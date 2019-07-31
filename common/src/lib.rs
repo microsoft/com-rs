@@ -68,6 +68,6 @@ extern "system" {
     ) -> HRESULT;
 }
 
-pub unsafe trait ComInterface {
+pub trait ComInterface {
     const IID: IID;
 }

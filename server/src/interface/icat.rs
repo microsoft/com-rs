@@ -28,7 +28,7 @@ impl ICat {
     }
 }
 
-unsafe impl ComInterface for ICat {
+impl ComInterface for ICat {
     const IID: IID = IID_ICAT;
 }
 
