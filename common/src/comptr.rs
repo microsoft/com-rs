@@ -2,16 +2,17 @@
 // actually possessing the entire Human struct, just
 // an interface pointer.
 use crate::iunknown::RawIUnknown;
+use crate::ComInterface;
 
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ptr::NonNull;
 
-pub struct ComPtr<T> {
+pub struct ComPtr<T: ComInterface> {
     ptr: NonNull<T>,
 }
 
-impl<T> Deref for ComPtr<T> {
+impl<T: ComInterface> Deref for ComPtr<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -19,13 +20,13 @@ impl<T> Deref for ComPtr<T> {
     }
 }
 
-impl<T> DerefMut for ComPtr<T> {
+impl<T: ComInterface> DerefMut for ComPtr<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { self.ptr.as_mut() }
     }
 }
 
-impl<T> ComPtr<T> {
+impl<T: ComInterface> ComPtr<T> {
     /// NonNull<T> must be safely convertable to *mut RawIUnknown
     pub unsafe fn new(ptr: NonNull<T>) -> Self {
         ComPtr { ptr }
@@ -36,14 +37,14 @@ impl<T> ComPtr<T> {
     }
 }
 
-impl<T> Clone for ComPtr<T> {
+impl<T: ComInterface> Clone for ComPtr<T> {
     fn clone(&self) -> Self {
         self.add_ref();
         ComPtr { ptr: self.ptr }
     }
 }
 
-impl<T> Drop for ComPtr<T> {
+impl<T: ComInterface> Drop for ComPtr<T> {
     fn drop(&mut self) {
         unsafe {
             (*(self.ptr.as_ptr() as *mut RawIUnknown)).raw_release();

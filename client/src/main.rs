@@ -104,6 +104,6 @@ pub const IID_IEXAMPLE: IID = IID {
     data3: 0x418C,
     data4: [0xA9, 0xF9, 0x05, 0xAC, 0x67, 0x52, 0x5E, 0x43],
 };
-impl ComInterface for IExample {
+unsafe impl ComInterface for IExample {
     const IID: IID = IID_IEXAMPLE;
 }
