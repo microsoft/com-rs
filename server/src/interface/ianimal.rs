@@ -24,7 +24,7 @@ impl IAnimal {
     }
 }
 
-impl ComInterface for IAnimal {
+unsafe impl ComInterface for IAnimal {
     const IID: IID = IID_IANIMAL;
 }
 
