@@ -13,7 +13,7 @@ use common::{
     IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID, LPVOID, REFCLSID,
     REFIID,
 };
-use server::{IAnimal, ICat, CLSID_CAT};
+use server::{IAnimal, ICat, CLSID_CAT, IExample};
 use std::os::raw::c_void;
 
 fn main() {
@@ -94,16 +94,4 @@ fn get_class_object(iid: &IID) -> Result<ComPtr<IUnknown>, HRESULT> {
 
 fn uninitialize() {
     unsafe { CoUninitialize() }
-}
-
-#[repr(C)]
-pub struct IExample {}
-pub const IID_IEXAMPLE: IID = IID {
-    data1: 0xC5F45CBC,
-    data2: 0x4439,
-    data3: 0x418C,
-    data4: [0xA9, 0xF9, 0x05, 0xAC, 0x67, 0x52, 0x5E, 0x43],
-};
-unsafe impl ComInterface for IExample {
-    const IID: IID = IID_IEXAMPLE;
 }

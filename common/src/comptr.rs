@@ -28,7 +28,7 @@ impl<T: ComInterface> DerefMut for ComPtr<T> {
 
 impl<T: ComInterface> ComPtr<T> {
     /// NonNull<T> must be safely convertable to *mut RawIUnknown
-    pub unsafe fn new(ptr: NonNull<T>) -> Self {
+    pub fn new(ptr: NonNull<T>) -> Self {
         ComPtr { ptr }
     }
 
