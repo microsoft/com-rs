@@ -1,10 +1,10 @@
 use std::os::raw::c_void;
 
 use crate::interface::{
-    ianimal::{RawIAnimal, IID_IANIMAL},
-    icat::{ICat, ICatVTable, RawICat, IID_ICAT},
+    ianimal::{IAnimalMethods, RawIAnimal, IID_IANIMAL},
+    icat::{ICat, ICatMethods, ICatVTable, RawICat, IID_ICAT},
 };
-use common::{IID_IUnknown, IUnknownVTable, RawIUnknown, E_NOINTERFACE, HRESULT, IID, NOERROR};
+use common::{IID_IUnknown, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, NOERROR};
 
 /// The implementation class
 /// https://en.wikipedia.org/wiki/British_Shorthair
@@ -71,16 +71,16 @@ unsafe extern "stdcall" fn eat(_this: *mut RawIAnimal) -> HRESULT {
 impl BritishShortHairCat {
     pub(crate) fn new() -> BritishShortHairCat {
         println!("Allocating new Vtable...");
-        let iunknown = IUnknownVTable {
+        let iunknown = IUnknownMethods {
             QueryInterface: query_interface,
             Release: release,
             AddRef: add_ref,
         };
-        let vtable = Box::into_raw(Box::new(ICatVTable {
-            iunknown,
-            Eat: eat,
+        let ianimal = IAnimalMethods { Eat: eat };
+        let icat = ICatMethods {
             IgnoreHumans: ignore_humans,
-        }));
+        };
+        let vtable = Box::into_raw(Box::new(ICatVTable(iunknown, ianimal, icat)));
         let inner = RawICat { vtable };
         BritishShortHairCat {
             inner: ICat { inner },

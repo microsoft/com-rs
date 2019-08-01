@@ -1,4 +1,4 @@
-use common::{ComInterface, ComPtr, IClassFactoryVTable, RawIUnknown, IID};
+use common::{ComInterface, ComPtr, IClassFactoryMethods, IUnknownMethods, RawIUnknown, IID};
 
 pub const IID_ICAT_CLASS: IID = IID {
     data1: 0xf5353c58,
@@ -42,6 +42,10 @@ impl std::convert::AsMut<RawIUnknown> for RawICatClass {
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct ICatClassVTable {
-    pub(crate) iclassfactory: IClassFactoryVTable,
-}
+pub struct ICatClassMethods {}
+#[repr(C)]
+pub struct ICatClassVTable(
+    pub IUnknownMethods,
+    pub IClassFactoryMethods,
+    pub ICatClassMethods,
+);
