@@ -71,7 +71,7 @@ fn main() {
             return;
         }
     };
-    println!("Got animal2.");
+    println!("Got cat.");
     cat.eat();
 
     // We must drop them now or else we'll get an error when they drop after we've uninitialized COM

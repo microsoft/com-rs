@@ -4,7 +4,7 @@ use crate::implementation::BritishShortHairCat;
 use crate::interface::icat_class::{ICatClass, ICatClassVTable, RawICatClass, IID_ICAT_CLASS};
 use common::{
     IClassFactoryVTable, IID_IUnknown, IUnknownVTable, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION,
-    E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, NOERROR, S_OK,
+    E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, NOERROR, S_OK, RawIClassFactory
 };
 
 #[repr(C)]
@@ -57,12 +57,13 @@ unsafe extern "stdcall" fn release(this: *mut RawIUnknown) -> u32 {
 }
 
 unsafe extern "stdcall" fn create_instance(
-    this: *mut RawIUnknown,
+    this: *mut RawIClassFactory,
+    aggregate: *mut RawIUnknown,
     riid: *const IID,
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Creating instance...");
-    if this != std::ptr::null_mut() {
+    if aggregate != std::ptr::null_mut() {
         return CLASS_E_NOAGGREGATION;
     }
 
