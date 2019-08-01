@@ -18,7 +18,7 @@ extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut 
         if *rclsid != CLSID_CAT_CLASS {
             return CLASS_E_CLASSNOTAVAILABLE;
         }
-        println!("Allocating new object...");
+        println!("Allocating new object CatClass...");
         let cat = Box::into_raw(Box::new(implementation::BritishShortHairCatClass::new()));
         (*(cat as *mut RawIUnknown)).raw_add_ref();
         let hr = (*(cat as *mut RawIUnknown)).raw_query_interface(riid, ppv);

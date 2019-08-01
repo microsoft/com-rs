@@ -28,7 +28,7 @@ fn main() {
     let mut factory = match result {
         Ok(factory) => factory,
         Err(hr) => {
-            println!("Failed to get com class object {}", hr);
+            println!("Failed to get com class object {:x}", hr as u32);
             return;
         }
     };

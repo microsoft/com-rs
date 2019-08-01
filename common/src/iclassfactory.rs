@@ -11,6 +11,7 @@ pub const IID_ICLASS_FACTORY: IID = IID {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IClassFactoryVTable {
+    pub iunknown: IUnknownVTable,
     pub CreateInstance:
         unsafe extern "stdcall" fn(*mut RawIUnknown, REFIID, *mut *mut c_void) -> HRESULT,
     pub LockServer: unsafe extern "stdcall" fn(BOOL) -> HRESULT,
@@ -18,7 +19,6 @@ pub struct IClassFactoryVTable {
 
 #[repr(C)]
 pub struct RawIClassFactory {
-    iunknown: *const IUnknownVTable,
     vtable: *const IClassFactoryVTable,
 }
 
