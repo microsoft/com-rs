@@ -24,7 +24,7 @@ unsafe extern "stdcall" fn query_interface(
     riid: *const IID,
     ppv: *mut *mut c_void,
 ) -> HRESULT {
-    println!("Querying interface...");
+    println!("Querying interface on CatClass...");
     if *riid == IID_IUnknown || *riid == IID_ICLASS_FACTORY || *riid == IID_ICAT_CLASS {
         *ppv = this as *mut c_void;
         (*this).raw_add_ref();
@@ -61,12 +61,16 @@ unsafe extern "stdcall" fn create_instance(
     riid: *const IID,
     ppv: *mut *mut c_void,
 ) -> HRESULT {
+    println!("Creating instance...");
     if this != std::ptr::null_mut() {
         return CLASS_E_NOAGGREGATION;
     }
 
-    let cat_class = Box::into_raw(Box::new(BritishShortHairCat::new()));
-    unimplemented!()
+    let cat = Box::into_raw(Box::new(BritishShortHairCat::new()));
+    (*(cat as *mut RawIUnknown)).raw_add_ref();
+    let hr = (*(cat as *mut RawIUnknown)).raw_query_interface(riid, ppv);
+    (*(cat as *mut RawIUnknown)).raw_release();
+    hr
 }
 
 unsafe extern "stdcall" fn lock_server(increment: BOOL) -> HRESULT {
@@ -76,18 +80,18 @@ unsafe extern "stdcall" fn lock_server(increment: BOOL) -> HRESULT {
 
 impl BritishShortHairCatClass {
     pub(crate) fn new() -> BritishShortHairCatClass {
-        println!("Allocating new Vtable...");
+        println!("Allocating new Vtable for CatClass...");
         let iunknown = IUnknownVTable {
             QueryInterface: query_interface,
             Release: release,
             AddRef: add_ref,
         };
         let iclassfactory = IClassFactoryVTable {
+            iunknown,
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
         let vtable = Box::into_raw(Box::new(ICatClassVTable {
-            iunknown,
             iclassfactory,
         }));
         let inner = RawICatClass { vtable };
