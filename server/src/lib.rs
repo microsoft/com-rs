@@ -5,7 +5,7 @@ use common::{
     failed, RawIUnknown, CLASS_E_CLASSNOTAVAILABLE, HRESULT, IID, LPVOID, REFCLSID, REFIID,
 };
 
-pub use interface::{IAnimal, ICat};
+pub use interface::{IAnimal, ICat, IExample};
 
 pub const CLSID_CAT: IID = IID {
     data1: 0xC5F45CBC,

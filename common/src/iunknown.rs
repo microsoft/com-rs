@@ -58,6 +58,6 @@ impl IUnknown {
     }
 }
 
-impl ComInterface for IUnknown {
+unsafe impl ComInterface for IUnknown {
     const IID: IID = IID_IUnknown;
 }

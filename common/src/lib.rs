@@ -68,6 +68,8 @@ extern "system" {
     ) -> HRESULT;
 }
 
-pub trait ComInterface {
+/// Structs implementing this trait must have the layout of a COM Interface Pointer.
+/// For example, we assume safe conversion and usage of the struct as a `RawIUnknown`. 
+pub unsafe trait ComInterface {
     const IID: IID;
 }
