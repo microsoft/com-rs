@@ -1,4 +1,4 @@
-use super::icat::{ICatVTable, RawICat};
+use super::icat::ICatVTable;
 use common::{ComInterface, ComPtr, RawIUnknown, HRESULT, IID};
 
 pub const IID_IANIMAL: IID = IID {
@@ -39,7 +39,7 @@ impl RawIAnimal {
     }
 
     pub unsafe fn raw_eat(&mut self) -> HRESULT {
-        ((*self.vtable).Eat)(self as *mut RawIAnimal as *mut RawICat)
+        ((*self.vtable).Eat)(self as *mut RawIAnimal)
     }
 }
 

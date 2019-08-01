@@ -71,6 +71,6 @@ impl std::convert::AsMut<RawIAnimal> for RawICat {
 #[repr(C)]
 pub struct ICatVTable {
     pub(crate) iunknown: IUnknownVTable,
-    pub(crate) Eat: unsafe extern "stdcall" fn(*mut RawICat) -> HRESULT,
+    pub(crate) Eat: unsafe extern "stdcall" fn(*mut RawIAnimal) -> HRESULT,
     pub(crate) IgnoreHumans: unsafe extern "stdcall" fn(*mut RawICat) -> HRESULT,
 }
