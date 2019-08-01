@@ -61,7 +61,7 @@ impl IClassFactory {
 }
 
 unsafe impl ComInterface for IClassFactory {
-    const IID: IID = IID_IUnknown;
+    const IID: IID = IID_ICLASS_FACTORY;
 }
 
 impl std::convert::AsRef<RawIUnknown> for RawIClassFactory {
