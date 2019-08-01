@@ -9,9 +9,9 @@
 // }
 
 use common::{
-    failed, CoGetClassObject, CoInitializeEx, CoUninitialize, ComInterface, ComPtr, IClassFactory,
-    IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID, IID_ICLASS_FACTORY,
-    LPVOID, REFCLSID, REFIID,
+    failed, CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize, ComInterface,
+    ComPtr, IClassFactory, IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID,
+    IID_ICLASS_FACTORY, LPVOID, REFCLSID, REFIID,
 };
 use server::{IAnimal, ICat, CLSID_CAT_CLASS};
 use std::os::raw::c_void;
@@ -63,20 +63,20 @@ fn main() {
     // animal.raw_add_ref();
     // animal.add_ref();
 
-    let result = factory.create_instance::<IAnimal>();
-    let mut animal2 = match result {
-        Some(animal2) => animal2,
-        None => {
-            println!("Failed to get an animal2");
+    let result = create_instance::<ICat>(&CLSID_CAT_CLASS);
+    let mut cat = match result {
+        Ok(cat) => cat,
+        Err(e) => {
+            println!("Failed to get an cat, {:x}", e as u32);
             return;
         }
     };
     println!("Got animal2.");
-    animal2.eat();
+    cat.eat();
 
     // We must drop them now or else we'll get an error when they drop after we've uninitialized COM
     drop(animal);
-    drop(animal2);
+    drop(cat);
     drop(unknown);
     drop(factory);
 
@@ -116,6 +116,25 @@ fn get_class_object(iid: &IID) -> Result<ComPtr<IClassFactory>, HRESULT> {
             ComPtr::new(std::ptr::NonNull::new(class_factory as *mut IClassFactory).unwrap())
         },
     )
+}
+
+// TODO: accept server options
+fn create_instance<T: ComInterface>(clsid: &IID) -> Result<ComPtr<T>, HRESULT> {
+    let mut instance = std::ptr::null_mut::<c_void>();
+    let hr = unsafe {
+        CoCreateInstance(
+            clsid as REFCLSID,
+            std::ptr::null_mut(),
+            CLSCTX_INPROC_SERVER,
+            &T::IID as REFIID,
+            &mut instance as *mut LPVOID,
+        )
+    };
+    if failed(hr) {
+        return Err(hr);
+    }
+
+    Ok(unsafe { ComPtr::new(std::ptr::NonNull::new(instance as *mut T).unwrap()) })
 }
 
 fn uninitialize() {

@@ -66,6 +66,7 @@ extern "system" {
     // other resources that the thread maintains, and forces all RPC connections on the thread to close.
     pub fn CoUninitialize() -> ();
 
+    // https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cocreateinstance
     pub fn CoCreateInstance(
         rclsid: REFCLSID,
         pUnkOuter: LPUNKNOWN,
