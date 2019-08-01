@@ -13,7 +13,7 @@ pub const IID_ICLASS_FACTORY: IID = IID {
 pub struct IClassFactoryVTable {
     pub iunknown: IUnknownVTable,
     pub CreateInstance:
-        unsafe extern "stdcall" fn(*mut RawIUnknown, REFIID, *mut *mut c_void) -> HRESULT,
+        unsafe extern "stdcall" fn(*mut RawIClassFactory, *mut RawIUnknown, REFIID, *mut *mut c_void) -> HRESULT,
     pub LockServer: unsafe extern "stdcall" fn(BOOL) -> HRESULT,
 }
 
@@ -26,7 +26,7 @@ impl RawIClassFactory {
     pub unsafe fn raw_create_instance(&mut self, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT {
         // TODO: Support aggregation!
         // https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iclassfactory-createinstance
-        ((*self.vtable).CreateInstance)(std::ptr::null_mut(), riid, ppv)
+        ((*self.vtable).CreateInstance)(self as *mut RawIClassFactory, std::ptr::null_mut(), riid, ppv)
     }
 
     pub unsafe fn raw_lock_server(&mut self, increment: bool) -> HRESULT {
