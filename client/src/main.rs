@@ -13,7 +13,7 @@ use common::{
     ComPtr, IClassFactory, IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID,
     IID_ICLASS_FACTORY, LPVOID, REFCLSID, REFIID,
 };
-use server::{IAnimal, ICat, CLSID_CAT_CLASS, IExample};
+use server::{IAnimal, ICat, IExample, CLSID_CAT_CLASS};
 use std::os::raw::c_void;
 
 fn main() {
@@ -111,11 +111,9 @@ fn get_class_object(iid: &IID) -> Result<ComPtr<IClassFactory>, HRESULT> {
         return Err(hr);
     }
 
-    Ok(
-        unsafe {
-            ComPtr::new(std::ptr::NonNull::new(class_factory as *mut IClassFactory).unwrap())
-        },
-    )
+    Ok(ComPtr::new(
+        std::ptr::NonNull::new(class_factory as *mut IClassFactory).unwrap(),
+    ))
 }
 
 // TODO: accept server options
@@ -134,7 +132,9 @@ fn create_instance<T: ComInterface>(clsid: &IID) -> Result<ComPtr<T>, HRESULT> {
         return Err(hr);
     }
 
-    Ok(unsafe { ComPtr::new(std::ptr::NonNull::new(instance as *mut T).unwrap()) })
+    Ok(ComPtr::new(
+        std::ptr::NonNull::new(instance as *mut T).unwrap(),
+    ))
 }
 
 fn uninitialize() {

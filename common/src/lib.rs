@@ -3,8 +3,10 @@ mod comptr;
 
 mod iclassfactory;
 mod iunknown;
-pub use iclassfactory::{IClassFactory, IClassFactoryVTable, RawIClassFactory, IID_ICLASS_FACTORY};
-pub use iunknown::{IID_IUnknown, IUnknown, IUnknownVTable, RawIUnknown};
+pub use iclassfactory::{
+    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, RawIClassFactory, IID_ICLASS_FACTORY,
+};
+pub use iunknown::{IID_IUnknown, IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown};
 
 pub use comptr::ComPtr;
 use std::os::raw::c_void;
@@ -77,7 +79,7 @@ extern "system" {
 }
 
 /// Structs implementing this trait must have the layout of a COM Interface Pointer.
-/// For example, we assume safe conversion and usage of the struct as a `RawIUnknown`. 
+/// For example, we assume safe conversion and usage of the struct as a `RawIUnknown`.
 pub unsafe trait ComInterface {
     const IID: IID;
 }

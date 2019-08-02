@@ -1,10 +1,12 @@
 use std::os::raw::c_void;
 
 use crate::implementation::BritishShortHairCat;
-use crate::interface::icat_class::{ICatClass, ICatClassVTable, RawICatClass, IID_ICAT_CLASS};
+use crate::interface::icat_class::{
+    ICatClass, ICatClassMethods, ICatClassVTable, RawICatClass, IID_ICAT_CLASS,
+};
 use common::{
-    IClassFactoryVTable, IID_IUnknown, IUnknownVTable, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION,
-    E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, NOERROR, S_OK, RawIClassFactory
+    IClassFactoryMethods, IID_IUnknown, IUnknownMethods, RawIClassFactory, RawIUnknown, BOOL,
+    CLASS_E_NOAGGREGATION, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, NOERROR, S_OK,
 };
 
 #[repr(C)]
@@ -82,19 +84,21 @@ unsafe extern "stdcall" fn lock_server(increment: BOOL) -> HRESULT {
 impl BritishShortHairCatClass {
     pub(crate) fn new() -> BritishShortHairCatClass {
         println!("Allocating new Vtable for CatClass...");
-        let iunknown = IUnknownVTable {
+        let iunknown = IUnknownMethods {
             QueryInterface: query_interface,
             Release: release,
             AddRef: add_ref,
         };
-        let iclassfactory = IClassFactoryVTable {
-            iunknown,
+        let iclassfactory = IClassFactoryMethods {
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
-        let vtable = Box::into_raw(Box::new(ICatClassVTable {
+        let icatclass = ICatClassMethods {};
+        let vtable = Box::into_raw(Box::new(ICatClassVTable(
+            iunknown,
             iclassfactory,
-        }));
+            icatclass,
+        )));
         let inner = RawICatClass { vtable };
         BritishShortHairCatClass {
             inner: ICatClass { inner },

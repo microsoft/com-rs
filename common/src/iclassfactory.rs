@@ -1,4 +1,10 @@
-use super::*;
+use crate::{
+    c_void,
+    comptr::ComPtr,
+    failed,
+    iunknown::{IUnknownMethods, RawIUnknown},
+    ComInterface, BOOL, HRESULT, IID, REFIID,
+};
 
 // uuid(0x000e0000, 0x0000, 0x0000, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46)
 pub const IID_ICLASS_FACTORY: IID = IID {
@@ -10,12 +16,17 @@ pub const IID_ICLASS_FACTORY: IID = IID {
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct IClassFactoryVTable {
-    pub iunknown: IUnknownVTable,
-    pub CreateInstance:
-        unsafe extern "stdcall" fn(*mut RawIClassFactory, *mut RawIUnknown, REFIID, *mut *mut c_void) -> HRESULT,
+pub struct IClassFactoryMethods {
+    pub CreateInstance: unsafe extern "stdcall" fn(
+        *mut RawIClassFactory,
+        *mut RawIUnknown,
+        REFIID,
+        *mut *mut c_void,
+    ) -> HRESULT,
     pub LockServer: unsafe extern "stdcall" fn(BOOL) -> HRESULT,
 }
+#[repr(C)]
+pub struct IClassFactoryVTable(IUnknownMethods, IClassFactoryMethods);
 
 #[repr(C)]
 pub struct RawIClassFactory {
@@ -26,11 +37,16 @@ impl RawIClassFactory {
     pub unsafe fn raw_create_instance(&mut self, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT {
         // TODO: Support aggregation!
         // https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iclassfactory-createinstance
-        ((*self.vtable).CreateInstance)(self as *mut RawIClassFactory, std::ptr::null_mut(), riid, ppv)
+        ((*self.vtable).1.CreateInstance)(
+            self as *mut RawIClassFactory,
+            std::ptr::null_mut(),
+            riid,
+            ppv,
+        )
     }
 
     pub unsafe fn raw_lock_server(&mut self, increment: bool) -> HRESULT {
-        ((*self.vtable).LockServer)(increment as BOOL)
+        ((*self.vtable).1.LockServer)(increment as BOOL)
     }
 
     pub fn create_instance<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
@@ -40,7 +56,7 @@ impl RawIClassFactory {
             // TODO: decide what failures are possible
             return None;
         }
-        Some(unsafe { ComPtr::new(std::ptr::NonNull::new(ppv as *mut T)?) })
+        Some(ComPtr::new(std::ptr::NonNull::new(ppv as *mut T)?))
     }
 }
 
