@@ -1,4 +1,4 @@
-use common::{ComInterface, ComPtr, RawIUnknown, HRESULT, IID, IUnknownVTable};
+use common::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, IID};
 
 pub const IID_IEXAMPLE: IID = IID {
     data1: 0xC5F45CBC,
@@ -28,8 +28,7 @@ pub(crate) struct RawIExample {
     vtable: *const IExampleVTable,
 }
 
-impl RawIExample {
-}
+impl RawIExample {}
 
 impl std::convert::AsRef<RawIUnknown> for RawIExample {
     fn as_ref(&self) -> &RawIUnknown {
@@ -43,8 +42,9 @@ impl std::convert::AsMut<RawIUnknown> for RawIExample {
     }
 }
 
+#[repr(C)]
+pub struct IExampleMethods {}
+
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct IExampleVTable {
-    pub(crate) iunknown: IUnknownVTable,
-}
+pub struct IExampleVTable(pub IUnknownMethods, pub IExampleMethods);

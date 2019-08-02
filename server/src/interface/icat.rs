@@ -1,5 +1,6 @@
-use super::ianimal::RawIAnimal;
-use common::{ComInterface, ComPtr, IUnknownVTable, RawIUnknown, HRESULT, IID};
+use super::ianimal::{IAnimalMethods, RawIAnimal};
+use common::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, HRESULT, IID};
+
 pub const IID_ICAT: IID = IID {
     data1: 0xf5353c58,
     data2: 0xcfd9,
@@ -39,7 +40,7 @@ pub(crate) struct RawICat {
 
 impl RawICat {
     unsafe fn raw_ignore_humans(&mut self) -> HRESULT {
-        ((*self.vtable).IgnoreHumans)(self as *mut RawICat)
+        ((*self.vtable).2.IgnoreHumans)(self as *mut RawICat)
     }
 }
 
@@ -69,8 +70,8 @@ impl std::convert::AsMut<RawIAnimal> for RawICat {
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct ICatVTable {
-    pub(crate) iunknown: IUnknownVTable,
-    pub(crate) Eat: unsafe extern "stdcall" fn(*mut RawICat) -> HRESULT,
+pub struct ICatMethods {
     pub(crate) IgnoreHumans: unsafe extern "stdcall" fn(*mut RawICat) -> HRESULT,
 }
+#[repr(C)]
+pub struct ICatVTable(pub IUnknownMethods, pub IAnimalMethods, pub ICatMethods);

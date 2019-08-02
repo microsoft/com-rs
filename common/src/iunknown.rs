@@ -1,4 +1,4 @@
-use super::*;
+use crate::{c_void, comptr::ComPtr, failed, ComInterface, E_NOINTERFACE, HRESULT, IID};
 
 #[allow(non_upper_case_globals)]
 pub const IID_IUnknown: IID = IID {
@@ -10,12 +10,14 @@ pub const IID_IUnknown: IID = IID {
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct IUnknownVTable {
+pub struct IUnknownMethods {
     pub QueryInterface:
         unsafe extern "stdcall" fn(*mut RawIUnknown, *const IID, *mut *mut c_void) -> HRESULT,
     pub AddRef: unsafe extern "stdcall" fn(*mut RawIUnknown) -> u32,
     pub Release: unsafe extern "stdcall" fn(*mut RawIUnknown) -> u32,
 }
+#[repr(C)]
+pub struct IUnknownVTable(IUnknownMethods);
 
 #[repr(C)]
 pub struct RawIUnknown {
@@ -28,13 +30,13 @@ impl RawIUnknown {
         riid: *const IID,
         ppv: *mut *mut c_void,
     ) -> HRESULT {
-        ((*self.vtable).QueryInterface)(self, riid, ppv)
+        ((*self.vtable).0.QueryInterface)(self, riid, ppv)
     }
     pub unsafe fn raw_add_ref(&mut self) -> u32 {
-        ((*self.vtable).AddRef)(self)
+        ((*self.vtable).0.AddRef)(self)
     }
     pub unsafe fn raw_release(&mut self) -> u32 {
-        ((*self.vtable).Release)(self)
+        ((*self.vtable).0.Release)(self)
     }
     pub fn query_interface<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
@@ -43,7 +45,7 @@ impl RawIUnknown {
             assert!(hr == E_NOINTERFACE);
             return None;
         }
-        Some(unsafe { ComPtr::new(std::ptr::NonNull::new(ppv as *mut T)?) })
+        Some(ComPtr::new(std::ptr::NonNull::new(ppv as *mut T)?))
     }
 }
 

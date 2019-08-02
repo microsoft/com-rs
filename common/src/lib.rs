@@ -1,8 +1,12 @@
 // These are all defined in [winapi](https://github.com/retep998/winapi-rs)
 mod comptr;
-mod iunknown;
 
-pub use iunknown::{IID_IUnknown, IUnknown, IUnknownVTable, RawIUnknown};
+mod iclassfactory;
+mod iunknown;
+pub use iclassfactory::{
+    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, RawIClassFactory, IID_ICLASS_FACTORY,
+};
+pub use iunknown::{IID_IUnknown, IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown};
 
 pub use comptr::ComPtr;
 use std::os::raw::c_void;
@@ -23,8 +27,12 @@ pub fn failed(result: HRESULT) -> bool {
 }
 pub const E_NOINTERFACE: HRESULT = -0x7FFFBFFE;
 pub const NOERROR: HRESULT = 0x0;
+pub const S_OK: HRESULT = 0x0;
 pub const CLASS_E_CLASSNOTAVAILABLE: HRESULT = -0x7FFBFEEF;
+pub const CLASS_E_NOAGGREGATION: HRESULT = -0x7FFBFEF0;
 
+#[allow(non_camel_case_types)]
+pub type c_int = i32;
 #[allow(non_camel_case_types)]
 pub type c_long = i32;
 #[allow(non_camel_case_types)]
@@ -32,6 +40,7 @@ pub type c_ulong = u32;
 pub type LPVOID = *mut c_void;
 pub type LPUNKNOWN = *mut IUnknown;
 pub type DWORD = c_ulong;
+pub type BOOL = c_int;
 
 pub const COINIT_APARTMENTTHREADED: DWORD = 0x2;
 pub const CLSCTX_INPROC_SERVER: DWORD = 0x1;
@@ -59,6 +68,7 @@ extern "system" {
     // other resources that the thread maintains, and forces all RPC connections on the thread to close.
     pub fn CoUninitialize() -> ();
 
+    // https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cocreateinstance
     pub fn CoCreateInstance(
         rclsid: REFCLSID,
         pUnkOuter: LPUNKNOWN,
@@ -69,7 +79,7 @@ extern "system" {
 }
 
 /// Structs implementing this trait must have the layout of a COM Interface Pointer.
-/// For example, we assume safe conversion and usage of the struct as a `RawIUnknown`. 
+/// For example, we assume safe conversion and usage of the struct as a `RawIUnknown`.
 pub unsafe trait ComInterface {
     const IID: IID;
 }

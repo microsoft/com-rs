@@ -9,11 +9,11 @@
 // }
 
 use common::{
-    failed, CoGetClassObject, CoInitializeEx, CoUninitialize, ComInterface, ComPtr, IID_IUnknown,
-    IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID, LPVOID, REFCLSID,
-    REFIID,
+    failed, CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize, ComInterface,
+    ComPtr, IClassFactory, IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID,
+    IID_ICLASS_FACTORY, LPVOID, REFCLSID, REFIID,
 };
-use server::{IAnimal, ICat, CLSID_CAT, IExample};
+use server::{IAnimal, ICat, IExample, CLSID_CAT_CLASS};
 use std::os::raw::c_void;
 
 fn main() {
@@ -24,16 +24,25 @@ fn main() {
         return;
     }
 
-    let result = get_class_object(&CLSID_CAT);
-    let mut unknown = match result {
-        Ok(unknown) => unknown,
+    let result = get_class_object(&CLSID_CAT_CLASS);
+    let mut factory = match result {
+        Ok(factory) => factory,
         Err(hr) => {
-            println!("Failed to get com class object {}", hr);
+            println!("Failed to get com class object {:x}", hr as u32);
             return;
         }
     };
 
-    println!("Got unknown.");
+    println!("Got factory.");
+    let result = factory.create_instance::<IUnknown>();
+    let mut unknown = match result {
+        Some(unknown) => unknown,
+        None => {
+            println!("Failed to get an unknown");
+            return;
+        }
+    };
+
     let result = unknown.query_interface::<IAnimal>();
     let mut animal = match result {
         Some(animal) => animal,
@@ -54,9 +63,22 @@ fn main() {
     // animal.raw_add_ref();
     // animal.add_ref();
 
+    let result = create_instance::<ICat>(&CLSID_CAT_CLASS);
+    let mut cat = match result {
+        Ok(cat) => cat,
+        Err(e) => {
+            println!("Failed to get an cat, {:x}", e as u32);
+            return;
+        }
+    };
+    println!("Got cat.");
+    cat.eat();
+
     // We must drop them now or else we'll get an error when they drop after we've uninitialized COM
     drop(animal);
+    drop(cat);
     drop(unknown);
+    drop(factory);
 
     uninitialize();
 }
@@ -74,22 +96,45 @@ fn initialize_ex() -> Result<(), HRESULT> {
 }
 
 // TODO: accept server options
-fn get_class_object(iid: &IID) -> Result<ComPtr<IUnknown>, HRESULT> {
-    let mut unknown = std::ptr::null_mut::<c_void>();
+fn get_class_object(iid: &IID) -> Result<ComPtr<IClassFactory>, HRESULT> {
+    let mut class_factory = std::ptr::null_mut::<c_void>();
     let hr = unsafe {
         CoGetClassObject(
             iid as REFCLSID,
             CLSCTX_INPROC_SERVER,
             std::ptr::null_mut::<c_void>(),
-            &IID_IUnknown as REFIID,
-            &mut unknown as *mut LPVOID,
+            &IID_ICLASS_FACTORY as REFIID,
+            &mut class_factory as *mut LPVOID,
         )
     };
     if failed(hr) {
         return Err(hr);
     }
 
-    Ok(unsafe { ComPtr::new(std::ptr::NonNull::new(unknown as *mut IUnknown).unwrap()) })
+    Ok(ComPtr::new(
+        std::ptr::NonNull::new(class_factory as *mut IClassFactory).unwrap(),
+    ))
+}
+
+// TODO: accept server options
+fn create_instance<T: ComInterface>(clsid: &IID) -> Result<ComPtr<T>, HRESULT> {
+    let mut instance = std::ptr::null_mut::<c_void>();
+    let hr = unsafe {
+        CoCreateInstance(
+            clsid as REFCLSID,
+            std::ptr::null_mut(),
+            CLSCTX_INPROC_SERVER,
+            &T::IID as REFIID,
+            &mut instance as *mut LPVOID,
+        )
+    };
+    if failed(hr) {
+        return Err(hr);
+    }
+
+    Ok(ComPtr::new(
+        std::ptr::NonNull::new(instance as *mut T).unwrap(),
+    ))
 }
 
 fn uninitialize() {

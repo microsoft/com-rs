@@ -1,13 +1,11 @@
 mod implementation;
 mod interface;
 
-use common::{
-    failed, RawIUnknown, CLASS_E_CLASSNOTAVAILABLE, HRESULT, IID, LPVOID, REFCLSID, REFIID,
-};
+use common::{RawIUnknown, CLASS_E_CLASSNOTAVAILABLE, HRESULT, IID, LPVOID, REFCLSID, REFIID};
 
 pub use interface::{IAnimal, ICat, IExample};
 
-pub const CLSID_CAT: IID = IID {
+pub const CLSID_CAT_CLASS: IID = IID {
     data1: 0xC5F45CBC,
     data2: 0x4439,
     data3: 0x418C,
@@ -17,16 +15,14 @@ pub const CLSID_CAT: IID = IID {
 #[no_mangle]
 extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut LPVOID) -> HRESULT {
     unsafe {
-        if *rclsid != CLSID_CAT {
+        if *rclsid != CLSID_CAT_CLASS {
             return CLASS_E_CLASSNOTAVAILABLE;
         }
-        println!("Allocating new object...");
-        let cat = Box::into_raw(Box::new(implementation::Cat::new()));
+        println!("Allocating new object CatClass...");
+        let cat = Box::into_raw(Box::new(implementation::BritishShortHairCatClass::new()));
+        (*(cat as *mut RawIUnknown)).raw_add_ref();
         let hr = (*(cat as *mut RawIUnknown)).raw_query_interface(riid, ppv);
-        if failed(hr) {
-            println!("Querying new object failed... Deallocating object...");
-            let _ = Box::from_raw(cat);
-        }
+        (*(cat as *mut RawIUnknown)).raw_release();
         hr
     }
 }
