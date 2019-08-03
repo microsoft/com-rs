@@ -3,7 +3,7 @@ mod interface;
 
 use common::{RawIUnknown, CLASS_E_CLASSNOTAVAILABLE, HRESULT, IID, LPVOID, REFCLSID, REFIID};
 
-pub use interface::{IAnimal, ICat, IExample};
+pub use interface::{IAnimal, ICat, IExample, IDomesticAnimal};
 
 pub const CLSID_CAT_CLASS: IID = IID {
     data1: 0xC5F45CBC,
