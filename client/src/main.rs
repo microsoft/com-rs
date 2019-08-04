@@ -13,7 +13,10 @@ use common::{
     ComPtr, IClassFactory, IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID,
     IID_ICLASS_FACTORY, LPVOID, REFCLSID, REFIID,
 };
-use server::{IAnimal, ICat, IExample, CLSID_CAT_CLASS, IDomesticAnimal};
+use server::{
+    IAnimal, ICat, IExample, IFileManager, ILocalFileManager, IDomesticAnimal, 
+    CLSID_CAT_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS, CLSID_LOCAL_FILE_MANAGER_CLASS,
+};
 use std::os::raw::c_void;
 
 fn main() {
@@ -23,6 +26,8 @@ fn main() {
         println!("Failed to initialize COM Library: {}", hr);
         return;
     }
+
+    run_aggr_test();
 
     let result = get_class_object(&CLSID_CAT_CLASS);
     let mut factory = match result {
@@ -121,6 +126,41 @@ fn main() {
     drop(factory);
 
     uninitialize();
+}
+
+fn run_aggr_test() {
+    let result = create_instance::<IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
+    let mut filemanager = match result {
+        Ok(filemanager) => filemanager,
+        Err(e) => {
+            println!("Failed to get filemanager, {:x}", e as u32);
+            return;
+        }
+    };
+    println!("Got filemanager!");
+    filemanager.delete_all();
+
+    let result = filemanager.query_interface::<ILocalFileManager>();
+    let mut lfm = match result {
+        Some(lfm) => lfm,
+        None => {
+            println!("Failed to get Local File Manager!");
+            return;
+        }
+    };
+    println!("Got Local File Manager.");
+    lfm.delete_local();
+
+    let result = create_instance::<ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
+    let mut localfilemanager = match result {
+        Ok(localfilemanager) => localfilemanager,
+        Err(e) => {
+            println!("Failed to get localfilemanager, {:x}", e as u32);
+            return;
+        }
+    };
+    println!("Got localfilemanager!");
+    localfilemanager.delete_local();
 }
 
 // TODO: accept threading options
