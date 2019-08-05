@@ -13,7 +13,7 @@ use common::{
     ComPtr, IClassFactory, IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID,
     IID_ICLASS_FACTORY, LPVOID, REFCLSID, REFIID,
 };
-use server::{IAnimal, ICat, IExample, CLSID_CAT_CLASS};
+use server::{IAnimal, ICat, IExample, CLSID_CAT_CLASS, IDomesticAnimal};
 use std::os::raw::c_void;
 
 fn main() {
@@ -54,9 +54,41 @@ fn main() {
 
     println!("Got animal.");
     animal.eat();
-    assert!(animal.query_interface::<ICat>().is_some());
-    assert!(animal.query_interface::<IUnknown>().is_some());
-    assert!(animal.query_interface::<IExample>().is_none());
+
+    // Test cross-vtable interface queries for both directions.
+    let result = animal.query_interface::<IDomesticAnimal>();
+    let mut domestic_animal = match result {
+        Some(domestic_animal) => domestic_animal,
+        None => {
+            println!("Failed to get domestic animal!");
+            return;
+        }
+    };
+    println!("Got domestic animal.");
+    domestic_animal.train();
+    
+    let result = domestic_animal.query_interface::<ICat>();
+    let mut new_cat = match result {
+        Some(new_cat) => new_cat,
+        None => {
+            println!("Failed to get domestic animal!");
+            return;
+        }
+    };
+    println!("Got domestic animal.");
+    new_cat.ignore_humans();
+
+    // Test querying within second vtable.
+    let result = domestic_animal.query_interface::<IDomesticAnimal>();
+    let mut domestic_animal_two = match result {
+        Some(domestic_animal_two) => domestic_animal_two,
+        None => {
+            println!("Failed to get domestic animal!");
+            return;
+        }
+    };
+    println!("Got domestic animal.");
+    domestic_animal_two.train();
 
     // These doesn't compile
     // animal.ignore_humans();
@@ -74,7 +106,15 @@ fn main() {
     println!("Got cat.");
     cat.eat();
 
+    assert!(animal.query_interface::<ICat>().is_some());
+    assert!(animal.query_interface::<IUnknown>().is_some());
+    assert!(animal.query_interface::<IExample>().is_none());
+    assert!(animal.query_interface::<IDomesticAnimal>().is_some());
+
     // We must drop them now or else we'll get an error when they drop after we've uninitialized COM
+    drop(domestic_animal);
+    drop(new_cat);
+    drop(domestic_animal_two);
     drop(animal);
     drop(cat);
     drop(unknown);
