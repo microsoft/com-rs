@@ -26,11 +26,11 @@ pub struct IClassFactoryMethods {
     pub LockServer: unsafe extern "stdcall" fn(BOOL) -> HRESULT,
 }
 #[repr(C)]
-pub struct IClassFactoryVTable(IUnknownMethods, IClassFactoryMethods);
+pub struct IClassFactoryVTable(pub IUnknownMethods, pub IClassFactoryMethods);
 
 #[repr(C)]
 pub struct RawIClassFactory {
-    vtable: *const IClassFactoryVTable,
+    pub vtable: *const IClassFactoryVTable,
 }
 
 impl RawIClassFactory {
@@ -62,7 +62,7 @@ impl RawIClassFactory {
 
 #[repr(C)]
 pub struct IClassFactory {
-    inner: RawIClassFactory,
+    pub inner: RawIClassFactory,
 }
 
 impl IClassFactory {

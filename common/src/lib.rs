@@ -30,6 +30,7 @@ pub const NOERROR: HRESULT = 0x0;
 pub const S_OK: HRESULT = 0x0;
 pub const CLASS_E_CLASSNOTAVAILABLE: HRESULT = -0x7FFBFEEF;
 pub const CLASS_E_NOAGGREGATION: HRESULT = -0x7FFBFEF0;
+pub const E_INVALIDARG: HRESULT = -0x7FF8FFA9;
 
 #[allow(non_camel_case_types)]
 pub type c_int = i32;
@@ -71,7 +72,7 @@ extern "system" {
     // https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cocreateinstance
     pub fn CoCreateInstance(
         rclsid: REFCLSID,
-        pUnkOuter: LPUNKNOWN,
+        pUnkOuter: *mut RawIUnknown,
         dwClsContext: DWORD,
         riid: REFIID,
         ppv: *mut LPVOID,

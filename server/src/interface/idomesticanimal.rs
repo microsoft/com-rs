@@ -74,4 +74,8 @@ pub struct IDomesticAnimalMethods {
     pub(crate) Train: unsafe extern "stdcall" fn(*mut RawIDomesticAnimal) -> HRESULT,
 }
 #[repr(C)]
-pub struct IDomesticAnimalVTable(pub IUnknownMethods, pub IAnimalMethods, pub IDomesticAnimalMethods);
+pub struct IDomesticAnimalVTable(
+    pub IUnknownMethods,
+    pub IAnimalMethods,
+    pub IDomesticAnimalMethods,
+);
