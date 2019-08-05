@@ -6,7 +6,7 @@ use crate::interface::{
     },
     ilocalfilemanager::IID_ILOCAL_FILE_MANAGER,
 };
-use common::{
+use com::{
     failed, IID_IUnknown, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, LPUNKNOWN,
     NOERROR,
 };

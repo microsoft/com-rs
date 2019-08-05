@@ -1,19 +1,21 @@
 use std::os::raw::c_void;
 
-use crate::implementation::LocalFileManager;
-use common::{
-    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IID_IUnknown, IUnknownMethods,
-    RawIClassFactory, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION, E_INVALIDARG, E_NOINTERFACE,
-    HRESULT, IID, IID_ICLASS_FACTORY, NOERROR, S_OK,
+use crate::implementation::WindowsFileManager;
+use crate::CLSID_LOCAL_FILE_MANAGER_CLASS;
+use com::{
+    failed, CoCreateInstance, IClassFactory, IClassFactoryMethods, IClassFactoryVTable,
+    IID_IUnknown, IUnknownMethods, RawIClassFactory, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION,
+    CLSCTX_INPROC_SERVER, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, LPVOID, NOERROR,
+    REFCLSID, REFIID, S_OK,
 };
 
 #[repr(C)]
-pub struct LocalFileManagerClass {
+pub struct WindowsFileManagerClass {
     inner: IClassFactory,
     ref_count: u32,
 }
 
-impl Drop for LocalFileManagerClass {
+impl Drop for WindowsFileManagerClass {
     fn drop(&mut self) {
         let _ = unsafe { Box::from_raw(self.inner.inner.vtable as *mut IClassFactoryVTable) };
     }
@@ -24,7 +26,7 @@ unsafe extern "stdcall" fn query_interface(
     riid: *const IID,
     ppv: *mut *mut c_void,
 ) -> HRESULT {
-    println!("Querying interface on LocalFileManagerClass...");
+    println!("Querying interface on CatClass...");
     if *riid == IID_IUnknown || *riid == IID_ICLASS_FACTORY {
         *ppv = this as *mut c_void;
         (*this).raw_add_ref();
@@ -36,18 +38,18 @@ unsafe extern "stdcall" fn query_interface(
 
 unsafe extern "stdcall" fn add_ref(this: *mut RawIUnknown) -> u32 {
     println!("Adding ref...");
-    let this = this as *mut LocalFileManagerClass;
+    let this = this as *mut WindowsFileManagerClass;
     (*this).ref_count += 1;
-    println!("LFMC Count now {}", (*this).ref_count);
+    println!("WFMC Count now {}", (*this).ref_count);
     (*this).ref_count
 }
 
 // TODO: This could potentially be null or pointing to some invalid memory
 unsafe extern "stdcall" fn release(this: *mut RawIUnknown) -> u32 {
     println!("Releasing...");
-    let this = this as *mut LocalFileManagerClass;
+    let this = this as *mut WindowsFileManagerClass;
     (*this).ref_count -= 1;
-    println!("LFMC Count now {}", (*this).ref_count);
+    println!("WFMC Count now {}", (*this).ref_count);
     let count = (*this).ref_count;
     if count == 0 {
         println!("Count is 0. Freeing memory...");
@@ -63,25 +65,31 @@ unsafe extern "stdcall" fn create_instance(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Creating instance...");
-    if !aggregate.is_null() && *riid != IID_IUnknown {
-        *ppv = std::ptr::null_mut::<c_void>();
-        return E_INVALIDARG;
+    if aggregate != std::ptr::null_mut() {
+        return CLASS_E_NOAGGREGATION;
     }
 
-    let lfm = Box::into_raw(Box::new(LocalFileManager::new(aggregate)));
+    let wfm = Box::into_raw(Box::new(WindowsFileManager::new()));
 
-    // This check has to be here because it can only be done after object
-    // is allocated on the heap (address of nonDelegatingUnknown fixed)
-    if aggregate.is_null() {
-        (*lfm).iunk_to_use = &((*lfm).non_delegating_unk) as *const _ as *mut RawIUnknown;
+    // Instantiate object to aggregate
+    let mut pUnkLocalFileManager = std::ptr::null_mut::<c_void>();
+    let hr = CoCreateInstance(
+        &CLSID_LOCAL_FILE_MANAGER_CLASS as REFCLSID,
+        wfm as *mut RawIUnknown,
+        CLSCTX_INPROC_SERVER,
+        &IID_IUnknown as REFIID,
+        &mut pUnkLocalFileManager as *mut LPVOID,
+    );
+    if failed(hr) {
+        println!("Failed to instantiate aggregate! Error: {:x}", hr as u32);
+        panic!();
     }
+    (*wfm).pUnkLocalFileManager = pUnkLocalFileManager as *mut RawIUnknown;
 
-    // As an aggregable object, we have to add_ref through the
-    // non-delegating IUnknown on creation. Otherwise, we might
-    // add_ref the outer object if aggregated.
-    ((*lfm).non_delegating_unk).raw_add_ref();
-    let hr = (*lfm).non_delegating_unk.raw_query_interface(riid, ppv);
-    ((*lfm).non_delegating_unk).raw_release();
+    // Start reference count only after aggregation
+    (*(wfm as *mut RawIUnknown)).raw_add_ref();
+    let hr = (*(wfm as *mut RawIUnknown)).raw_query_interface(riid, ppv);
+    (*(wfm as *mut RawIUnknown)).raw_release();
     hr
 }
 
@@ -90,9 +98,9 @@ unsafe extern "stdcall" fn lock_server(increment: BOOL) -> HRESULT {
     S_OK
 }
 
-impl LocalFileManagerClass {
-    pub(crate) fn new() -> LocalFileManagerClass {
-        println!("Allocating new Vtable for LocalFileManagerClass...");
+impl WindowsFileManagerClass {
+    pub(crate) fn new() -> WindowsFileManagerClass {
+        println!("Allocating new Vtable for WindowsFileManagerClass...");
         let iunknown = IUnknownMethods {
             QueryInterface: query_interface,
             Release: release,
@@ -104,7 +112,7 @@ impl LocalFileManagerClass {
         };
         let vtable = Box::into_raw(Box::new(IClassFactoryVTable(iunknown, iclassfactory)));
         let inner = RawIClassFactory { vtable };
-        LocalFileManagerClass {
+        WindowsFileManagerClass {
             inner: IClassFactory { inner },
             ref_count: 0,
         }

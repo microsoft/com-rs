@@ -1,7 +1,13 @@
-[workspace]
+[package]
+name = "com"
+version = "0.0.1"
+authors = ["Microsoft Corp"]
+edition = "2018"
 
+[dependencies]
+
+[workspace]
 members = [
-    "client",
-    "server",
-    "common",
+    "examples/basic/client",
+    "examples/basic/server",
 ]

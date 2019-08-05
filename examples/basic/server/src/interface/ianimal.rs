@@ -1,4 +1,4 @@
-use common::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, HRESULT, IID};
+use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, HRESULT, IID};
 
 pub const IID_IANIMAL: IID = IID {
     data1: 0xeff8970e,

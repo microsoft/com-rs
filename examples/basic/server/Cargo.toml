@@ -1,11 +1,11 @@
 [package]
 name = "server"
 version = "0.1.0"
-authors = ["Ryan Levick <ryan.levick@gmail.com>"]
+authors = ["Microsoft Corp"]
 edition = "2018"
 
 [dependencies]
-common = { path = "../common" }
+com = { path = "../../.." }
 
 [lib]
 crate-type = ["rlib", "cdylib"]

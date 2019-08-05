@@ -1,4 +1,3 @@
-use std::mem::size_of;
 use std::os::raw::c_void;
 
 use crate::interface::{
@@ -9,7 +8,7 @@ use crate::interface::{
         IID_IDOMESTIC_ANIMAL,
     },
 };
-use common::{IID_IUnknown, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, NOERROR};
+use com::{IID_IUnknown, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, NOERROR};
 
 /// The implementation class
 /// https://en.wikipedia.org/wiki/British_Shorthair

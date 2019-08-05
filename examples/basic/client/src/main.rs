@@ -8,7 +8,7 @@
 //   HRESULT IgnoreHumans(void);
 // }
 
-use common::{
+use com::{
     failed, CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize, ComInterface,
     ComPtr, IClassFactory, IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID,
     IID_ICLASS_FACTORY, LPVOID, REFCLSID, REFIID,

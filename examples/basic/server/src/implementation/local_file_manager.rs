@@ -4,7 +4,7 @@ use crate::interface::ilocalfilemanager::{
     ILocalFileManager, ILocalFileManagerMethods, ILocalFileManagerVTable, RawILocalFileManager,
     IID_ILOCAL_FILE_MANAGER,
 };
-use common::{
+use com::{
     IID_IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown, E_NOINTERFACE, HRESULT, IID,
     LPUNKNOWN, NOERROR,
 };
