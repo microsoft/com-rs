@@ -1,4 +1,4 @@
-use common::{ComInterface, ComPtr, IClassFactoryMethods, IUnknownMethods, RawIUnknown, IID};
+use com::{ComInterface, ComPtr, IClassFactoryMethods, IUnknownMethods, RawIUnknown, IID};
 
 pub const IID_ICAT_CLASS: IID = IID {
     data1: 0xf5353c58,

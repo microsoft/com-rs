@@ -1,9 +1,0 @@
-[package]
-name = "com-client"
-version = "0.1.0"
-authors = ["Ryan Levick <ryan.levick@gmail.com>"]
-edition = "2018"
-
-[dependencies]
-common = { path = "../common" }
-server = { path = "../server" }

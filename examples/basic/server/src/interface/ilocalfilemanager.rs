@@ -1,4 +1,4 @@
-use common::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, HRESULT, IID};
+use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, HRESULT, IID};
 
 pub const IID_ILOCAL_FILE_MANAGER: IID = IID {
     data1: 0x4fc333e3,

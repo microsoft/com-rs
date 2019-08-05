@@ -4,7 +4,7 @@ use crate::implementation::BritishShortHairCat;
 use crate::interface::icat_class::{
     ICatClass, ICatClassMethods, ICatClassVTable, RawICatClass, IID_ICAT_CLASS,
 };
-use common::{
+use com::{
     IClassFactoryMethods, IID_IUnknown, IUnknownMethods, RawIClassFactory, RawIUnknown, BOOL,
     CLASS_E_NOAGGREGATION, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, NOERROR, S_OK,
 };

@@ -1,5 +1,5 @@
 use super::ianimal::{IAnimalMethods, RawIAnimal};
-use common::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, HRESULT, IID};
+use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, HRESULT, IID};
 
 pub const IID_IDOMESTIC_ANIMAL: IID = IID {
     data1: 0xc22425df,
