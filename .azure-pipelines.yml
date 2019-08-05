@@ -5,7 +5,7 @@ jobs:
     pool:
       vmImage: vs2017-win2016
     steps:
-      - template: ./ci/install-rust.yml
+      - template: ./.ci/install-rust.yml
         parameters:
           rust_version: stable
 
