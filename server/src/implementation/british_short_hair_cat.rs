@@ -1,10 +1,13 @@
-use std::os::raw::c_void;
 use std::mem::size_of;
+use std::os::raw::c_void;
 
 use crate::interface::{
     ianimal::{IAnimalMethods, RawIAnimal, IID_IANIMAL},
     icat::{ICat, ICatMethods, ICatVTable, RawICat, IID_ICAT},
-    idomesticanimal::{IDomesticAnimal, IDomesticAnimalMethods, IDomesticAnimalVTable, RawIDomesticAnimal, IID_IDOMESTIC_ANIMAL},
+    idomesticanimal::{
+        IDomesticAnimal, IDomesticAnimalMethods, IDomesticAnimalVTable, RawIDomesticAnimal,
+        IID_IDOMESTIC_ANIMAL,
+    },
 };
 use common::{IID_IUnknown, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, NOERROR};
 
@@ -36,14 +39,14 @@ unsafe extern "stdcall" fn icat_query_interface(
         IID_IUnknown | IID_ICAT | IID_IANIMAL => {
             println!("Returning this.");
             *ppv = this as *mut c_void;
-        },
+        }
         IID_IDOMESTIC_ANIMAL => {
             println!("Returning this add 1.");
             *ppv = this.add(1) as *mut c_void;
-        },
+        }
         _ => {
             println!("Returning NO INTERFACE.");
-            return E_NOINTERFACE
+            return E_NOINTERFACE;
         }
     }
 
@@ -119,10 +122,14 @@ impl BritishShortHairCat {
         };
         let icat_ianimal = IAnimalMethods { Eat: eat };
 
-        let icat = ICatMethods { IgnoreHumans: ignore_humans };
+        let icat = ICatMethods {
+            IgnoreHumans: ignore_humans,
+        };
         let icat_vtable = Box::into_raw(Box::new(ICatVTable(icat_iunknown, icat_ianimal, icat)));
         println!("ICat VTable address: {:p}", icat_vtable);
-        let icat_inner = RawICat { vtable: icat_vtable };
+        let icat_inner = RawICat {
+            vtable: icat_vtable,
+        };
 
         /* Initialising VTable for IDomesticAnimal */
         /* Initialising VTable for ICat */
@@ -132,15 +139,26 @@ impl BritishShortHairCat {
             AddRef: idomesticanimal_add_ref,
         };
         let idomesticanimal_ianimal = IAnimalMethods { Eat: eat };
-        
+
         let idomesticanimal = IDomesticAnimalMethods { Train: train };
-        let idomesticanimal_vtable = Box::into_raw(Box::new(IDomesticAnimalVTable(idomesticanimal_iunknown, idomesticanimal_ianimal, idomesticanimal)));
-        println!("IDomesticAnimal VTable address: {:p}", idomesticanimal_vtable);
-        let idomesticanimal_inner = RawIDomesticAnimal { vtable: idomesticanimal_vtable };
+        let idomesticanimal_vtable = Box::into_raw(Box::new(IDomesticAnimalVTable(
+            idomesticanimal_iunknown,
+            idomesticanimal_ianimal,
+            idomesticanimal,
+        )));
+        println!(
+            "IDomesticAnimal VTable address: {:p}",
+            idomesticanimal_vtable
+        );
+        let idomesticanimal_inner = RawIDomesticAnimal {
+            vtable: idomesticanimal_vtable,
+        };
 
         let out = BritishShortHairCat {
             inner_one: ICat { inner: icat_inner },
-            inner_two: IDomesticAnimal { inner: idomesticanimal_inner },
+            inner_two: IDomesticAnimal {
+                inner: idomesticanimal_inner,
+            },
             ref_count: 0,
         };
 

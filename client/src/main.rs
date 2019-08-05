@@ -14,8 +14,8 @@ use common::{
     IID_ICLASS_FACTORY, LPVOID, REFCLSID, REFIID,
 };
 use server::{
-    IAnimal, ICat, IExample, IFileManager, ILocalFileManager, IDomesticAnimal, 
-    CLSID_CAT_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS, CLSID_LOCAL_FILE_MANAGER_CLASS,
+    IAnimal, ICat, IDomesticAnimal, IExample, IFileManager, ILocalFileManager, CLSID_CAT_CLASS,
+    CLSID_LOCAL_FILE_MANAGER_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS,
 };
 use std::os::raw::c_void;
 
@@ -71,7 +71,7 @@ fn main() {
     };
     println!("Got domestic animal.");
     domestic_animal.train();
-    
+
     let result = domestic_animal.query_interface::<ICat>();
     let mut new_cat = match result {
         Some(new_cat) => new_cat,

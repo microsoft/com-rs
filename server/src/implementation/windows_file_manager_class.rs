@@ -1,13 +1,13 @@
 use std::os::raw::c_void;
 
 use crate::implementation::WindowsFileManager;
+use crate::CLSID_LOCAL_FILE_MANAGER_CLASS;
 use common::{
-    IClassFactoryMethods, IClassFactory, IClassFactoryVTable, IID_IUnknown, IUnknownMethods,
-    RawIClassFactory, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION, E_NOINTERFACE, HRESULT, IID,
-    IID_ICLASS_FACTORY, NOERROR, S_OK, LPVOID, CoCreateInstance, REFCLSID, CLSCTX_INPROC_SERVER,
-    failed, REFIID
+    failed, CoCreateInstance, IClassFactory, IClassFactoryMethods, IClassFactoryVTable,
+    IID_IUnknown, IUnknownMethods, RawIClassFactory, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION,
+    CLSCTX_INPROC_SERVER, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, LPVOID, NOERROR,
+    REFCLSID, REFIID, S_OK,
 };
-use crate::{CLSID_LOCAL_FILE_MANAGER_CLASS};
 
 #[repr(C)]
 pub struct WindowsFileManagerClass {
@@ -110,10 +110,7 @@ impl WindowsFileManagerClass {
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
-        let vtable = Box::into_raw(Box::new(IClassFactoryVTable(
-            iunknown,
-            iclassfactory,
-        )));
+        let vtable = Box::into_raw(Box::new(IClassFactoryVTable(iunknown, iclassfactory)));
         let inner = RawIClassFactory { vtable };
         WindowsFileManagerClass {
             inner: IClassFactory { inner },

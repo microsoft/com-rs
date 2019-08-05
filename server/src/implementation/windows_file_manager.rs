@@ -1,10 +1,15 @@
 use std::os::raw::c_void;
 
 use crate::interface::{
-    ifilemanager::{IFileManager, IID_IFILE_MANAGER, IFileManagerVTable, IFileManagerMethods, RawIFileManager},
-    ilocalfilemanager::{ IID_ILOCAL_FILE_MANAGER },
+    ifilemanager::{
+        IFileManager, IFileManagerMethods, IFileManagerVTable, RawIFileManager, IID_IFILE_MANAGER,
+    },
+    ilocalfilemanager::IID_ILOCAL_FILE_MANAGER,
 };
-use common::{IID_IUnknown, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, NOERROR, LPUNKNOWN};
+use common::{
+    failed, IID_IUnknown, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, LPUNKNOWN,
+    NOERROR,
+};
 
 /// The implementation class
 #[repr(C)]
@@ -33,17 +38,20 @@ unsafe extern "stdcall" fn ifilemanager_query_interface(
     match *riid {
         IID_IUnknown | IID_IFILE_MANAGER => {
             *ppv = this as *mut c_void;
-        },
+        }
         IID_ILOCAL_FILE_MANAGER => {
-            (*((*obj).pUnkLocalFileManager)).raw_query_interface(riid, ppv);
+            let hr = (*((*obj).pUnkLocalFileManager)).raw_query_interface(riid, ppv);
+            if failed(hr) {
+                return E_NOINTERFACE;
+            }
 
             // We release it as the previous call add_ref-ed the inner object.
             // The intention is to transfer reference counting logic to the
             // outer object.
             (*((*obj).pUnkLocalFileManager)).raw_release();
-        },
+        }
         _ => {
-            return E_NOINTERFACE
+            return E_NOINTERFACE;
         }
     }
 
@@ -89,12 +97,21 @@ impl WindowsFileManager {
             AddRef: ifilemanager_add_ref,
         };
 
-        let ifilemanager = IFileManagerMethods { DeleteAll: delete_all };
-        let ifilemanager_vtable = Box::into_raw(Box::new(IFileManagerVTable(ifilemanager_iunknown, ifilemanager)));
-        let ifilemanager_inner = RawIFileManager { vtable: ifilemanager_vtable };
+        let ifilemanager = IFileManagerMethods {
+            DeleteAll: delete_all,
+        };
+        let ifilemanager_vtable = Box::into_raw(Box::new(IFileManagerVTable(
+            ifilemanager_iunknown,
+            ifilemanager,
+        )));
+        let ifilemanager_inner = RawIFileManager {
+            vtable: ifilemanager_vtable,
+        };
 
         let out = WindowsFileManager {
-            inner_one: IFileManager { inner: ifilemanager_inner },
+            inner_one: IFileManager {
+                inner: ifilemanager_inner,
+            },
             ref_count: 0,
             pUnkLocalFileManager: std::ptr::null_mut::<RawIUnknown>(),
         };

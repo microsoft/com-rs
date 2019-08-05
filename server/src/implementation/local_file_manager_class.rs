@@ -2,9 +2,9 @@ use std::os::raw::c_void;
 
 use crate::implementation::LocalFileManager;
 use common::{
-    IClassFactoryMethods, IClassFactory, IClassFactoryVTable, IID_IUnknown, IUnknownMethods,
-    RawIClassFactory, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION, E_NOINTERFACE, HRESULT, IID,
-    IID_ICLASS_FACTORY, NOERROR, S_OK, E_INVALIDARG
+    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IID_IUnknown, IUnknownMethods,
+    RawIClassFactory, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION, E_INVALIDARG, E_NOINTERFACE,
+    HRESULT, IID, IID_ICLASS_FACTORY, NOERROR, S_OK,
 };
 
 #[repr(C)]
@@ -64,7 +64,8 @@ unsafe extern "stdcall" fn create_instance(
 ) -> HRESULT {
     println!("Creating instance...");
     if !aggregate.is_null() && *riid != IID_IUnknown {
-        return E_INVALIDARG
+        *ppv = std::ptr::null_mut::<c_void>();
+        return E_INVALIDARG;
     }
 
     let lfm = Box::into_raw(Box::new(LocalFileManager::new(aggregate)));
@@ -72,15 +73,15 @@ unsafe extern "stdcall" fn create_instance(
     // This check has to be here because it can only be done after object
     // is allocated on the heap (address of nonDelegatingUnknown fixed)
     if aggregate.is_null() {
-       (*lfm).pUnkToUse = &((*lfm).nonDelegatingUnk) as *const _ as *mut RawIUnknown;
+        (*lfm).iunk_to_use = &((*lfm).non_delegating_unk) as *const _ as *mut RawIUnknown;
     }
 
-    // As an aggregable object, we have to add_ref through the 
+    // As an aggregable object, we have to add_ref through the
     // non-delegating IUnknown on creation. Otherwise, we might
     // add_ref the outer object if aggregated.
-    ((*lfm).nonDelegatingUnk).raw_add_ref();
-    let hr = (*lfm).nonDelegatingUnk.raw_query_interface(riid, ppv);
-    ((*lfm).nonDelegatingUnk).raw_release();
+    ((*lfm).non_delegating_unk).raw_add_ref();
+    let hr = (*lfm).non_delegating_unk.raw_query_interface(riid, ppv);
+    ((*lfm).non_delegating_unk).raw_release();
     hr
 }
 
@@ -101,10 +102,7 @@ impl LocalFileManagerClass {
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
-        let vtable = Box::into_raw(Box::new(IClassFactoryVTable(
-            iunknown,
-            iclassfactory,
-        )));
+        let vtable = Box::into_raw(Box::new(IClassFactoryVTable(iunknown, iclassfactory)));
         let inner = RawIClassFactory { vtable };
         LocalFileManagerClass {
             inner: IClassFactory { inner },

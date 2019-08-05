@@ -17,9 +17,7 @@ pub struct IUnknownMethods {
     pub Release: unsafe extern "stdcall" fn(*mut RawIUnknown) -> u32,
 }
 #[repr(C)]
-pub struct IUnknownVTable(
-    pub IUnknownMethods
-);
+pub struct IUnknownVTable(pub IUnknownMethods);
 
 #[repr(C)]
 pub struct RawIUnknown {

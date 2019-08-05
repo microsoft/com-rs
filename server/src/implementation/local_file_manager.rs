@@ -1,22 +1,27 @@
 use std::os::raw::c_void;
 
-use crate::interface::{
-    ilocalfilemanager::{ILocalFileManager, IID_ILOCAL_FILE_MANAGER, ILocalFileManagerVTable, ILocalFileManagerMethods, RawILocalFileManager}
+use crate::interface::ilocalfilemanager::{
+    ILocalFileManager, ILocalFileManagerMethods, ILocalFileManagerVTable, RawILocalFileManager,
+    IID_ILOCAL_FILE_MANAGER,
 };
-use common::{IID_IUnknown, IUnknownMethods, RawIUnknown, IUnknownVTable, E_NOINTERFACE, HRESULT, IID, NOERROR, LPUNKNOWN};
+use common::{
+    IID_IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown, E_NOINTERFACE, HRESULT, IID,
+    LPUNKNOWN, NOERROR,
+};
 
 /// The implementation class
 #[repr(C)]
 pub struct LocalFileManager {
     inner_one: ILocalFileManager,
-    pub nonDelegatingUnk: RawIUnknown,
-    pub pUnkToUse: *mut RawIUnknown,
+    pub non_delegating_unk: RawIUnknown,
+    pub iunk_to_use: *mut RawIUnknown,
     ref_count: u32,
 }
 
 impl Drop for LocalFileManager {
     fn drop(&mut self) {
-        let _ = unsafe { Box::from_raw(self.inner_one.inner.vtable as *mut ILocalFileManagerVTable) };
+        let _ =
+            unsafe { Box::from_raw(self.inner_one.inner.vtable as *mut ILocalFileManagerVTable) };
     }
 }
 
@@ -26,20 +31,19 @@ unsafe extern "stdcall" fn ilocalfilemanager_query_interface(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     let obj = this as *mut LocalFileManager;
-    (*((*obj).pUnkToUse)).raw_query_interface(riid, ppv)
+    (*((*obj).iunk_to_use)).raw_query_interface(riid, ppv)
 }
 
 unsafe extern "stdcall" fn ilocalfilemanager_add_ref(this: *mut RawIUnknown) -> u32 {
     let obj = this as *mut LocalFileManager;
 
-    let hr = (*((*obj).pUnkToUse)).raw_add_ref();
+    let hr = (*((*obj).iunk_to_use)).raw_add_ref();
     hr
 }
 
-// TODO: This could potentially be null or pointing to some invalid memory
 unsafe extern "stdcall" fn ilocalfilemanager_release(this: *mut RawIUnknown) -> u32 {
     let obj = this as *mut LocalFileManager;
-    (*((*obj).pUnkToUse)).raw_release()
+    (*((*obj).iunk_to_use)).raw_release()
 }
 
 unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_query_interface(
@@ -53,14 +57,15 @@ unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_query_interface(
         IID_IUnknown => {
             // Returns the nondelegating IUnknown, as in COM specification.
             *ppv = this as *mut c_void;
-        },
+        }
         IID_ILOCAL_FILE_MANAGER => {
             // Returns the original VTable.
             *ppv = obj as *mut c_void;
-        },
+        }
         _ => {
+            *ppv = std::ptr::null_mut::<c_void>();
             println!("Returning NO INTERFACE.");
-            return E_NOINTERFACE
+            return E_NOINTERFACE;
         }
     }
 
@@ -107,7 +112,9 @@ impl LocalFileManager {
         };
 
         let non_del_unknown_vtable = Box::into_raw(Box::new(IUnknownVTable(non_del_iunknown)));
-        let non_del_inner = RawIUnknown { vtable: non_del_unknown_vtable };
+        let non_del_inner = RawIUnknown {
+            vtable: non_del_unknown_vtable,
+        };
 
         // Initialising VTable for ILocalFileManager
         let ilocalfilemanager_iunknown = IUnknownMethods {
@@ -116,17 +123,24 @@ impl LocalFileManager {
             AddRef: ilocalfilemanager_add_ref,
         };
 
-        let ilocalfilemanager = ILocalFileManagerMethods { DeleteLocal: delete_local };
-        let ilocalfilemanager_vtable = Box::into_raw(Box::new(ILocalFileManagerVTable(ilocalfilemanager_iunknown, ilocalfilemanager)));
-        let ilocalfilemanager_inner = RawILocalFileManager { vtable: ilocalfilemanager_vtable };
-
-        let out = LocalFileManager {
-            inner_one: ILocalFileManager { inner: ilocalfilemanager_inner },
-            ref_count: 0,
-            pUnkToUse: aggregate,
-            nonDelegatingUnk: non_del_inner,
+        let ilocalfilemanager = ILocalFileManagerMethods {
+            DeleteLocal: delete_local,
+        };
+        let ilocalfilemanager_vtable = Box::into_raw(Box::new(ILocalFileManagerVTable(
+            ilocalfilemanager_iunknown,
+            ilocalfilemanager,
+        )));
+        let ilocalfilemanager_inner = RawILocalFileManager {
+            vtable: ilocalfilemanager_vtable,
         };
 
-        out
+        LocalFileManager {
+            inner_one: ILocalFileManager {
+                inner: ilocalfilemanager_inner,
+            },
+            non_delegating_unk: non_del_inner,
+            iunk_to_use: aggregate,
+            ref_count: 0,
+        }
     }
 }

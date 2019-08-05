@@ -3,7 +3,7 @@ mod interface;
 
 use common::{RawIUnknown, CLASS_E_CLASSNOTAVAILABLE, HRESULT, IID, LPVOID, REFCLSID, REFIID};
 
-pub use interface::{IAnimal, ICat, IExample, IDomesticAnimal, IFileManager, ILocalFileManager};
+pub use interface::{IAnimal, ICat, IDomesticAnimal, IExample, IFileManager, ILocalFileManager};
 
 pub const CLSID_CAT_CLASS: IID = IID {
     data1: 0xC5F45CBC,
@@ -37,7 +37,7 @@ extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut 
                 let hr = (*(cat as *mut RawIUnknown)).raw_query_interface(riid, ppv);
                 (*(cat as *mut RawIUnknown)).raw_release();
                 hr
-            },
+            }
             CLSID_WINDOWS_FILE_MANAGER_CLASS => {
                 println!("Allocating new object WindowsFileManagerClass...");
                 let wfm = Box::into_raw(Box::new(implementation::WindowsFileManagerClass::new()));
@@ -45,7 +45,7 @@ extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut 
                 let hr = (*(wfm as *mut RawIUnknown)).raw_query_interface(riid, ppv);
                 (*(wfm as *mut RawIUnknown)).raw_release();
                 hr
-            },
+            }
             CLSID_LOCAL_FILE_MANAGER_CLASS => {
                 println!("Allocating new object LocalFileManagerClass...");
                 let lfm = Box::into_raw(Box::new(implementation::LocalFileManagerClass::new()));
@@ -53,13 +53,11 @@ extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut 
                 let hr = (*(lfm as *mut RawIUnknown)).raw_query_interface(riid, ppv);
                 (*(lfm as *mut RawIUnknown)).raw_release();
                 hr
-            },
-            _ => {
-                CLASS_E_CLASSNOTAVAILABLE
             }
+            _ => CLASS_E_CLASSNOTAVAILABLE,
         }
         // if *rclsid != CLSID_CAT_CLASS {
         //     return CLASS_E_CLASSNOTAVAILABLE;
-        // }     
+        // }
     }
 }
