@@ -24,7 +24,7 @@ unsafe impl ComInterface for IExample {
 }
 
 #[repr(C)]
-pub(crate) struct RawIExample {
+pub struct RawIExample {
     vtable: *const IExampleVTable,
 }
 

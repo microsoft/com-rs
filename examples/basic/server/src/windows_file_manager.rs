@@ -1,14 +1,13 @@
 use std::os::raw::c_void;
 
-use crate::interface::{
+use com::{
+    failed, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, IID_IUNKNOWN, NOERROR,
+};
+use interface::{
     ifilemanager::{
         IFileManager, IFileManagerMethods, IFileManagerVTable, RawIFileManager, IID_IFILE_MANAGER,
     },
     ilocalfilemanager::IID_ILOCAL_FILE_MANAGER,
-};
-use com::{
-    failed, IID_IUnknown, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, LPUNKNOWN,
-    NOERROR,
 };
 
 /// The implementation class
@@ -16,13 +15,13 @@ use com::{
 pub struct WindowsFileManager {
     inner_one: IFileManager,
     ref_count: u32,
-    pub pUnkLocalFileManager: *mut RawIUnknown,
+    pub p_unk_local_file_manager: *mut RawIUnknown,
 }
 
 impl Drop for WindowsFileManager {
     fn drop(&mut self) {
         unsafe {
-            (*self.pUnkLocalFileManager).raw_release();
+            (*self.p_unk_local_file_manager).raw_release();
             Box::from_raw(self.inner_one.inner.vtable as *mut IFileManagerVTable)
         };
     }
@@ -36,11 +35,11 @@ unsafe extern "stdcall" fn ifilemanager_query_interface(
     let obj = this as *mut WindowsFileManager;
 
     match *riid {
-        IID_IUnknown | IID_IFILE_MANAGER => {
+        IID_IUNKNOWN | IID_IFILE_MANAGER => {
             *ppv = this as *mut c_void;
         }
         IID_ILOCAL_FILE_MANAGER => {
-            let hr = (*((*obj).pUnkLocalFileManager)).raw_query_interface(riid, ppv);
+            let hr = (*((*obj).p_unk_local_file_manager)).raw_query_interface(riid, ppv);
             if failed(hr) {
                 return E_NOINTERFACE;
             }
@@ -48,7 +47,7 @@ unsafe extern "stdcall" fn ifilemanager_query_interface(
             // We release it as the previous call add_ref-ed the inner object.
             // The intention is to transfer reference counting logic to the
             // outer object.
-            (*((*obj).pUnkLocalFileManager)).raw_release();
+            (*((*obj).p_unk_local_file_manager)).raw_release();
         }
         _ => {
             return E_NOINTERFACE;
@@ -113,7 +112,7 @@ impl WindowsFileManager {
                 inner: ifilemanager_inner,
             },
             ref_count: 0,
-            pUnkLocalFileManager: std::ptr::null_mut::<RawIUnknown>(),
+            p_unk_local_file_manager: std::ptr::null_mut::<RawIUnknown>(),
         };
 
         out

@@ -6,7 +6,7 @@ mod iunknown;
 pub use iclassfactory::{
     IClassFactory, IClassFactoryMethods, IClassFactoryVTable, RawIClassFactory, IID_ICLASS_FACTORY,
 };
-pub use iunknown::{IID_IUnknown, IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown};
+pub use iunknown::{IID_IUNKNOWN, IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown};
 
 pub use comptr::ComPtr;
 use std::os::raw::c_void;

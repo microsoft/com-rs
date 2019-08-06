@@ -1,10 +1,10 @@
 use std::os::raw::c_void;
 
-use crate::implementation::LocalFileManager;
+use crate::LocalFileManager;
 use com::{
-    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IID_IUnknown, IUnknownMethods,
-    RawIClassFactory, RawIUnknown, BOOL, E_INVALIDARG, E_NOINTERFACE, HRESULT, IID,
-    IID_ICLASS_FACTORY, NOERROR, S_OK,
+    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IUnknownMethods, RawIClassFactory,
+    RawIUnknown, BOOL, E_INVALIDARG, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, IID_IUNKNOWN,
+    NOERROR, S_OK,
 };
 
 #[repr(C)]
@@ -25,7 +25,7 @@ unsafe extern "stdcall" fn query_interface(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Querying interface on LocalFileManagerClass...");
-    if *riid == IID_IUnknown || *riid == IID_ICLASS_FACTORY {
+    if *riid == IID_IUNKNOWN || *riid == IID_ICLASS_FACTORY {
         *ppv = this as *mut c_void;
         (*this).raw_add_ref();
         NOERROR
@@ -57,13 +57,13 @@ unsafe extern "stdcall" fn release(this: *mut RawIUnknown) -> u32 {
 }
 
 unsafe extern "stdcall" fn create_instance(
-    this: *mut RawIClassFactory,
+    _this: *mut RawIClassFactory,
     aggregate: *mut RawIUnknown,
     riid: *const IID,
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Creating instance...");
-    if !aggregate.is_null() && *riid != IID_IUnknown {
+    if !aggregate.is_null() && *riid != IID_IUNKNOWN {
         *ppv = std::ptr::null_mut::<c_void>();
         return E_INVALIDARG;
     }
@@ -85,7 +85,7 @@ unsafe extern "stdcall" fn create_instance(
     hr
 }
 
-unsafe extern "stdcall" fn lock_server(increment: BOOL) -> HRESULT {
+unsafe extern "stdcall" fn lock_server(_increment: BOOL) -> HRESULT {
     println!("LockServer called");
     S_OK
 }

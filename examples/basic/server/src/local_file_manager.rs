@@ -1,12 +1,12 @@
 use std::os::raw::c_void;
 
-use crate::interface::ilocalfilemanager::{
+use com::{
+    IUnknownMethods, IUnknownVTable, RawIUnknown, E_NOINTERFACE, HRESULT, IID, IID_IUNKNOWN,
+    NOERROR,
+};
+use interface::ilocalfilemanager::{
     ILocalFileManager, ILocalFileManagerMethods, ILocalFileManagerVTable, RawILocalFileManager,
     IID_ILOCAL_FILE_MANAGER,
-};
-use com::{
-    IID_IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown, E_NOINTERFACE, HRESULT, IID,
-    LPUNKNOWN, NOERROR,
 };
 
 /// The implementation class
@@ -54,7 +54,7 @@ unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_query_interface(
     let obj = this.sub(1) as *mut LocalFileManager;
 
     match *riid {
-        IID_IUnknown => {
+        IID_IUNKNOWN => {
             // Returns the nondelegating IUnknown, as in COM specification.
             *ppv = this as *mut c_void;
         }

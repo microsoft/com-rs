@@ -28,7 +28,7 @@ unsafe impl ComInterface for IAnimal {
 }
 
 #[repr(C)]
-pub(crate) struct RawIAnimal {
+pub struct RawIAnimal {
     vtable: *const IAnimalVTable,
 }
 
@@ -37,7 +37,7 @@ impl RawIAnimal {
         let _ = unsafe { self.raw_eat() };
     }
 
-    pub unsafe fn raw_eat(&mut self) -> HRESULT {
+    unsafe fn raw_eat(&mut self) -> HRESULT {
         ((*self.vtable).1.Eat)(self as *mut RawIAnimal)
     }
 }
@@ -55,10 +55,10 @@ impl std::convert::AsMut<RawIUnknown> for RawIAnimal {
 }
 
 #[repr(C)]
-struct IAnimalVTable(IUnknownMethods, IAnimalMethods);
+pub struct IAnimalVTable(IUnknownMethods, IAnimalMethods);
 
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IAnimalMethods {
-    pub(crate) Eat: unsafe extern "stdcall" fn(*mut RawIAnimal) -> HRESULT,
+    pub Eat: unsafe extern "stdcall" fn(*mut RawIAnimal) -> HRESULT,
 }

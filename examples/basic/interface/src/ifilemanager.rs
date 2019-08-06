@@ -9,7 +9,7 @@ pub const IID_IFILE_MANAGER: IID = IID {
 
 #[repr(C)]
 pub struct IFileManager {
-    pub(crate) inner: RawIFileManager,
+    pub inner: RawIFileManager,
 }
 
 impl IFileManager {
@@ -28,8 +28,8 @@ unsafe impl ComInterface for IFileManager {
 }
 
 #[repr(C)]
-pub(crate) struct RawIFileManager {
-    pub(crate) vtable: *const IFileManagerVTable,
+pub struct RawIFileManager {
+    pub vtable: *const IFileManagerVTable,
 }
 
 impl RawIFileManager {
@@ -53,7 +53,7 @@ impl std::convert::AsMut<RawIUnknown> for RawIFileManager {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IFileManagerMethods {
-    pub(crate) DeleteAll: unsafe extern "stdcall" fn(*mut RawIFileManager) -> HRESULT,
+    pub DeleteAll: unsafe extern "stdcall" fn(*mut RawIFileManager) -> HRESULT,
 }
 #[repr(C)]
 pub struct IFileManagerVTable(pub IUnknownMethods, pub IFileManagerMethods);
