@@ -1,13 +1,13 @@
 use std::os::raw::c_void;
 
-use crate::implementation::WindowsFileManager;
-use crate::CLSID_LOCAL_FILE_MANAGER_CLASS;
+use crate::WindowsFileManager;
 use com::{
     failed, CoCreateInstance, IClassFactory, IClassFactoryMethods, IClassFactoryVTable,
-    IID_IUnknown, IUnknownMethods, RawIClassFactory, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION,
-    CLSCTX_INPROC_SERVER, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, LPVOID, NOERROR,
-    REFCLSID, REFIID, S_OK,
+    IUnknownMethods, RawIClassFactory, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION,
+    CLSCTX_INPROC_SERVER, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, IID_IUNKNOWN, LPVOID,
+    NOERROR, REFCLSID, REFIID, S_OK,
 };
+use interface::CLSID_LOCAL_FILE_MANAGER_CLASS;
 
 #[repr(C)]
 pub struct WindowsFileManagerClass {
@@ -27,7 +27,7 @@ unsafe extern "stdcall" fn query_interface(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Querying interface on CatClass...");
-    if *riid == IID_IUnknown || *riid == IID_ICLASS_FACTORY {
+    if *riid == IID_IUNKNOWN || *riid == IID_ICLASS_FACTORY {
         *ppv = this as *mut c_void;
         (*this).raw_add_ref();
         NOERROR
@@ -59,7 +59,7 @@ unsafe extern "stdcall" fn release(this: *mut RawIUnknown) -> u32 {
 }
 
 unsafe extern "stdcall" fn create_instance(
-    this: *mut RawIClassFactory,
+    _this: *mut RawIClassFactory,
     aggregate: *mut RawIUnknown,
     riid: *const IID,
     ppv: *mut *mut c_void,
@@ -72,19 +72,19 @@ unsafe extern "stdcall" fn create_instance(
     let wfm = Box::into_raw(Box::new(WindowsFileManager::new()));
 
     // Instantiate object to aggregate
-    let mut pUnkLocalFileManager = std::ptr::null_mut::<c_void>();
+    let mut unknown_file_manager = std::ptr::null_mut::<c_void>();
     let hr = CoCreateInstance(
         &CLSID_LOCAL_FILE_MANAGER_CLASS as REFCLSID,
         wfm as *mut RawIUnknown,
         CLSCTX_INPROC_SERVER,
-        &IID_IUnknown as REFIID,
-        &mut pUnkLocalFileManager as *mut LPVOID,
+        &IID_IUNKNOWN as REFIID,
+        &mut unknown_file_manager as *mut LPVOID,
     );
     if failed(hr) {
         println!("Failed to instantiate aggregate! Error: {:x}", hr as u32);
         panic!();
     }
-    (*wfm).pUnkLocalFileManager = pUnkLocalFileManager as *mut RawIUnknown;
+    (*wfm).p_unk_local_file_manager = unknown_file_manager as *mut RawIUnknown;
 
     // Start reference count only after aggregation
     (*(wfm as *mut RawIUnknown)).raw_add_ref();
@@ -93,7 +93,7 @@ unsafe extern "stdcall" fn create_instance(
     hr
 }
 
-unsafe extern "stdcall" fn lock_server(increment: BOOL) -> HRESULT {
+unsafe extern "stdcall" fn lock_server(_increment: BOOL) -> HRESULT {
     println!("LockServer called");
     S_OK
 }

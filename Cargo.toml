@@ -10,4 +10,5 @@ edition = "2018"
 members = [
     "examples/basic/client",
     "examples/basic/server",
+    "examples/basic/interface",
 ]

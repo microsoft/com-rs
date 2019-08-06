@@ -10,7 +10,7 @@ pub const IID_ICAT: IID = IID {
 
 #[repr(C)]
 pub struct ICat {
-    pub(crate) inner: RawICat,
+    pub inner: RawICat,
 }
 
 impl ICat {
@@ -34,12 +34,12 @@ unsafe impl ComInterface for ICat {
 }
 
 #[repr(C)]
-pub(crate) struct RawICat {
-    pub(crate) vtable: *const ICatVTable,
+pub struct RawICat {
+    pub vtable: *const ICatVTable,
 }
 
 impl RawICat {
-    unsafe fn raw_ignore_humans(&mut self) -> HRESULT {
+    pub unsafe fn raw_ignore_humans(&mut self) -> HRESULT {
         ((*self.vtable).2.IgnoreHumans)(self as *mut RawICat)
     }
 }
@@ -71,7 +71,8 @@ impl std::convert::AsMut<RawIAnimal> for RawICat {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct ICatMethods {
-    pub(crate) IgnoreHumans: unsafe extern "stdcall" fn(*mut RawICat) -> HRESULT,
+    pub IgnoreHumans: unsafe extern "stdcall" fn(*mut RawICat) -> HRESULT,
 }
+
 #[repr(C)]
 pub struct ICatVTable(pub IUnknownMethods, pub IAnimalMethods, pub ICatMethods);

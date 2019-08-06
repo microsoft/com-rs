@@ -1,7 +1,7 @@
 use crate::{c_void, comptr::ComPtr, failed, ComInterface, E_NOINTERFACE, HRESULT, IID};
 
 #[allow(non_upper_case_globals)]
-pub const IID_IUnknown: IID = IID {
+pub const IID_IUNKNOWN: IID = IID {
     data1: 0u32,
     data2: 0u16,
     data3: 0u16,
@@ -61,5 +61,5 @@ impl IUnknown {
 }
 
 unsafe impl ComInterface for IUnknown {
-    const IID: IID = IID_IUnknown;
+    const IID: IID = IID_IUNKNOWN;
 }

@@ -13,7 +13,7 @@ use com::{
     ComPtr, IClassFactory, IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID,
     IID_ICLASS_FACTORY, LPVOID, REFCLSID, REFIID,
 };
-use server::{
+use interface::{
     IAnimal, ICat, IDomesticAnimal, IExample, IFileManager, ILocalFileManager, CLSID_CAT_CLASS,
     CLSID_LOCAL_FILE_MANAGER_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS,
 };

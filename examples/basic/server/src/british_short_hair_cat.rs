@@ -1,6 +1,7 @@
 use std::os::raw::c_void;
 
-use crate::interface::{
+use com::{IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, IID_IUNKNOWN, NOERROR};
+use interface::{
     ianimal::{IAnimalMethods, RawIAnimal, IID_IANIMAL},
     icat::{ICat, ICatMethods, ICatVTable, RawICat, IID_ICAT},
     idomesticanimal::{
@@ -8,7 +9,6 @@ use crate::interface::{
         IID_IDOMESTIC_ANIMAL,
     },
 };
-use com::{IID_IUnknown, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, NOERROR};
 
 /// The implementation class
 /// https://en.wikipedia.org/wiki/British_Shorthair
@@ -32,10 +32,10 @@ unsafe extern "stdcall" fn icat_query_interface(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Querying interface through ICat's IUnknown...");
-    let obj = this as *mut BritishShortHairCat;
+    let _obj = this as *mut BritishShortHairCat;
 
     match *riid {
-        IID_IUnknown | IID_ICAT | IID_IANIMAL => {
+        IID_IUNKNOWN | IID_ICAT | IID_IANIMAL => {
             println!("Returning this.");
             *ppv = this as *mut c_void;
         }

@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies]
 com = { path = "../../.." }
-server = { path = "../server" }
+interface = { path = "../interface" }

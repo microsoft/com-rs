@@ -10,7 +10,7 @@ pub const IID_IDOMESTIC_ANIMAL: IID = IID {
 
 #[repr(C)]
 pub struct IDomesticAnimal {
-    pub(crate) inner: RawIDomesticAnimal,
+    pub inner: RawIDomesticAnimal,
 }
 
 impl IDomesticAnimal {
@@ -34,8 +34,8 @@ unsafe impl ComInterface for IDomesticAnimal {
 }
 
 #[repr(C)]
-pub(crate) struct RawIDomesticAnimal {
-    pub(crate) vtable: *const IDomesticAnimalVTable,
+pub struct RawIDomesticAnimal {
+    pub vtable: *const IDomesticAnimalVTable,
 }
 
 impl RawIDomesticAnimal {
@@ -71,8 +71,9 @@ impl std::convert::AsMut<RawIAnimal> for RawIDomesticAnimal {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IDomesticAnimalMethods {
-    pub(crate) Train: unsafe extern "stdcall" fn(*mut RawIDomesticAnimal) -> HRESULT,
+    pub Train: unsafe extern "stdcall" fn(*mut RawIDomesticAnimal) -> HRESULT,
 }
+
 #[repr(C)]
 pub struct IDomesticAnimalVTable(
     pub IUnknownMethods,

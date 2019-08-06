@@ -9,7 +9,7 @@ pub const IID_ICAT_CLASS: IID = IID {
 
 #[repr(C)]
 pub struct ICatClass {
-    pub(crate) inner: RawICatClass,
+    pub inner: RawICatClass,
 }
 
 impl ICatClass {
@@ -24,8 +24,8 @@ unsafe impl ComInterface for ICatClass {
 }
 
 #[repr(C)]
-pub(crate) struct RawICatClass {
-    pub(crate) vtable: *const ICatClassVTable,
+pub struct RawICatClass {
+    pub vtable: *const ICatClassVTable,
 }
 
 impl std::convert::AsRef<RawIUnknown> for RawICatClass {
@@ -43,6 +43,7 @@ impl std::convert::AsMut<RawIUnknown> for RawICatClass {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct ICatClassMethods {}
+
 #[repr(C)]
 pub struct ICatClassVTable(
     pub IUnknownMethods,
