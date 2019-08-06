@@ -4,8 +4,6 @@ version = "0.0.1"
 authors = ["Microsoft Corp"]
 edition = "2018"
 
-[dependencies]
-
 [workspace]
 members = [
     "examples/basic/client",
