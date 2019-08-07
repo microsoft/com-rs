@@ -6,7 +6,7 @@ mod iunknown;
 pub use iclassfactory::{
     IClassFactory, IClassFactoryMethods, IClassFactoryVTable, RawIClassFactory, IID_ICLASS_FACTORY,
 };
-pub use iunknown::{IID_IUnknown, IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown};
+pub use iunknown::{IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown, IID_IUNKNOWN};
 use std::fmt;
 
 pub use comptr::ComPtr;
@@ -22,7 +22,9 @@ pub struct IID {
 
 impl fmt::Display for IID {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{{{:04X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
+        write!(
+            f,
+            "{{{:04X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
             self.data1,
             self.data2,
             self.data3,

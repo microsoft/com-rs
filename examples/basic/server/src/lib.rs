@@ -1,33 +1,25 @@
-
 extern crate winapi;
-mod implementation;
-mod interface;
 use com::{RawIUnknown, CLASS_E_CLASSNOTAVAILABLE, HRESULT, IID, LPVOID, REFCLSID, REFIID, S_OK};
-use winapi::{
-    um::{
-        libloaderapi::{ GetModuleHandleA, GetModuleFileNameA },
-        winreg::{ HKEY_CLASSES_ROOT, RegCreateKeyExA, RegSetValueExA, RegDeleteKeyA, LSTATUS, RegCloseKey },
-        winnt::{ KEY_QUERY_VALUE, KEY_ALL_ACCESS, REG_OPTION_NON_VOLATILE, CHAR, REG_SZ },
-        minwinbase:: {SECURITY_ATTRIBUTES},
-        olectl::{SELFREG_E_CLASS}
-    },
-    shared::{
-        minwindef::{HKEY, DWORD},
-        winerror::{ERROR_SUCCESS, S_FALSE}
-    }
-};
-use std::ffi::{CString, CStr};
-use std::os::raw::c_void;
 use std::convert::TryInto;
-
-pub use interface::{IAnimal, ICat, IDomesticAnimal, IExample, IFileManager, ILocalFileManager};
-
-pub const CLSID_CAT_CLASS: IID = IID {
-    data1: 0xC5F45CBC,
-    data2: 0x4439,
-    data3: 0x418C,
-    data4: [0xA9, 0xF9, 0x05, 0xAC, 0x67, 0x52, 0x5E, 0x43],
+use std::ffi::{CStr, CString};
+use std::os::raw::c_void;
+use winapi::{
+    shared::{
+        minwindef::{DWORD, HKEY},
+        winerror::{ERROR_SUCCESS, S_FALSE},
+    },
+    um::{
+        libloaderapi::{GetModuleFileNameA, GetModuleHandleA},
+        minwinbase::SECURITY_ATTRIBUTES,
+        olectl::SELFREG_E_CLASS,
+        winnt::{CHAR, KEY_ALL_ACCESS, KEY_QUERY_VALUE, REG_OPTION_NON_VOLATILE, REG_SZ},
+        winreg::{
+            RegCloseKey, RegCreateKeyExA, RegDeleteKeyA, RegSetValueExA, HKEY_CLASSES_ROOT, LSTATUS,
+        },
+    },
 };
+
+pub use interface::{IAnimal, ICat, IDomesticAnimal, IExample, IFileManager, ILocalFileManager, CLSID_CAT_CLASS, CLSID_LOCAL_FILE_MANAGER_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS};
 
 mod british_short_hair_cat;
 mod british_short_hair_cat_class;
@@ -86,7 +78,6 @@ extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut 
 #[no_mangle]
 extern "stdcall" fn DllRegisterServer() -> HRESULT {
     unsafe {
-        
         let registry_keys_to_add = get_relevant_registry_keys();
 
         for key_info in registry_keys_to_add.iter() {
@@ -137,7 +128,7 @@ unsafe fn add_class_key(key_info: &registry_key_info) -> LSTATUS {
         KEY_ALL_ACCESS,
         lpSecurityAttributes,
         &hkResult as *const _ as *mut HKEY,
-        lpdwDisposition
+        lpdwDisposition,
     );
     if result as u32 != ERROR_SUCCESS {
         println!("Error creating key. error code: {}", result);
@@ -150,7 +141,12 @@ unsafe fn add_class_key(key_info: &registry_key_info) -> LSTATUS {
         0,
         REG_SZ,
         key_info.key_value_data.as_ptr() as *const u8,
-        key_info.key_value_data.to_bytes_with_nul().len().try_into().unwrap()
+        key_info
+            .key_value_data
+            .to_bytes_with_nul()
+            .len()
+            .try_into()
+            .unwrap(),
     );
     if result as u32 != ERROR_SUCCESS {
         println!("Error creating key. error code: {}", result);
@@ -161,17 +157,15 @@ unsafe fn add_class_key(key_info: &registry_key_info) -> LSTATUS {
 }
 
 unsafe fn remove_class_key(key_info: &registry_key_info) -> LSTATUS {
-    RegDeleteKeyA(
-        HKEY_CLASSES_ROOT,
-        key_info.key_path.as_ptr()
-    )
+    RegDeleteKeyA(HKEY_CLASSES_ROOT, key_info.key_path.as_ptr())
 }
 
 unsafe fn get_relevant_registry_keys() -> Vec<registry_key_info> {
     let MAX_FILE_PATH_LENGTH = 260;
     let hModule = GetModuleHandleA(CString::new("server.dll").unwrap().as_ptr());
-    let raw_ptr = CString::new(Vec::with_capacity(MAX_FILE_PATH_LENGTH)).expect("Failed to create empty string!").into_raw();
-
+    let raw_ptr = CString::new(Vec::with_capacity(MAX_FILE_PATH_LENGTH))
+        .expect("Failed to create empty string!")
+        .into_raw();
 
     GetModuleFileNameA(hModule, raw_ptr, MAX_FILE_PATH_LENGTH.try_into().unwrap());
 
@@ -185,29 +179,49 @@ unsafe fn get_relevant_registry_keys() -> Vec<registry_key_info> {
             key_value_data: CString::new("Cat Component").unwrap(),
         },
         registry_key_info {
-            key_path: CString::new(format!("CLSID\\{}\\InprocServer32", CLSID_CAT_CLASS.to_string())).unwrap(),
+            key_path: CString::new(format!(
+                "CLSID\\{}\\InprocServer32",
+                CLSID_CAT_CLASS.to_string()
+            ))
+            .unwrap(),
             key_value_name: CString::new("").unwrap(),
             key_value_data: file_path.clone(),
         },
         registry_key_info {
-            key_path: CString::new(format!("CLSID\\{}", CLSID_LOCAL_FILE_MANAGER_CLASS.to_string())).unwrap(),
+            key_path: CString::new(format!(
+                "CLSID\\{}",
+                CLSID_LOCAL_FILE_MANAGER_CLASS.to_string()
+            ))
+            .unwrap(),
             key_value_name: CString::new("").unwrap(),
             key_value_data: CString::new("Local File Manager Component").unwrap(),
         },
         registry_key_info {
-            key_path: CString::new(format!("CLSID\\{}\\InprocServer32", CLSID_LOCAL_FILE_MANAGER_CLASS.to_string())).unwrap(),
+            key_path: CString::new(format!(
+                "CLSID\\{}\\InprocServer32",
+                CLSID_LOCAL_FILE_MANAGER_CLASS.to_string()
+            ))
+            .unwrap(),
             key_value_name: CString::new("").unwrap(),
             key_value_data: file_path.clone(),
         },
         registry_key_info {
-            key_path: CString::new(format!("CLSID\\{}", CLSID_WINDOWS_FILE_MANAGER_CLASS.to_string())).unwrap(),
+            key_path: CString::new(format!(
+                "CLSID\\{}",
+                CLSID_WINDOWS_FILE_MANAGER_CLASS.to_string()
+            ))
+            .unwrap(),
             key_value_name: CString::new("").unwrap(),
             key_value_data: CString::new("Windows File Manager Component").unwrap(),
-        },  
+        },
         registry_key_info {
-            key_path: CString::new(format!("CLSID\\{}\\InprocServer32", CLSID_WINDOWS_FILE_MANAGER_CLASS.to_string())).unwrap(),
+            key_path: CString::new(format!(
+                "CLSID\\{}\\InprocServer32",
+                CLSID_WINDOWS_FILE_MANAGER_CLASS.to_string()
+            ))
+            .unwrap(),
             key_value_name: CString::new("").unwrap(),
             key_value_data: file_path.clone(),
-        },  
+        },
     ]
 }

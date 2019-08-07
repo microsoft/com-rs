@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 com = { path = "../../.." }
 interface = { path = "../interface" }
-server = { path = "../server" }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser", "winreg"] }
