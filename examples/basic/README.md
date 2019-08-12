@@ -2,24 +2,31 @@
 
 A COM example in Rust
 
-# Install
+# Run
 
-First build the server by running the following in the server folder:
+To install the server and run the client, simply run the following from the basic folder:
+
+```bash
+cargo run
+```
+
+Alternatively, you can choose to build/install/run the server and client seperately.
+
+# Build & Install Server
+
+You can build the server by running the following in the server folder:
 
 ```bash
 cargo build
 ```
 
-To "install" the server dll, you need to add the following keys to your Windows registry:
+To "install" the server, you need to add the CLSIDs to your Windows registry. You can do that by running:
 
-```
-[Computer\HKEY_CLASSES_ROOT\CLSID\{C5F45CBC-4439-418C-A9F9-05AC67525E43}]
-@="Cat Component"
-[Computer\HKEY_CLASSES_ROOT\CLSID\{C5F45CBC-4439-418C-A9F9-05AC67525E43}\InprocServer32]
-@="C:\path\to\the\server\dll\file\in\your\target\folder"
+```bash
+regsvr32 path/to/your/server/dll/file
 ```
 
-# Run
+# Run Client
 
 To run the client which talks to the server, simply run the following from the client folder:
 

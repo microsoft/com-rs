@@ -7,6 +7,7 @@ pub use iclassfactory::{
     IClassFactory, IClassFactoryMethods, IClassFactoryVTable, RawIClassFactory, IID_ICLASS_FACTORY,
 };
 pub use iunknown::{IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown, IID_IUNKNOWN};
+use std::fmt;
 
 pub use comptr::ComPtr;
 use std::os::raw::c_void;
@@ -18,6 +19,27 @@ pub struct IID {
     pub data3: u16,
     pub data4: [u8; 8],
 }
+
+impl fmt::Display for IID {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{{{:04X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
+            self.data1,
+            self.data2,
+            self.data3,
+            self.data4[0],
+            self.data4[1],
+            self.data4[2],
+            self.data4[3],
+            self.data4[4],
+            self.data4[5],
+            self.data4[6],
+            self.data4[7],
+        )
+    }
+}
+
 pub type REFCLSID = *const IID;
 pub type REFIID = *const IID;
 
