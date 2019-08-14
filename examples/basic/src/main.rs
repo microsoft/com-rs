@@ -1,5 +1,5 @@
-use std::process::{Command, Stdio};
 use std::io::{self, Write};
+use std::process::{Command, Stdio};
 
 fn main() {
     let mut child_proc = Command::new("cmd")

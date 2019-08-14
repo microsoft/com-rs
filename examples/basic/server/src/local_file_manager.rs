@@ -1,12 +1,15 @@
-use std::os::raw::c_void;
-
-use com::{
-    IUnknownMethods, IUnknownVTable, RawIUnknown, E_NOINTERFACE, HRESULT, IID, IID_IUNKNOWN,
-    NOERROR,
-};
+use com::{IUnknownMethods, IUnknownVTable, RawIUnknown, IID_IUNKNOWN};
 use interface::ilocalfilemanager::{
     ILocalFileManager, ILocalFileManagerMethods, ILocalFileManagerVTable, RawILocalFileManager,
     IID_ILOCAL_FILE_MANAGER,
+};
+
+use winapi::{
+    ctypes::c_void,
+    shared::{
+        guiddef::{IsEqualGUID, IID},
+        winerror::{E_NOINTERFACE, HRESULT, NOERROR},
+    },
 };
 
 /// The implementation class
@@ -53,20 +56,17 @@ unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_query_interface(
 ) -> HRESULT {
     let obj = this.sub(1) as *mut LocalFileManager;
 
-    match *riid {
-        IID_IUNKNOWN => {
-            // Returns the nondelegating IUnknown, as in COM specification.
-            *ppv = this as *mut c_void;
-        }
-        IID_ILOCAL_FILE_MANAGER => {
-            // Returns the original VTable.
-            *ppv = obj as *mut c_void;
-        }
-        _ => {
-            *ppv = std::ptr::null_mut::<c_void>();
-            println!("Returning NO INTERFACE.");
-            return E_NOINTERFACE;
-        }
+    let riid_ref = &*riid;
+    if IsEqualGUID(riid_ref, &IID_IUNKNOWN) {
+        // Returns the nondelegating IUnknown, as in COM specification.
+        *ppv = this as *mut c_void;
+    } else if IsEqualGUID(riid_ref, &IID_ILOCAL_FILE_MANAGER) {
+        // Returns the original VTable.
+        *ppv = obj as *mut c_void;
+    } else {
+        *ppv = std::ptr::null_mut::<c_void>();
+        println!("Returning NO INTERFACE.");
+        return E_NOINTERFACE;
     }
 
     (*this).raw_add_ref();

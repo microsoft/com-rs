@@ -1,11 +1,13 @@
 use super::ianimal::{IAnimalMethods, RawIAnimal};
-use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, HRESULT, IID};
+use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown};
+
+use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
 pub const IID_IDOMESTIC_ANIMAL: IID = IID {
-    data1: 0xc22425df,
-    data2: 0xefb2,
-    data3: 0x4b85,
-    data4: [0x93, 0x3e, 0x9c, 0xf7, 0xb2, 0x34, 0x59, 0xe8],
+    Data1: 0xc22425df,
+    Data2: 0xefb2,
+    Data3: 0x4b85,
+    Data4: [0x93, 0x3e, 0x9c, 0xf7, 0xb2, 0x34, 0x59, 0xe8],
 };
 
 #[repr(C)]

@@ -1,13 +1,20 @@
-use std::os::raw::c_void;
-
 use crate::WindowsFileManager;
 use com::{
-    failed, CoCreateInstance, IClassFactory, IClassFactoryMethods, IClassFactoryVTable,
-    IUnknownMethods, RawIClassFactory, RawIUnknown, BOOL, CLASS_E_NOAGGREGATION,
-    CLSCTX_INPROC_SERVER, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, IID_IUNKNOWN, LPVOID,
-    NOERROR, REFCLSID, REFIID, S_OK,
+    failed, IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IUnknownMethods,
+    RawIClassFactory, RawIUnknown, IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 use interface::CLSID_LOCAL_FILE_MANAGER_CLASS;
+
+use winapi::{
+    ctypes::c_void,
+    shared::{
+        guiddef::{IsEqualGUID, IID, REFCLSID, REFIID},
+        minwindef::{BOOL, LPVOID},
+        winerror::{CLASS_E_NOAGGREGATION, E_NOINTERFACE, HRESULT, NOERROR, S_OK},
+        wtypesbase::CLSCTX_INPROC_SERVER,
+    },
+    um::combaseapi::CoCreateInstance,
+};
 
 #[repr(C)]
 pub struct WindowsFileManagerClass {
@@ -27,7 +34,9 @@ unsafe extern "stdcall" fn query_interface(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Querying interface on CatClass...");
-    if *riid == IID_IUNKNOWN || *riid == IID_ICLASS_FACTORY {
+
+    let riid_ref = &*riid;
+    if IsEqualGUID(riid_ref, &IID_IUNKNOWN) | IsEqualGUID(riid_ref, &IID_ICLASS_FACTORY) {
         *ppv = this as *mut c_void;
         (*this).raw_add_ref();
         NOERROR
@@ -75,7 +84,7 @@ unsafe extern "stdcall" fn create_instance(
     let mut unknown_file_manager = std::ptr::null_mut::<c_void>();
     let hr = CoCreateInstance(
         &CLSID_LOCAL_FILE_MANAGER_CLASS as REFCLSID,
-        wfm as *mut RawIUnknown,
+        wfm as winapi::um::unknwnbase::LPUNKNOWN,
         CLSCTX_INPROC_SERVER,
         &IID_IUNKNOWN as REFIID,
         &mut unknown_file_manager as *mut LPVOID,

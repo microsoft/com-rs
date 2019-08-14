@@ -1,17 +1,25 @@
 use crate::{
-    c_void,
     comptr::ComPtr,
     failed,
     iunknown::{IUnknownMethods, RawIUnknown},
-    ComInterface, BOOL, HRESULT, IID, REFIID,
+    ComInterface,
+};
+
+use winapi::{
+    ctypes::c_void,
+    shared::{
+        guiddef::{IID, REFIID},
+        minwindef::BOOL,
+    },
+    um::winnt::HRESULT,
 };
 
 // uuid(0x000e0000, 0x0000, 0x0000, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46)
 pub const IID_ICLASS_FACTORY: IID = IID {
-    data1: 0x01u32,
-    data2: 0u16,
-    data3: 0u16,
-    data4: [0xC0, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0x46u8],
+    Data1: 0x01u32,
+    Data2: 0u16,
+    Data3: 0u16,
+    Data4: [0xC0, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0x46u8],
 };
 
 #[allow(non_snake_case)]

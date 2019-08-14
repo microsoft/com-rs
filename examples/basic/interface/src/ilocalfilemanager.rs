@@ -1,10 +1,12 @@
-use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, HRESULT, IID};
+use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown};
+
+use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
 pub const IID_ILOCAL_FILE_MANAGER: IID = IID {
-    data1: 0x4fc333e3,
-    data2: 0xc389,
-    data3: 0x4c48,
-    data4: [0xb1, 0x08, 0x78, 0x95, 0xb0, 0xaf, 0x21, 0xad],
+    Data1: 0x4fc333e3,
+    Data2: 0xc389,
+    Data3: 0x4c48,
+    Data4: [0xb1, 0x08, 0x78, 0x95, 0xb0, 0xaf, 0x21, 0xad],
 };
 
 #[repr(C)]

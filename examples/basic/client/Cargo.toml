@@ -9,4 +9,4 @@ com = { path = "../../.." }
 interface = { path = "../interface" }
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["winuser", "winreg"] }
+winapi = { version = "0.3", features = ["winuser", "winreg", "combaseapi", "objbase"] }
