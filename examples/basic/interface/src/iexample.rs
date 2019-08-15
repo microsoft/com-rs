@@ -1,10 +1,12 @@
-use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown, IID};
+use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown};
+
+use winapi::shared::guiddef::IID;
 
 pub const IID_IEXAMPLE: IID = IID {
-    data1: 0xC5F45CBC,
-    data2: 0x4439,
-    data3: 0x418C,
-    data4: [0xA9, 0xF9, 0x05, 0xAC, 0x67, 0x52, 0x5E, 0x43],
+    Data1: 0xC5F45CBC,
+    Data2: 0x4439,
+    Data3: 0x418C,
+    Data4: [0xA9, 0xF9, 0x05, 0xAC, 0x67, 0x52, 0x5E, 0x43],
 };
 
 #[repr(C)]

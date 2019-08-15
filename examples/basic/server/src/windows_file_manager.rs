@@ -1,13 +1,17 @@
-use std::os::raw::c_void;
-
-use com::{
-    failed, IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, IID_IUNKNOWN, NOERROR,
-};
+use com::{failed, IUnknownMethods, RawIUnknown, IID_IUNKNOWN};
 use interface::{
     ifilemanager::{
         IFileManager, IFileManagerMethods, IFileManagerVTable, RawIFileManager, IID_IFILE_MANAGER,
     },
     ilocalfilemanager::IID_ILOCAL_FILE_MANAGER,
+};
+
+use winapi::{
+    ctypes::c_void,
+    shared::{
+        guiddef::{IsEqualGUID, IID},
+        winerror::{E_NOINTERFACE, HRESULT, NOERROR},
+    },
 };
 
 /// The implementation class
@@ -34,24 +38,21 @@ unsafe extern "stdcall" fn ifilemanager_query_interface(
 ) -> HRESULT {
     let obj = this as *mut WindowsFileManager;
 
-    match *riid {
-        IID_IUNKNOWN | IID_IFILE_MANAGER => {
-            *ppv = this as *mut c_void;
-        }
-        IID_ILOCAL_FILE_MANAGER => {
-            let hr = (*((*obj).p_unk_local_file_manager)).raw_query_interface(riid, ppv);
-            if failed(hr) {
-                return E_NOINTERFACE;
-            }
-
-            // We release it as the previous call add_ref-ed the inner object.
-            // The intention is to transfer reference counting logic to the
-            // outer object.
-            (*((*obj).p_unk_local_file_manager)).raw_release();
-        }
-        _ => {
+    let riid_ref = &*riid;
+    if IsEqualGUID(riid_ref, &IID_IUNKNOWN) | IsEqualGUID(riid_ref, &IID_IFILE_MANAGER) {
+        *ppv = this as *mut c_void;
+    } else if IsEqualGUID(riid_ref, &IID_ILOCAL_FILE_MANAGER) {
+        let hr = (*((*obj).p_unk_local_file_manager)).raw_query_interface(riid, ppv);
+        if failed(hr) {
             return E_NOINTERFACE;
         }
+
+        // We release it as the previous call add_ref-ed the inner object.
+        // The intention is to transfer reference counting logic to the
+        // outer object.
+        (*((*obj).p_unk_local_file_manager)).raw_release();
+    } else {
+        return E_NOINTERFACE;
     }
 
     (*this).raw_add_ref();

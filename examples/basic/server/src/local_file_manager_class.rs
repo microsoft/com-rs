@@ -1,10 +1,16 @@
-use std::os::raw::c_void;
-
 use crate::LocalFileManager;
 use com::{
     IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IUnknownMethods, RawIClassFactory,
-    RawIUnknown, BOOL, E_INVALIDARG, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, IID_IUNKNOWN,
-    NOERROR, S_OK,
+    RawIUnknown, IID_ICLASS_FACTORY, IID_IUNKNOWN,
+};
+
+use winapi::{
+    ctypes::c_void,
+    shared::{
+        guiddef::{IsEqualGUID, IID},
+        minwindef::BOOL,
+        winerror::{E_INVALIDARG, E_NOINTERFACE, HRESULT, NOERROR, S_OK},
+    },
 };
 
 #[repr(C)]
@@ -25,7 +31,9 @@ unsafe extern "stdcall" fn query_interface(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Querying interface on LocalFileManagerClass...");
-    if *riid == IID_IUNKNOWN || *riid == IID_ICLASS_FACTORY {
+
+    let riid_ref = &*riid;
+    if IsEqualGUID(riid_ref, &IID_IUNKNOWN) | IsEqualGUID(riid_ref, &IID_ICLASS_FACTORY) {
         *ppv = this as *mut c_void;
         (*this).raw_add_ref();
         NOERROR
@@ -63,7 +71,7 @@ unsafe extern "stdcall" fn create_instance(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Creating instance...");
-    if !aggregate.is_null() && *riid != IID_IUNKNOWN {
+    if !aggregate.is_null() && !IsEqualGUID(&*riid, &IID_IUNKNOWN) {
         *ppv = std::ptr::null_mut::<c_void>();
         return E_INVALIDARG;
     }

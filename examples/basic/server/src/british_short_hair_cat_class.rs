@@ -1,13 +1,19 @@
-use std::os::raw::c_void;
-
 use crate::BritishShortHairCat;
 use com::{
-    IClassFactoryMethods, IUnknownMethods, RawIClassFactory, RawIUnknown, BOOL,
-    CLASS_E_NOAGGREGATION, E_NOINTERFACE, HRESULT, IID, IID_ICLASS_FACTORY, IID_IUNKNOWN, NOERROR,
-    S_OK,
+    IClassFactoryMethods, IUnknownMethods, RawIClassFactory, RawIUnknown, IID_ICLASS_FACTORY,
+    IID_IUNKNOWN,
 };
 use interface::icat_class::{
     ICatClass, ICatClassMethods, ICatClassVTable, RawICatClass, IID_ICAT_CLASS,
+};
+
+use winapi::{
+    ctypes::c_void,
+    shared::{
+        guiddef::{IsEqualGUID, IID},
+        minwindef::BOOL,
+        winerror::{CLASS_E_NOAGGREGATION, E_NOINTERFACE, HRESULT, NOERROR, S_OK},
+    },
 };
 
 #[repr(C)]
@@ -28,7 +34,12 @@ unsafe extern "stdcall" fn query_interface(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     println!("Querying interface on CatClass...");
-    if *riid == IID_IUNKNOWN || *riid == IID_ICLASS_FACTORY || *riid == IID_ICAT_CLASS {
+    let riid_ref = &*riid;
+
+    if IsEqualGUID(riid_ref, &IID_IUNKNOWN)
+        || IsEqualGUID(riid_ref, &IID_ICLASS_FACTORY)
+        || IsEqualGUID(riid_ref, &IID_ICAT_CLASS)
+    {
         *ppv = this as *mut c_void;
         (*this).raw_add_ref();
         NOERROR

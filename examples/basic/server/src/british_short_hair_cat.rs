@@ -1,12 +1,18 @@
-use std::os::raw::c_void;
-
-use com::{IUnknownMethods, RawIUnknown, E_NOINTERFACE, HRESULT, IID, IID_IUNKNOWN, NOERROR};
+use com::{IUnknownMethods, RawIUnknown, IID_IUNKNOWN};
 use interface::{
     ianimal::{IAnimalMethods, RawIAnimal, IID_IANIMAL},
     icat::{ICat, ICatMethods, ICatVTable, RawICat, IID_ICAT},
     idomesticanimal::{
         IDomesticAnimal, IDomesticAnimalMethods, IDomesticAnimalVTable, RawIDomesticAnimal,
         IID_IDOMESTIC_ANIMAL,
+    },
+};
+
+use winapi::{
+    ctypes::c_void,
+    shared::{
+        guiddef::{IsEqualGUID, IID},
+        winerror::{E_NOINTERFACE, HRESULT, NOERROR},
     },
 };
 
@@ -34,19 +40,19 @@ unsafe extern "stdcall" fn icat_query_interface(
     println!("Querying interface through ICat's IUnknown...");
     let _obj = this as *mut BritishShortHairCat;
 
-    match *riid {
-        IID_IUNKNOWN | IID_ICAT | IID_IANIMAL => {
-            println!("Returning this.");
-            *ppv = this as *mut c_void;
-        }
-        IID_IDOMESTIC_ANIMAL => {
-            println!("Returning this add 1.");
-            *ppv = this.add(1) as *mut c_void;
-        }
-        _ => {
-            println!("Returning NO INTERFACE.");
-            return E_NOINTERFACE;
-        }
+    let riid_ref = &*riid;
+    if IsEqualGUID(riid_ref, &IID_IUNKNOWN)
+        | IsEqualGUID(riid_ref, &IID_ICAT)
+        | IsEqualGUID(riid_ref, &IID_IANIMAL)
+    {
+        println!("Returning this.");
+        *ppv = this as *mut c_void;
+    } else if IsEqualGUID(riid_ref, &IID_IDOMESTIC_ANIMAL) {
+        println!("Returning this add 1.");
+        *ppv = this.add(1) as *mut c_void;
+    } else {
+        println!("Returning NO INTERFACE.");
+        return E_NOINTERFACE;
     }
 
     println!("Successful!.");

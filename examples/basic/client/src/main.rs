@@ -8,16 +8,25 @@
 //   HRESULT IgnoreHumans(void);
 // }
 
-use com::{
-    failed, CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize, ComInterface,
-    ComPtr, IClassFactory, IUnknown, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED, HRESULT, IID,
-    IID_ICLASS_FACTORY, LPVOID, REFCLSID, REFIID,
+use winapi::{
+    ctypes::c_void,
+    shared::{
+        guiddef::{IID, REFCLSID, REFIID},
+        minwindef::LPVOID,
+        winerror::HRESULT,
+        wtypesbase::CLSCTX_INPROC_SERVER,
+    },
+    um::{
+        combaseapi::{CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize},
+        objbase::COINIT_APARTMENTTHREADED,
+    },
 };
+
+use com::{failed, ComInterface, ComPtr, IClassFactory, IUnknown, IID_ICLASS_FACTORY};
 use interface::{
     IAnimal, ICat, IDomesticAnimal, IExample, IFileManager, ILocalFileManager, CLSID_CAT_CLASS,
     CLSID_LOCAL_FILE_MANAGER_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS,
 };
-use std::os::raw::c_void;
 
 fn main() {
     let result = initialize_ex();

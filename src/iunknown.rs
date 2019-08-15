@@ -1,11 +1,17 @@
-use crate::{c_void, comptr::ComPtr, failed, ComInterface, E_NOINTERFACE, HRESULT, IID};
+use crate::{comptr::ComPtr, failed, ComInterface};
+
+use winapi::{
+    ctypes::c_void,
+    shared::{guiddef::IID, winerror::E_NOINTERFACE},
+    um::winnt::HRESULT,
+};
 
 #[allow(non_upper_case_globals)]
 pub const IID_IUNKNOWN: IID = IID {
-    data1: 0u32,
-    data2: 0u16,
-    data3: 0u16,
-    data4: [192u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 70u8],
+    Data1: 0u32,
+    Data2: 0u16,
+    Data3: 0u16,
+    Data4: [192u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 70u8],
 };
 
 #[allow(non_snake_case)]
