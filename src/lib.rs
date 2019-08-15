@@ -5,7 +5,7 @@ mod iunknown;
 
 pub use comptr::ComPtr;
 pub use iclassfactory::{
-    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IID_ICLASS_FACTORY,
+    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IID_ICLASS_FACTORY,IClassFactoryVPtr,
 };
 pub use inproc::*;
 pub use iunknown::{IUnknown, IUnknownMethods, IUnknownVTable, IID_IUNKNOWN, IUnknownVPtr};

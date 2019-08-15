@@ -1,13 +1,14 @@
 // An issue with having T be Human is that I am never
 // actually possessing the entire Human struct, just
 // an interface pointer.
-use crate::ComInterface;
+use crate::{ComInterface, failed};
 
 use std::ptr::NonNull;
 
 use super::*;
 use std::marker::PhantomData;
 use winapi::ctypes::c_void;
+use winapi::shared::winerror::E_NOINTERFACE;
 
 pub struct ComPtr<T: ComInterface + ?Sized> {
     ptr: NonNull<c_void>,
@@ -31,8 +32,18 @@ impl<T: ComInterface + ?Sized> ComPtr<T> {
         self.ptr
     }
 
-    fn cast_and_add_ref(&self) {
-        unsafe { (*(self as *const _ as *const ComPtr<IUnknown>)).add_ref(); }
+    fn cast_and_add_ref(&mut self) {
+        unsafe { (*(self as *const _ as *mut ComPtr<IUnknown>)).add_ref(); }
+    }
+
+    pub fn get_interface<S: ComInterface + ?Sized>(&mut self) -> Option<ComPtr<S>> {
+        let mut ppv = std::ptr::null_mut::<c_void>();
+        let hr = unsafe { (*(self as *const _ as *mut ComPtr<IUnknown>)).query_interface(&S::IID as *const IID, &mut ppv) };
+        if failed(hr) {
+            assert!(hr == E_NOINTERFACE);
+            return None;
+        }
+        Some(ComPtr::new(std::ptr::NonNull::new(ppv as *mut c_void)?))
     }
 }
 
@@ -40,17 +51,18 @@ impl<T: ComInterface + ?Sized> Drop for ComPtr<T> {
     fn drop(&mut self) {
         println!("Dropped!");
         unsafe {
-            (*(self as *const _ as *const ComPtr<IUnknown>)).release();
+            (*(self as *const _ as *mut ComPtr<IUnknown>)).release();
         }
     }
 }
 
 impl<T: ComInterface> Clone for ComPtr<T> {
     fn clone(&self) -> Self {
-        self.cast_and_add_ref();
-        ComPtr {
+        let mut new_ptr = ComPtr {
             ptr: self.ptr,
             phantom: PhantomData
-        }
+        };
+        new_ptr.cast_and_add_ref();
+        new_ptr
     }
 }

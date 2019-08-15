@@ -1,7 +1,7 @@
 use super::*;
-use std::os::raw::c_void;
 use winapi::shared::guiddef::GUID;
 use winapi::shared::ntdef::HRESULT;
+use winapi::ctypes::c_void;
 
 #[allow(non_upper_case_globals)]
 pub const IID_IUNKNOWN: GUID = GUID {
@@ -27,8 +27,8 @@ pub type IUnknownVPtr = *const IUnknownVTable;
 
 pub trait IUnknown {
     fn query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT;
-    fn add_ref(&self) -> u32;
-    fn release(&self) -> u32;
+    fn add_ref(&mut self) -> u32;
+    fn release(&mut self) -> u32;
 }
 
 impl <T: ComInterface + ?Sized> IUnknown for ComPtr<T> {
@@ -37,12 +37,12 @@ impl <T: ComInterface + ?Sized> IUnknown for ComPtr<T> {
         unsafe { ((**itf_ptr).0.QueryInterface)(itf_ptr, riid, ppv) }
     }
 
-    fn add_ref(&self) -> u32 {
+    fn add_ref(&mut self) -> u32 {
         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
         unsafe { ((**itf_ptr).0.AddRef)(itf_ptr) }
     }
 
-    fn release(&self) -> u32 {
+    fn release(&mut self) -> u32 {
         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
         unsafe { ((**itf_ptr).0.Release)(itf_ptr) }
     }
@@ -58,12 +58,12 @@ impl<T: IUnknown + ComInterface + ?Sized> ComPtr<T> {
         unsafe { ((**itf_ptr).0.QueryInterface)(itf_ptr, riid, ppv) }
     }
 
-    fn add_ref(&self) -> u32 {
+    fn add_ref(&mut self) -> u32 {
         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
         unsafe { ((**itf_ptr).0.AddRef)(itf_ptr) }
     }
 
-    fn release(&self) -> u32 {
+    fn release(&mut self) -> u32 {
         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
         unsafe { ((**itf_ptr).0.Release)(itf_ptr) }
     }

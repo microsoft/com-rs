@@ -1,4 +1,4 @@
-use super::ianimal::{IAnimalMethods};
+use super::ianimal::{IAnimalMethods, IAnimal};
 use com::{ComInterface, ComPtr, IUnknownMethods, IUnknown};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
@@ -10,7 +10,7 @@ pub const IID_ICAT: IID = IID {
     Data4: [0x8d, 0x92, 0xd2, 0x74, 0xc7, 0x57, 0x8b, 0x53],
 };
 
-pub trait ICat: IUnknown {
+pub trait ICat: IAnimal {
     fn ignore_humans(&mut self) -> HRESULT;
 }
 

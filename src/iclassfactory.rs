@@ -24,7 +24,7 @@ pub struct IClassFactoryMethods {
         REFIID,
         *mut *mut c_void,
     ) -> HRESULT,
-    pub LockServer: unsafe extern "stdcall" fn(BOOL) -> HRESULT,
+    pub LockServer: unsafe extern "stdcall" fn(*mut IClassFactoryVPtr, BOOL) -> HRESULT,
 }
 #[repr(C)]
 pub struct IClassFactoryVTable(pub IUnknownMethods, pub IClassFactoryMethods);
@@ -33,7 +33,7 @@ pub type IClassFactoryVPtr = *const IClassFactoryVTable;
 
 pub trait IClassFactory: IUnknown {
     fn create_instance(&mut self, aggr: *mut IUnknownVPtr, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT;
-    fn lock_server(&self, increment: BOOL) -> HRESULT;
+    fn lock_server(&mut self, increment: BOOL) -> HRESULT;
 }
 
 impl <T: IClassFactory + ComInterface + ?Sized> IClassFactory for ComPtr<T> {
@@ -42,9 +42,9 @@ impl <T: IClassFactory + ComInterface + ?Sized> IClassFactory for ComPtr<T> {
         unsafe { ((**itf_ptr).1.CreateInstance)(itf_ptr, aggr, riid, ppv) }
     }
 
-    fn lock_server(&self, increment: BOOL) -> HRESULT {
+    fn lock_server(&mut self, increment: BOOL) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut IClassFactoryVPtr;
-        unsafe { ((**itf_ptr).1.LockServer)(increment) }
+        unsafe { ((**itf_ptr).1.LockServer)(itf_ptr, increment) }
     }
 }
 
@@ -54,7 +54,7 @@ unsafe impl ComInterface for IClassFactory {
 }
 
 impl ComPtr<IClassFactory> {
-    pub fn get_instance<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
+    pub fn get_instance<T: ComInterface + ?Sized>(&mut self) -> Option<ComPtr<T>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
         let mut aggr = std::ptr::null_mut();
         let hr = unsafe {

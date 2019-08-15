@@ -22,10 +22,10 @@ use winapi::{
     },
 };
 
-use com::{failed, ComInterface, ComPtr, IClassFactory, IUnknown, IID_ICLASS_FACTORY};
+use com::{failed, ComInterface, ComPtr, IClassFactory, IUnknown, IID_ICLASS_FACTORY, guid_to_string};
 use interface::{
-    IAnimal, ICat, IDomesticAnimal, IExample, IFileManager, ILocalFileManager, CLSID_CAT_CLASS,
-    CLSID_LOCAL_FILE_MANAGER_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS,
+    IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS,
+    // CLSID_LOCAL_FILE_MANAGER_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS, IFileManager, ILocalFileManager,
 };
 
 fn main() {
@@ -36,7 +36,7 @@ fn main() {
         return;
     }
 
-    run_aggr_test();
+    // run_aggr_test();
 
     let result = get_class_object(&CLSID_CAT_CLASS);
     let mut factory = match result {
@@ -48,7 +48,7 @@ fn main() {
     };
 
     println!("Got factory.");
-    let result = factory.create_instance::<IUnknown>();
+    let result = factory.get_instance::<IUnknown>();
     let mut unknown = match result {
         Some(unknown) => unknown,
         None => {
@@ -57,7 +57,7 @@ fn main() {
         }
     };
 
-    let result = unknown.query_interface::<IAnimal>();
+    let result = unknown.get_interface::<IAnimal>();
     let mut animal = match result {
         Some(animal) => animal,
         None => {
@@ -70,7 +70,7 @@ fn main() {
     animal.eat();
 
     // Test cross-vtable interface queries for both directions.
-    let result = animal.query_interface::<IDomesticAnimal>();
+    let result = animal.get_interface::<IDomesticAnimal>();
     let mut domestic_animal = match result {
         Some(domestic_animal) => domestic_animal,
         None => {
@@ -81,7 +81,7 @@ fn main() {
     println!("Got domestic animal.");
     domestic_animal.train();
 
-    let result = domestic_animal.query_interface::<ICat>();
+    let result = domestic_animal.get_interface::<ICat>();
     let mut new_cat = match result {
         Some(new_cat) => new_cat,
         None => {
@@ -93,7 +93,7 @@ fn main() {
     new_cat.ignore_humans();
 
     // Test querying within second vtable.
-    let result = domestic_animal.query_interface::<IDomesticAnimal>();
+    let result = domestic_animal.get_interface::<IDomesticAnimal>();
     let mut domestic_animal_two = match result {
         Some(domestic_animal_two) => domestic_animal_two,
         None => {
@@ -120,10 +120,10 @@ fn main() {
     println!("Got cat.");
     cat.eat();
 
-    assert!(animal.query_interface::<ICat>().is_some());
-    assert!(animal.query_interface::<IUnknown>().is_some());
-    assert!(animal.query_interface::<IExample>().is_none());
-    assert!(animal.query_interface::<IDomesticAnimal>().is_some());
+    assert!(animal.get_interface::<ICat>().is_some());
+    assert!(animal.get_interface::<IUnknown>().is_some());
+    assert!(animal.get_interface::<IExample>().is_none());
+    assert!(animal.get_interface::<IDomesticAnimal>().is_some());
 
     // We must drop them now or else we'll get an error when they drop after we've uninitialized COM
     drop(domestic_animal);
@@ -137,40 +137,40 @@ fn main() {
     uninitialize();
 }
 
-fn run_aggr_test() {
-    let result = create_instance::<IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
-    let mut filemanager = match result {
-        Ok(filemanager) => filemanager,
-        Err(e) => {
-            println!("Failed to get filemanager, {:x}", e as u32);
-            return;
-        }
-    };
-    println!("Got filemanager!");
-    filemanager.delete_all();
+// fn run_aggr_test() {
+//     let result = create_instance::<IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
+//     let mut filemanager = match result {
+//         Ok(filemanager) => filemanager,
+//         Err(e) => {
+//             println!("Failed to get filemanager, {:x}", e as u32);
+//             return;
+//         }
+//     };
+//     println!("Got filemanager!");
+//     filemanager.delete_all();
 
-    let result = filemanager.query_interface::<ILocalFileManager>();
-    let mut lfm = match result {
-        Some(lfm) => lfm,
-        None => {
-            println!("Failed to get Local File Manager!");
-            return;
-        }
-    };
-    println!("Got Local File Manager.");
-    lfm.delete_local();
+//     let result = filemanager.get_interface::<ILocalFileManager>();
+//     let mut lfm = match result {
+//         Some(lfm) => lfm,
+//         None => {
+//             println!("Failed to get Local File Manager!");
+//             return;
+//         }
+//     };
+//     println!("Got Local File Manager.");
+//     lfm.delete_local();
 
-    let result = create_instance::<ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
-    let mut localfilemanager = match result {
-        Ok(localfilemanager) => localfilemanager,
-        Err(e) => {
-            println!("Failed to get localfilemanager, {:x}", e as u32);
-            return;
-        }
-    };
-    println!("Got localfilemanager!");
-    localfilemanager.delete_local();
-}
+//     let result = create_instance::<ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
+//     let mut localfilemanager = match result {
+//         Ok(localfilemanager) => localfilemanager,
+//         Err(e) => {
+//             println!("Failed to get localfilemanager, {:x}", e as u32);
+//             return;
+//         }
+//     };
+//     println!("Got localfilemanager!");
+//     localfilemanager.delete_local();
+// }
 
 // TODO: accept threading options
 fn initialize_ex() -> Result<(), HRESULT> {
@@ -201,12 +201,12 @@ fn get_class_object(iid: &IID) -> Result<ComPtr<IClassFactory>, HRESULT> {
     }
 
     Ok(ComPtr::new(
-        std::ptr::NonNull::new(class_factory as *mut IClassFactory).unwrap(),
+        std::ptr::NonNull::new(class_factory as *mut c_void).unwrap(),
     ))
 }
 
 // TODO: accept server options
-fn create_instance<T: ComInterface>(clsid: &IID) -> Result<ComPtr<T>, HRESULT> {
+fn create_instance<T: ComInterface + ?Sized>(clsid: &IID) -> Result<ComPtr<T>, HRESULT> {
     let mut instance = std::ptr::null_mut::<c_void>();
     let hr = unsafe {
         CoCreateInstance(
@@ -222,7 +222,7 @@ fn create_instance<T: ComInterface>(clsid: &IID) -> Result<ComPtr<T>, HRESULT> {
     }
 
     Ok(ComPtr::new(
-        std::ptr::NonNull::new(instance as *mut T).unwrap(),
+        std::ptr::NonNull::new(instance as *mut c_void).unwrap(),
     ))
 }
 
