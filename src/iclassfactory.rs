@@ -1,20 +1,13 @@
-use crate::{
-    comptr::ComPtr,
-    failed,
-    iunknown::{IUnknownMethods, RawIUnknown},
-    ComInterface,
-};
+use super::*;
+use winapi::shared::guiddef::IID;
+use winapi::shared::guiddef::REFIID;
+use winapi::shared::ntdef::HRESULT;
+use winapi::shared::minwindef::BOOL;
+use winapi::ctypes::c_void;
 
-use winapi::{
-    ctypes::c_void,
-    shared::{
-        guiddef::{IID, REFIID},
-        minwindef::BOOL,
-    },
-    um::winnt::HRESULT,
-};
+use std::marker::PhantomData;
 
-// uuid(0x000e0000, 0x0000, 0x0000, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46)
+#[allow(non_upper_case_globals)]
 pub const IID_ICLASS_FACTORY: IID = IID {
     Data1: 0x01u32,
     Data2: 0u16,
@@ -26,8 +19,8 @@ pub const IID_ICLASS_FACTORY: IID = IID {
 #[repr(C)]
 pub struct IClassFactoryMethods {
     pub CreateInstance: unsafe extern "stdcall" fn(
-        *mut RawIClassFactory,
-        *mut RawIUnknown,
+        *mut IClassFactoryVPtr,
+        *mut IUnknownVPtr,
         REFIID,
         *mut *mut c_void,
     ) -> HRESULT,
@@ -36,66 +29,52 @@ pub struct IClassFactoryMethods {
 #[repr(C)]
 pub struct IClassFactoryVTable(pub IUnknownMethods, pub IClassFactoryMethods);
 
-#[repr(C)]
-pub struct RawIClassFactory {
-    pub vtable: *const IClassFactoryVTable,
+pub type IClassFactoryVPtr = *const IClassFactoryVTable;
+
+pub trait IClassFactory: IUnknown {
+    fn create_instance(&mut self, aggr: *mut IUnknownVPtr, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT;
+    fn lock_server(&self, increment: BOOL) -> HRESULT;
 }
 
-impl RawIClassFactory {
-    pub unsafe fn raw_create_instance(&mut self, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT {
-        // TODO: Support aggregation!
-        // https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iclassfactory-createinstance
-        ((*self.vtable).1.CreateInstance)(
-            self as *mut RawIClassFactory,
-            std::ptr::null_mut(),
-            riid,
-            ppv,
-        )
+impl <T: IClassFactory + ComInterface + ?Sized> IClassFactory for ComPtr<T> {
+    fn create_instance(&mut self, aggr: *mut IUnknownVPtr, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT {
+        let itf_ptr = self.into_raw() as *mut IClassFactoryVPtr;
+        unsafe { ((**itf_ptr).1.CreateInstance)(itf_ptr, aggr, riid, ppv) }
     }
 
-    pub unsafe fn raw_lock_server(&mut self, increment: bool) -> HRESULT {
-        ((*self.vtable).1.LockServer)(increment as BOOL)
-    }
-
-    pub fn create_instance<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
-        let mut ppv = std::ptr::null_mut::<c_void>();
-        let hr = unsafe { self.raw_create_instance(&T::IID as *const IID, &mut ppv) };
-        if failed(hr) {
-            // TODO: decide what failures are possible
-            return None;
-        }
-        Some(ComPtr::new(std::ptr::NonNull::new(ppv as *mut T)?))
+    fn lock_server(&self, increment: BOOL) -> HRESULT {
+        let itf_ptr = self.into_raw() as *mut IClassFactoryVPtr;
+        unsafe { ((**itf_ptr).1.LockServer)(increment) }
     }
 }
 
-#[repr(C)]
-pub struct IClassFactory {
-    pub inner: RawIClassFactory,
-}
-
-impl IClassFactory {
-    pub fn query_interface<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
-        let inner: &mut RawIUnknown = self.inner.as_mut();
-        inner.query_interface()
-    }
-
-    pub fn create_instance<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
-        self.inner.create_instance()
-    }
-}
 
 unsafe impl ComInterface for IClassFactory {
     const IID: IID = IID_ICLASS_FACTORY;
 }
 
-impl std::convert::AsRef<RawIUnknown> for RawIClassFactory {
-    fn as_ref(&self) -> &RawIUnknown {
-        unsafe { &*(self as *const RawIClassFactory as *const RawIUnknown) }
+impl ComPtr<IClassFactory> {
+    pub fn get_instance<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
+        let mut ppv = std::ptr::null_mut::<c_void>();
+        let mut aggr = std::ptr::null_mut();
+        let hr = unsafe {
+            self.create_instance(aggr, &T::IID as *const IID, &mut ppv)
+        };
+        if failed(hr) {
+            // TODO: decide what failures are possible
+            return None;
+        }
+        Some(ComPtr::new(std::ptr::NonNull::new(ppv as *mut c_void)?))
     }
 }
 
-impl std::convert::AsMut<RawIUnknown> for RawIClassFactory {
-    fn as_mut(&mut self) -> &mut RawIUnknown {
-        unsafe { &mut *(self as *mut RawIClassFactory as *mut RawIUnknown) }
-    }
-}
+// impl From<ComPtr<IClassFactory>> for ComPtr<IUnknown> {
+//     fn from(comptr: ComPtr<IClassFactory>) -> ComPtr<IUnknown> {
+//         println!("Wrapped!");
+//         ComPtr::wrap(comptr.get_ptr())
+//         // ComPtr {
+//         //     ptr: comptr.get_ptr(),
+//         //     phantom: PhantomData
+//         // }
+//     }
+// }

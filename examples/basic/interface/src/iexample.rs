@@ -1,4 +1,4 @@
-use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown};
+use com::{ComInterface, ComPtr, IUnknownMethods, IUnknown,};
 
 use winapi::shared::guiddef::IID;
 
@@ -9,40 +9,15 @@ pub const IID_IEXAMPLE: IID = IID {
     Data4: [0xA9, 0xF9, 0x05, 0xAC, 0x67, 0x52, 0x5E, 0x43],
 };
 
-#[repr(C)]
-pub struct IExample {
-    inner: RawIExample,
-}
-
-impl IExample {
-    pub fn query_interface<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
-        let inner: &mut RawIUnknown = self.inner.as_mut();
-        inner.query_interface()
-    }
-}
+pub trait IExample: IUnknown {}
 
 unsafe impl ComInterface for IExample {
     const IID: IID = IID_IEXAMPLE;
 }
 
-#[repr(C)]
-pub struct RawIExample {
-    vtable: *const IExampleVTable,
-}
+pub type IExampleVPtr = *const IExampleVTable;
 
-impl RawIExample {}
-
-impl std::convert::AsRef<RawIUnknown> for RawIExample {
-    fn as_ref(&self) -> &RawIUnknown {
-        unsafe { &*(self as *const RawIExample as *const RawIUnknown) }
-    }
-}
-
-impl std::convert::AsMut<RawIUnknown> for RawIExample {
-    fn as_mut(&mut self) -> &mut RawIUnknown {
-        unsafe { &mut *(self as *mut RawIExample as *mut RawIUnknown) }
-    }
-}
+impl <T: IExample + ComInterface + ?Sized> IExample for ComPtr<T> {}
 
 #[repr(C)]
 pub struct IExampleMethods {}

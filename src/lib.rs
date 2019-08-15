@@ -5,10 +5,10 @@ mod iunknown;
 
 pub use comptr::ComPtr;
 pub use iclassfactory::{
-    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, RawIClassFactory, IID_ICLASS_FACTORY,
+    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IID_ICLASS_FACTORY,
 };
 pub use inproc::*;
-pub use iunknown::{IUnknown, IUnknownMethods, IUnknownVTable, RawIUnknown, IID_IUNKNOWN};
+pub use iunknown::{IUnknown, IUnknownMethods, IUnknownVTable, IID_IUNKNOWN, IUnknownVPtr};
 
 extern crate winapi;
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
