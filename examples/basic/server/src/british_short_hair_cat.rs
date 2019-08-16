@@ -1,4 +1,4 @@
-use com::{IUnknownMethods, IUnknownVPtr, IID_IUNKNOWN, IUnknown, guid_to_string};
+use com::{IUnknownMethods, IUnknownVPtr, IID_IUNKNOWN, IUnknown};
 use interface::{
     ianimal::{IAnimal, IAnimalMethods, IAnimalVPtr, IID_IANIMAL},
     icat::{ICat, ICatMethods, ICatVTable, ICatVPtr, IID_ICAT},

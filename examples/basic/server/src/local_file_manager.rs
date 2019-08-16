@@ -91,7 +91,6 @@ unsafe extern "stdcall" fn ilocalfilemanager_query_interface(
     let hr = iunk_to_use.query_interface(riid, ppv);
     forget(iunk_to_use);
     
-    println!("Shouldn't drop here!");
     hr
 }
 
@@ -101,7 +100,6 @@ unsafe extern "stdcall" fn ilocalfilemanager_add_ref(this: *mut IUnknownVPtr) ->
     let hr = iunk_to_use.add_ref();
     forget(iunk_to_use);
     
-    println!("Shouldn't drop here!");
     hr
 }
 
@@ -111,7 +109,6 @@ unsafe extern "stdcall" fn ilocalfilemanager_release(this: *mut IUnknownVPtr) ->
     let hr = iunk_to_use.release();
     forget(iunk_to_use);
     
-    println!("Shouldn't drop here!");
     hr
 }
 

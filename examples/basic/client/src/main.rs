@@ -22,11 +22,11 @@ use winapi::{
     },
 };
 
-use com::{failed, ComInterface, ComPtr, IClassFactory, IUnknown, IID_ICLASS_FACTORY, guid_to_string};
+use com::{failed, ComInterface, ComPtr, IClassFactory, IUnknown, IID_ICLASS_FACTORY};
 use interface::{
     IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS,
     CLSID_LOCAL_FILE_MANAGER_CLASS, ILocalFileManager,
-    // CLSID_WINDOWS_FILE_MANAGER_CLASS, IFileManager,
+    CLSID_WINDOWS_FILE_MANAGER_CLASS, IFileManager,
 };
 
 fn main() {
@@ -139,27 +139,27 @@ fn main() {
 }
 
 fn run_aggr_test() {
-//     let result = create_instance::<IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
-//     let mut filemanager = match result {
-//         Ok(filemanager) => filemanager,
-//         Err(e) => {
-//             println!("Failed to get filemanager, {:x}", e as u32);
-//             return;
-//         }
-//     };
-//     println!("Got filemanager!");
-//     filemanager.delete_all();
+    let result = create_instance::<IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
+    let mut filemanager = match result {
+        Ok(filemanager) => filemanager,
+        Err(e) => {
+            println!("Failed to get filemanager, {:x}", e as u32);
+            return;
+        }
+    };
+    println!("Got filemanager!");
+    filemanager.delete_all();
 
-//     let result = filemanager.get_interface::<ILocalFileManager>();
-//     let mut lfm = match result {
-//         Some(lfm) => lfm,
-//         None => {
-//             println!("Failed to get Local File Manager!");
-//             return;
-//         }
-//     };
-//     println!("Got Local File Manager.");
-//     lfm.delete_local();
+    let result = filemanager.get_interface::<ILocalFileManager>();
+    let mut lfm = match result {
+        Some(lfm) => lfm,
+        None => {
+            println!("Failed to get Local File Manager!");
+            return;
+        }
+    };
+    println!("Got Local File Manager.");
+    lfm.delete_local();
 
     let result = create_instance::<ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
     let mut localfilemanager = match result {
