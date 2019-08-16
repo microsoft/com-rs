@@ -16,7 +16,6 @@ pub struct ComPtr<T: ComInterface + ?Sized> {
 }
 
 impl<T: ComInterface + ?Sized> ComPtr<T> {
-    /// NonNull<T> must be safely convertable to *mut RawIUnknown
     pub fn new(ptr: NonNull<c_void>) -> Self {
         ComPtr {
             ptr,

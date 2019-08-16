@@ -11,20 +11,21 @@ use winapi::shared::{
 
 pub use interface::{
     IAnimal, ICat, IDomesticAnimal, CLSID_CAT_CLASS, IExample,
-    // IFileManager, ILocalFileManager, CLSID_LOCAL_FILE_MANAGER_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS,
+    // IFileManager, CLSID_WINDOWS_FILE_MANAGER_CLASS,
+    ILocalFileManager, CLSID_LOCAL_FILE_MANAGER_CLASS,
 };
 
 mod british_short_hair_cat;
 mod british_short_hair_cat_class;
-// mod local_file_manager;
-// mod local_file_manager_class;
+mod local_file_manager;
+mod local_file_manager_class;
 // mod windows_file_manager;
 // mod windows_file_manager_class;
 
 use british_short_hair_cat::BritishShortHairCat;
 use british_short_hair_cat_class::BritishShortHairCatClass;
-// use local_file_manager::LocalFileManager;
-// use local_file_manager_class::LocalFileManagerClass;
+use local_file_manager::LocalFileManager;
+use local_file_manager_class::LocalFileManagerClass;
 // use windows_file_manager::WindowsFileManager;
 // use windows_file_manager_class::WindowsFileManagerClass;
 
@@ -34,13 +35,12 @@ extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut 
         let rclsid_ref = &*rclsid;
         if IsEqualGUID(rclsid_ref, &CLSID_CAT_CLASS) {
             println!("Allocating new object CatClass...");
-            let cat = Box::into_raw(Box::new(BritishShortHairCatClass::new()));
-            // (*(cat as *mut IUnknownVPtr)).raw_add_ref();
-            (*cat).add_ref();
-            // let hr = (*(cat as *mut IUnknownVPtr)).raw_query_interface(riid, ppv);
-            let hr = (*cat).query_interface(riid, ppv);
-            // (*(cat as *mut IUnknownVPtr)).raw_release();
-            (*cat).release();
+            let mut cat = Box::new(BritishShortHairCatClass::new());
+            cat.add_ref();
+            let hr = cat.query_interface(riid, ppv);
+            cat.release();
+            Box::into_raw(cat);
+
             hr
         // } else if IsEqualGUID(rclsid_ref, &CLSID_WINDOWS_FILE_MANAGER_CLASS) {
         //     println!("Allocating new object WindowsFileManagerClass...");
@@ -49,13 +49,15 @@ extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut 
         //     let hr = (*(wfm as *mut IUnknownVPtr)).raw_query_interface(riid, ppv);
         //     (*(wfm as *mut IUnknownVPtr)).raw_release();
         //     hr
-        // } else if IsEqualGUID(rclsid_ref, &CLSID_LOCAL_FILE_MANAGER_CLASS) {
-        //     println!("Allocating new object LocalFileManagerClass...");
-        //     let lfm = Box::into_raw(Box::new(LocalFileManagerClass::new()));
-        //     (*(lfm as *mut IUnknownVPtr)).raw_add_ref();
-        //     let hr = (*(lfm as *mut IUnknownVPtr)).raw_query_interface(riid, ppv);
-        //     (*(lfm as *mut IUnknownVPtr)).raw_release();
-        //     hr
+        } else if IsEqualGUID(rclsid_ref, &CLSID_LOCAL_FILE_MANAGER_CLASS) {
+            println!("Allocating new object LocalFileManagerClass...");
+            let mut lfm = Box::new(LocalFileManagerClass::new());
+            lfm.add_ref();
+            let hr = lfm.query_interface(riid, ppv);
+            lfm.release();
+            Box::into_raw(lfm);
+
+            hr
         } else {
             CLASS_E_CLASSNOTAVAILABLE
         }
@@ -95,16 +97,16 @@ fn get_relevant_registry_keys() -> Vec<RegistryKeyInfo> {
             "",
             file_path.clone().as_str(),
         ),
-        // RegistryKeyInfo::new(
-        //     class_key_path(CLSID_LOCAL_FILE_MANAGER_CLASS).as_str(),
-        //     "",
-        //     "Local File Manager Component",
-        // ),
-        // RegistryKeyInfo::new(
-        //     class_inproc_key_path(CLSID_LOCAL_FILE_MANAGER_CLASS).as_str(),
-        //     "",
-        //     file_path.clone().as_str(),
-        // ),
+        RegistryKeyInfo::new(
+            class_key_path(CLSID_LOCAL_FILE_MANAGER_CLASS).as_str(),
+            "",
+            "Local File Manager Component",
+        ),
+        RegistryKeyInfo::new(
+            class_inproc_key_path(CLSID_LOCAL_FILE_MANAGER_CLASS).as_str(),
+            "",
+            file_path.clone().as_str(),
+        ),
         // RegistryKeyInfo::new(
         //     class_key_path(CLSID_WINDOWS_FILE_MANAGER_CLASS).as_str(),
         //     "",
