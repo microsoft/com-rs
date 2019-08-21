@@ -1,0 +1,15 @@
+[package]
+name = "server"
+version = "0.1.0"
+authors = ["Microsoft Corp"]
+edition = "2018"
+
+[dependencies]
+com = { path = "../../.." }
+interface = { path = "../interface" }
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winuser", "winreg", "winerror", "combaseapi"] }
+
+[lib]
+crate-type = ["rlib", "cdylib"]
