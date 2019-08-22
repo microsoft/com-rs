@@ -13,7 +13,6 @@ use winapi::{
 
 #[repr(C)]
 pub struct ClarkKent {
-    // inner must always be first because Cat is actually an ISuperman with one extra field at the end
     inner: ISupermanVPtr,
     ref_count: u32,
 }
@@ -37,25 +36,32 @@ impl ISuperman for ClarkKent {
     }
 
     fn populate_output(&mut self, out_var: &mut ComOutPtr<u32>) -> HRESULT {
-        // let allocated_value = Box::into_raw(Box::new(6));
         out_var.set(6);
         S_OK
     }
 
-    fn mutate_and_return(&mut self, in_out_var: *mut u32) -> HRESULT {
-        unsafe { *in_out_var = 100; }
+    fn mutate_and_return(&mut self, in_out_var: &mut Option<Box<u32>>) -> HRESULT {
+        match in_out_var {
+            Some(n) => **n = 100,
+            None => println!("Received null, unable to mutate!")
+        };
+
         S_OK
     }
 
-    fn take_input_ptr(&mut self, in_ptr_var: *const u32) -> HRESULT {
-        unsafe { 
-            let in_ptr_var = *in_ptr_var;
-            if (in_ptr_var > 5) {
+    fn take_input_ptr(&mut self, in_ptr_var: &Option<u32>) -> HRESULT {
+        match in_ptr_var {
+            Some(n) => {
+                if *n > 5 {
+                    return E_FAIL;
+                } else {
+                    return S_OK;
+                }
+            },
+            None => {
                 return E_FAIL;
             }
-        }
-
-        S_OK
+        };
     }
 }
 
@@ -112,7 +118,6 @@ unsafe extern "stdcall" fn add_ref(this: *mut IUnknownVPtr) -> u32 {
     (*this).add_ref()
 }
 
-// TODO: This could potentially be null or pointing to some invalid memory
 unsafe extern "stdcall" fn release(this: *mut IUnknownVPtr) -> u32 {
     println!("Releasing...");
     let this = this as *mut ClarkKent;
@@ -132,12 +137,34 @@ unsafe extern "stdcall" fn populate_output(this: *mut ISupermanVPtr, out_var: *m
 
 unsafe extern "stdcall" fn mutate_and_return(this: *mut ISupermanVPtr, in_out_var: *mut u32) -> HRESULT {
     let this = this as *mut ClarkKent;
-    (*this).mutate_and_return(in_out_var)
+    let mut opt = if in_out_var.is_null() {
+        None
+    } else {
+        Some(Box::from_raw(in_out_var))
+    };
+
+    let hr = (*this).mutate_and_return(&mut opt);
+    
+    // Server side should not be responsible for memory allocated by client.
+    match opt {
+        Some(n) => {
+            Box::into_raw(n);
+        },
+        _ => (),
+    };
+    
+    hr
 }
 
 unsafe extern "stdcall" fn take_input_ptr(this: *mut ISupermanVPtr, in_ptr_var: *const u32) -> HRESULT {
     let this = this as *mut ClarkKent;
-    (*this).take_input_ptr(in_ptr_var)
+    let opt = if in_ptr_var.is_null() {
+        None
+    } else {
+        Some(*in_ptr_var)
+    };
+
+    (*this).take_input_ptr(&opt)
 }
 
 impl ClarkKent {

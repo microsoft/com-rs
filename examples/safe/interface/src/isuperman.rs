@@ -19,10 +19,10 @@ pub trait ISuperman: IUnknown {
     fn populate_output(&mut self, out_var: &mut ComOutPtr<u32>) -> HRESULT;
 
     // [in, out]
-    fn mutate_and_return(&mut self, in_out_var: *mut u32) -> HRESULT;
+    fn mutate_and_return(&mut self, in_out_var: &mut Option<Box<u32>>) -> HRESULT;
 
     // [in] pointer
-    fn take_input_ptr(&mut self, in_ptr_var: *const u32) -> HRESULT;
+    fn take_input_ptr(&mut self, in_ptr_var: &Option<u32>) -> HRESULT;
 
     // // [in, out] Interface
     // fn take_interface();
@@ -47,6 +47,7 @@ impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
     fn populate_output(&mut self, out_var: &mut ComOutPtr<u32>) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
         
+        // Let called-procedure write to possibly uninit memory.
         let mut proxy = MaybeUninit::<u32>::uninit();
 
         unsafe {
@@ -74,14 +75,24 @@ impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
         }
     }
 
-    fn mutate_and_return(&mut self, in_out_var: *mut u32) -> HRESULT {
+    fn mutate_and_return(&mut self, in_out_var: &mut Option<Box<u32>>) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
-        unsafe { ((**itf_ptr).1.MutateAndReturn)(itf_ptr, in_out_var) }
+        let in_out_raw = match in_out_var {
+            Some(ref mut n) => n.as_mut() as *mut u32,
+            None => std::ptr::null_mut::<u32>()
+        };
+
+        unsafe { ((**itf_ptr).1.MutateAndReturn)(itf_ptr, in_out_raw) }
     }
 
-    fn take_input_ptr(&mut self, in_ptr_var: *const u32) -> HRESULT {
+    fn take_input_ptr(&mut self, in_ptr_var: &Option<u32>) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
-        unsafe { ((**itf_ptr).1.TakeInputPtr)(itf_ptr, in_ptr_var) }
+        let in_out_raw = match in_ptr_var {
+            Some(n) => n as *const u32,
+            None => std::ptr::null_mut::<u32>()
+        };
+
+        unsafe { ((**itf_ptr).1.TakeInputPtr)(itf_ptr, in_out_raw) }
     }
 
 }

@@ -1,4 +1,4 @@
-// Wrapper struct for an uninitialised [out] pointer.
+// Wrapper struct for a potentially uninitialised raw pointer.
 // Simulates uninitialisation using a boolean.
 pub struct ComOutPtr<T> {
     value: *const T,
@@ -40,7 +40,7 @@ impl<T> ComOutPtr<T> {
     //     self.value as *mut T
     // }
 
-    // Important! We are going to always ignore the value pointed at by ptr.
+    // Important! We are going to always ignore the value pointed at by ptr here.
     // The only way you can "get" a value is by first setting it, so we know it's
     // initialised.
     //

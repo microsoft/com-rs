@@ -55,22 +55,32 @@ fn run_safe_test() {
     assert!(clark_kent.take_input(4) == S_OK);
 
     // [out] tests
-    // let mut var_to_populate = 0u32;
-    // let ptr = std::ptr::null_mut::<u32>();
     let mut var_to_populate = ComOutPtr::<u32>::new();
     clark_kent.populate_output(&mut var_to_populate);
     assert!(*var_to_populate.get().unwrap() == 6);
 
     // [in, out] tests
-    let mut ptr_to_mutate = Box::into_raw(Box::new(6));
-    clark_kent.mutate_and_return(ptr_to_mutate);
-    assert!(unsafe { *ptr_to_mutate == 100 });
+    let mut ptr_to_mutate = Some(Box::new(6));
+    clark_kent.mutate_and_return(&mut ptr_to_mutate);
+    match ptr_to_mutate {
+        Some(n) => assert!(*n == 100),
+        None => assert!(false)
+    };
+
+    let mut ptr_to_mutate = None;
+    clark_kent.mutate_and_return(&mut ptr_to_mutate);
+    match ptr_to_mutate {
+        Some(n) => assert!(false),
+        None => ()
+    };
 
     // [in] ptr tests
-    let in_var = Box::into_raw(Box::new(50));
-    assert!(clark_kent.take_input_ptr(in_var) == E_FAIL);
-    let in_var = Box::into_raw(Box::new(2));
-    assert!(clark_kent.take_input_ptr(in_var) == S_OK);
+    let in_var = Some(50);
+    assert!(clark_kent.take_input_ptr(&in_var) == E_FAIL);
+    let in_var = Some(2);
+    assert!(clark_kent.take_input_ptr(&in_var) == S_OK);
+    let in_var = None;
+    assert!(clark_kent.take_input_ptr(&in_var) == E_FAIL);
 
     println!("Tests passed!");
 }
