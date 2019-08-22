@@ -2,6 +2,7 @@ mod comptr;
 mod iclassfactory;
 mod inproc;
 mod iunknown;
+mod comoutptr;
 
 pub use comptr::ComPtr;
 pub use iclassfactory::{
@@ -9,6 +10,7 @@ pub use iclassfactory::{
 };
 pub use inproc::*;
 pub use iunknown::{IUnknown, IUnknownMethods, IUnknownVTable, IID_IUNKNOWN, IUnknownVPtr};
+pub use comoutptr::ComOutPtr;
 
 extern crate winapi;
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
