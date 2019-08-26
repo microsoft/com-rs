@@ -1,4 +1,4 @@
-use com::{ComInterface, ComPtr, IUnknownMethods, IUnknown,};
+use com::{ComInterface, ComPtr, IUnknown,};
 
 use winapi::shared::guiddef::IID;
 
@@ -12,6 +12,7 @@ pub const IID_IEXAMPLE: IID = IID {
 pub trait IExample: IUnknown {}
 
 unsafe impl ComInterface for IExample {
+    type VTable = IExampleVTable;
     const IID: IID = IID_IEXAMPLE;
 }
 
@@ -20,8 +21,6 @@ pub type IExampleVPtr = *const IExampleVTable;
 impl <T: IExample + ComInterface + ?Sized> IExample for ComPtr<T> {}
 
 #[repr(C)]
-pub struct IExampleMethods {}
-
-#[allow(non_snake_case)]
-#[repr(C)]
-pub struct IExampleVTable(pub IUnknownMethods, pub IExampleMethods);
+pub struct IExampleVTable {
+    pub base: <IUnknown as ComInterface>::VTable,
+}

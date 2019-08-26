@@ -1,7 +1,7 @@
 use crate::LocalFileManager;
 use com::{
-    IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IUnknownMethods, IClassFactoryVPtr,
-    IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN, ComPtr, IUnknown,
+    IClassFactory, IClassFactoryVTable, IUnknownVTable, IClassFactoryVPtr,
+    IUnknownVPtr, IID_ICLASSFACTORY, IID_IUNKNOWN, ComPtr, IUnknown,
 };
 
 use winapi::{
@@ -86,7 +86,7 @@ impl IUnknown for LocalFileManagerClass {
             println!("Querying interface on LocalFileManagerClass...");
 
             let riid = &*riid;
-            if IsEqualGUID(riid, &IID_IUNKNOWN) | IsEqualGUID(riid, &IID_ICLASS_FACTORY) {
+            if IsEqualGUID(riid, &IID_IUNKNOWN) | IsEqualGUID(riid, &IID_ICLASSFACTORY) {
                 *ppv = self as *const _ as *mut c_void;
                 self.add_ref();
                 NOERROR
@@ -154,16 +154,17 @@ unsafe extern "stdcall" fn lock_server(this: *mut IClassFactoryVPtr, increment: 
 impl LocalFileManagerClass {
     pub(crate) fn new() -> LocalFileManagerClass {
         println!("Allocating new Vtable for LocalFileManagerClass...");
-        let iunknown = IUnknownMethods {
+        let iunknown = IUnknownVTable {
             QueryInterface: query_interface,
             Release: release,
             AddRef: add_ref,
         };
-        let iclassfactory = IClassFactoryMethods {
+        let iclassfactory = IClassFactoryVTable {
+            base: iunknown,
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
-        let vptr = Box::into_raw(Box::new(IClassFactoryVTable(iunknown, iclassfactory)));
+        let vptr = Box::into_raw(Box::new(iclassfactory));
         LocalFileManagerClass {
             inner: vptr,
             ref_count: 0,

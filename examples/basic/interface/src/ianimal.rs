@@ -1,5 +1,5 @@
 use winapi::shared::guiddef::IID;
-use com::{ComInterface, ComPtr, IUnknown, IUnknownMethods};
+use com::{ComInterface, ComPtr, IUnknown};
 use winapi::um::winnt::HRESULT;
 
 pub const IID_IANIMAL: IID = IID {
@@ -14,6 +14,7 @@ pub trait IAnimal: IUnknown {
 }
 
 unsafe impl ComInterface for IAnimal {
+    type VTable = IAnimalVTable;
     const IID: IID = IID_IANIMAL;
 }
 
@@ -22,15 +23,13 @@ pub type IAnimalVPtr = *const IAnimalVTable;
 impl <T: IAnimal + ComInterface + ?Sized> IAnimal for ComPtr<T> {
     fn eat(&mut self) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut IAnimalVPtr;
-        unsafe { ((**itf_ptr).1.Eat)(itf_ptr) }
+        unsafe { ((**itf_ptr).Eat)(itf_ptr) }
     }
 }
 
-#[repr(C)]
-pub struct IAnimalVTable(IUnknownMethods, IAnimalMethods);
-
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct IAnimalMethods {
+pub struct IAnimalVTable {
+    pub base: <IUnknown as ComInterface>::VTable,
     pub Eat: unsafe extern "stdcall" fn(*mut IAnimalVPtr) -> HRESULT,
 }

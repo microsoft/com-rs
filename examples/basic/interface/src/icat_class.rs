@@ -1,4 +1,4 @@
-use com::{ComInterface, ComPtr, IClassFactoryMethods, IUnknownMethods, IUnknown,};
+use com::{ComInterface, ComPtr, IUnknown, IClassFactory};
 
 use winapi::shared::guiddef::IID;
 
@@ -12,6 +12,7 @@ pub const IID_ICAT_CLASS: IID = IID {
 pub trait ICatClass: IUnknown {}
 
 unsafe impl ComInterface for ICatClass {
+    type VTable = ICatClassVTable;
     const IID: IID = IID_ICAT_CLASS;
 }
 
@@ -19,15 +20,10 @@ pub type ICatClassVPtr = *const ICatClassVTable;
 
 impl <T: ICatClass + ComInterface + ?Sized> ICatClass for ComPtr<T> {}
 
-#[repr(C)]
-pub struct ICatClassVTable(
-    pub IUnknownMethods,
-    pub IClassFactoryMethods,
-    pub ICatClassMethods,
-);
-
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct ICatClassMethods {}
+pub struct ICatClassVTable {
+    pub base: <IClassFactory as ComInterface>::VTable,
+}
 
 

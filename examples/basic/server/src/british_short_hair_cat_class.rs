@@ -1,10 +1,10 @@
 use crate::BritishShortHairCat;
 use com::{
-    IClassFactoryMethods, IUnknownMethods, IID_ICLASS_FACTORY,
+    IClassFactoryVTable, IUnknownVTable, IID_ICLASSFACTORY,
     IID_IUNKNOWN, IClassFactory, IUnknownVPtr, IClassFactoryVPtr, IUnknown
 };
 use interface::icat_class::{
-    ICatClass, ICatClassMethods, ICatClassVTable, IID_ICAT_CLASS, ICatClassVPtr
+    ICatClass, ICatClassVTable, IID_ICAT_CLASS, ICatClassVPtr
 };
 
 use winapi::{
@@ -50,7 +50,7 @@ impl IUnknown for BritishShortHairCatClass {
         unsafe {
             let riid = &*riid;
             if IsEqualGUID(riid, &IID_IUNKNOWN)
-                || IsEqualGUID(riid, &IID_ICLASS_FACTORY)
+                || IsEqualGUID(riid, &IID_ICLASSFACTORY)
                 || IsEqualGUID(riid, &IID_ICAT_CLASS)
             {
                 *ppv = self as *const _ as *mut c_void;
@@ -127,21 +127,21 @@ unsafe extern "stdcall" fn lock_server(this: *mut IClassFactoryVPtr, increment: 
 impl BritishShortHairCatClass {
     pub(crate) fn new() -> BritishShortHairCatClass {
         println!("Allocating new Vtable for CatClass...");
-        let iunknown = IUnknownMethods {
+        let iunknown = IUnknownVTable {
             QueryInterface: query_interface,
             Release: release,
             AddRef: add_ref,
         };
-        let iclassfactory = IClassFactoryMethods {
+        let iclassfactory = IClassFactoryVTable {
+            base: iunknown,
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
-        let icatclass = ICatClassMethods {};
-        let vptr = Box::into_raw(Box::new(ICatClassVTable(
-            iunknown,
-            iclassfactory,
-            icatclass,
-        )));
+        let icatclass = ICatClassVTable {
+            base: iclassfactory,
+        };
+        let vptr = Box::into_raw(Box::new(icatclass));
+
         BritishShortHairCatClass {
             inner: vptr,
             ref_count: 0,

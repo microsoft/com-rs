@@ -1,6 +1,6 @@
-use com::{IUnknownMethods, IUnknownVTable, IUnknown, IUnknownVPtr, IID_IUNKNOWN, ComPtr,};
+use com::{IUnknownVTable, IUnknown, IUnknownVPtr, IID_IUNKNOWN, ComPtr,};
 use interface::ilocalfilemanager::{
-    ILocalFileManager, ILocalFileManagerMethods, ILocalFileManagerVTable, ILocalFileManagerVPtr,
+    ILocalFileManager, ILocalFileManagerVTable, ILocalFileManagerVPtr,
     IID_ILOCAL_FILE_MANAGER,
 };
 
@@ -142,28 +142,26 @@ impl LocalFileManager {
         println!("Allocating new Vtable...");
 
         // Initialising the non-delegating IUnknown
-        let non_del_iunknown = IUnknownMethods {
+        let non_del_iunknown = IUnknownVTable {
             QueryInterface: non_delegating_ilocalfilemanager_query_interface,
             Release: non_delegating_ilocalfilemanager_release,
             AddRef: non_delegating_ilocalfilemanager_add_ref,
         };
 
-        let non_del_unknown_vptr = Box::into_raw(Box::new(IUnknownVTable(non_del_iunknown)));
+        let non_del_unknown_vptr = Box::into_raw(Box::new(non_del_iunknown));
 
         // Initialising VTable for ILocalFileManager
-        let ilocalfilemanager_iunknown = IUnknownMethods {
+        let ilocalfilemanager_iunknown = IUnknownVTable {
             QueryInterface: ilocalfilemanager_query_interface,
             Release: ilocalfilemanager_release,
             AddRef: ilocalfilemanager_add_ref,
         };
 
-        let ilocalfilemanager = ILocalFileManagerMethods {
+        let ilocalfilemanager = ILocalFileManagerVTable {
+            base: ilocalfilemanager_iunknown,
             DeleteLocal: delete_local,
         };
-        let ilocalfilemanager_vptr = Box::into_raw(Box::new(ILocalFileManagerVTable(
-            ilocalfilemanager_iunknown,
-            ilocalfilemanager,
-        )));
+        let ilocalfilemanager_vptr = Box::into_raw(Box::new(ilocalfilemanager));
 
         LocalFileManager {
             inner_one: ilocalfilemanager_vptr,

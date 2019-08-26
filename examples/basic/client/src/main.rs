@@ -22,7 +22,7 @@ use winapi::{
     },
 };
 
-use com::{failed, ComInterface, ComPtr, IClassFactory, IUnknown, IID_ICLASS_FACTORY};
+use com::{failed, ComInterface, ComPtr, IClassFactory, IUnknown, IID_ICLASSFACTORY};
 use interface::{
     IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS,
     CLSID_LOCAL_FILE_MANAGER_CLASS, ILocalFileManager,
@@ -193,7 +193,7 @@ fn get_class_object(iid: &IID) -> Result<ComPtr<IClassFactory>, HRESULT> {
             iid as REFCLSID,
             CLSCTX_INPROC_SERVER,
             std::ptr::null_mut::<c_void>(),
-            &IID_ICLASS_FACTORY as REFIID,
+            &IID_ICLASSFACTORY as REFIID,
             &mut class_factory as *mut LPVOID,
         )
     };

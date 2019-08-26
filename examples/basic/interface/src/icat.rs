@@ -1,5 +1,5 @@
-use super::ianimal::{IAnimalMethods, IAnimal};
-use com::{ComInterface, ComPtr, IUnknownMethods, IUnknown};
+use super::ianimal::{IAnimal};
+use com::{ComInterface, ComPtr, IUnknown};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
@@ -15,6 +15,7 @@ pub trait ICat: IAnimal {
 }
 
 unsafe impl ComInterface for ICat {
+    type VTable = ICatVTable;
     const IID: IID = IID_ICAT;
 }
 
@@ -23,15 +24,13 @@ pub type ICatVPtr = *const ICatVTable;
 impl <T: ICat + ComInterface + ?Sized> ICat for ComPtr<T> {
     fn ignore_humans(&mut self) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ICatVPtr;
-        unsafe { ((**itf_ptr).2.IgnoreHumans)(itf_ptr) }
+        unsafe { ((**itf_ptr).IgnoreHumans)(itf_ptr) }
     }
 }
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct ICatMethods {
+pub struct ICatVTable {
+    pub base: <IAnimal as ComInterface>::VTable,
     pub IgnoreHumans: unsafe extern "stdcall" fn(*mut ICatVPtr) -> HRESULT,
 }
-
-#[repr(C)]
-pub struct ICatVTable(pub IUnknownMethods, pub IAnimalMethods, pub ICatMethods);

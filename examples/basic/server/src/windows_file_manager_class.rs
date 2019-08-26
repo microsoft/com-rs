@@ -1,7 +1,7 @@
 use crate::WindowsFileManager;
 use com::{
-    failed, IClassFactory, IClassFactoryMethods, IClassFactoryVTable, IUnknownMethods,
-    IClassFactoryVPtr, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN, IUnknown, ComPtr,
+    failed, IClassFactory, IClassFactoryVTable, IUnknownVTable,
+    IClassFactoryVPtr, IUnknownVPtr, IID_ICLASSFACTORY, IID_IUNKNOWN, IUnknown, ComPtr,
 };
 use interface::CLSID_LOCAL_FILE_MANAGER_CLASS;
 
@@ -79,7 +79,7 @@ impl IUnknown for WindowsFileManagerClass {
             println!("Querying interface on CatClass...");
 
             let riid_ref = &*riid;
-            if IsEqualGUID(riid_ref, &IID_IUNKNOWN) | IsEqualGUID(riid_ref, &IID_ICLASS_FACTORY) {
+            if IsEqualGUID(riid_ref, &IID_IUNKNOWN) | IsEqualGUID(riid_ref, &IID_ICLASSFACTORY) {
                 *ppv = self as *const _ as *mut c_void;
                 self.add_ref();
                 NOERROR
@@ -145,16 +145,17 @@ unsafe extern "stdcall" fn lock_server(this: *mut IClassFactoryVPtr, increment: 
 impl WindowsFileManagerClass {
     pub(crate) fn new() -> WindowsFileManagerClass {
         println!("Allocating new Vtable for WindowsFileManagerClass...");
-        let iunknown = IUnknownMethods {
+        let iunknown = IUnknownVTable {
             QueryInterface: query_interface,
             Release: release,
             AddRef: add_ref,
         };
-        let iclassfactory = IClassFactoryMethods {
+        let iclassfactory = IClassFactoryVTable {
+            base: iunknown,
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
-        let vptr = Box::into_raw(Box::new(IClassFactoryVTable(iunknown, iclassfactory)));
+        let vptr = Box::into_raw(Box::new(iclassfactory));
         WindowsFileManagerClass {
             inner: vptr,
             ref_count: 0,

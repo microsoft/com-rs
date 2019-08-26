@@ -1,4 +1,4 @@
-use com::{ComInterface, ComPtr, IUnknownMethods, IUnknown,};
+use com::{ComInterface, ComPtr, IUnknown,};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
@@ -14,6 +14,7 @@ pub trait IFileManager: IUnknown {
 }
 
 unsafe impl ComInterface for IFileManager {
+    type VTable = IFileManagerVTable;
     const IID: IID = IID_IFILE_MANAGER;
 }
 
@@ -22,14 +23,13 @@ pub type IFileManagerVPtr = *const IFileManagerVTable;
 impl <T: IFileManager + ComInterface + ?Sized> IFileManager for ComPtr<T> {
     fn delete_all(&mut self) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut IFileManagerVPtr;
-        unsafe { ((**itf_ptr).1.DeleteAll)(itf_ptr) }
+        unsafe { ((**itf_ptr).DeleteAll)(itf_ptr) }
     }
 }
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct IFileManagerMethods {
+pub struct IFileManagerVTable {
+    pub base: <IUnknown as ComInterface>::VTable,
     pub DeleteAll: unsafe extern "stdcall" fn(*mut IFileManagerVPtr) -> HRESULT,
 }
-#[repr(C)]
-pub struct IFileManagerVTable(pub IUnknownMethods, pub IFileManagerMethods);

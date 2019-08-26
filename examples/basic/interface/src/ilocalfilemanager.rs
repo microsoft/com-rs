@@ -1,4 +1,4 @@
-use com::{ComInterface, ComPtr, IUnknownMethods, IUnknown,};
+use com::{ComInterface, ComPtr, IUnknown,};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
@@ -14,6 +14,7 @@ pub trait ILocalFileManager: IUnknown {
 }
 
 unsafe impl ComInterface for ILocalFileManager {
+    type VTable = ILocalFileManagerVTable;
     const IID: IID = IID_ILOCAL_FILE_MANAGER;
 }
 
@@ -22,14 +23,12 @@ pub type ILocalFileManagerVPtr = *const ILocalFileManagerVTable;
 impl <T: ILocalFileManager + ComInterface + ?Sized> ILocalFileManager for ComPtr<T> {
     fn delete_local(&mut self) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ILocalFileManagerVPtr;
-        unsafe { ((**itf_ptr).1.DeleteLocal)(itf_ptr) }
+        unsafe { ((**itf_ptr).DeleteLocal)(itf_ptr) }
     }
 }
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct ILocalFileManagerMethods {
+pub struct ILocalFileManagerVTable {
+    pub base: <IUnknown as ComInterface>::VTable,
     pub DeleteLocal: unsafe extern "stdcall" fn(*mut ILocalFileManagerVPtr) -> HRESULT,
 }
-
-#[repr(C)]
-pub struct ILocalFileManagerVTable(pub IUnknownMethods, pub ILocalFileManagerMethods);

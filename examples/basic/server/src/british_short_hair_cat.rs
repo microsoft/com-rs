@@ -1,9 +1,9 @@
-use com::{IUnknownMethods, IUnknownVPtr, IID_IUNKNOWN, IUnknown};
+use com::{IUnknownVPtr, IID_IUNKNOWN, IUnknown, IUnknownVTable,};
 use interface::{
-    ianimal::{IAnimal, IAnimalMethods, IAnimalVPtr, IID_IANIMAL},
-    icat::{ICat, ICatMethods, ICatVTable, ICatVPtr, IID_ICAT},
+    ianimal::{IAnimal, IAnimalVPtr, IID_IANIMAL, IAnimalVTable,},
+    icat::{ICat, ICatVTable, ICatVPtr, IID_ICAT},
     idomesticanimal::{
-        IDomesticAnimal, IDomesticAnimalMethods, IDomesticAnimalVTable, IDomesticAnimalVPtr,
+        IDomesticAnimal, IDomesticAnimalVTable, IDomesticAnimalVPtr,
         IID_IDOMESTIC_ANIMAL,
     },
 };
@@ -208,60 +208,44 @@ impl BritishShortHairCat {
         println!("Allocating new Vtable...");
 
         /* Initialising VTable for ICat */
-        let icat_iunknown = IUnknownMethods {
+        let icat_iunknown = IUnknownVTable {
             QueryInterface: icat_query_interface,
             Release: icat_release,
             AddRef: icat_add_ref,
         };
-        let icat_ianimal = IAnimalMethods { Eat: icat_eat };
+        let icat_ianimal = IAnimalVTable {
+            base: icat_iunknown,
+            Eat: icat_eat
+        };
 
-        let icat = ICatMethods {
+        let icat = ICatVTable {
+            base:icat_ianimal,
             IgnoreHumans: icat_ignore_humans,
         };
-        let icat_vptr = Box::into_raw(Box::new(ICatVTable(icat_iunknown, icat_ianimal, icat)));
-        // let icat_vtable = Box::into_raw(Box::new(ICatVTable(icat_iunknown, icat_ianimal, icat)));
-        // println!("ICat VTable address: {:p}", icat_vtable);
-        // let icat_inner = ICatVPtr {
-        //     vtable: icat_vtable,
-        // };
+        let icat_vptr = Box::into_raw(Box::new(icat));
 
         /* Initialising VTable for IDomesticAnimal */
-        /* Initialising VTable for ICat */
-        let idomesticanimal_iunknown = IUnknownMethods {
+        let idomesticanimal_iunknown = IUnknownVTable {
             QueryInterface: idomesticanimal_query_interface,
             Release: idomesticanimal_release,
             AddRef: idomesticanimal_add_ref,
         };
-        let idomesticanimal_ianimal = IAnimalMethods { Eat: idomesticanimal_eat };
+        let idomesticanimal_ianimal = IAnimalVTable {
+            base: idomesticanimal_iunknown,
+            Eat: idomesticanimal_eat
+        };
 
-        let idomesticanimal = IDomesticAnimalMethods { Train: idomesticanimal_train };
-        let idomesticanimal_vptr = Box::into_raw(Box::new(IDomesticAnimalVTable(
-            idomesticanimal_iunknown,
-            idomesticanimal_ianimal,
-            idomesticanimal,
-        )));
-        // let idomesticanimal_vtable = Box::into_raw(Box::new(IDomesticAnimalVTable(
-        //     idomesticanimal_iunknown,
-        //     idomesticanimal_ianimal,
-        //     idomesticanimal,
-        // )));
-        // let idomesticanimal_inner = IDomesticAnimalVPtr {
-        //     vtable: idomesticanimal_vtable,
-        // };
+        let idomesticanimal = IDomesticAnimalVTable {
+            base: idomesticanimal_ianimal,
+            Train: idomesticanimal_train,
+        };
 
-        let out = BritishShortHairCat {
+        let idomesticanimal_vptr = Box::into_raw(Box::new(idomesticanimal));
+
+        BritishShortHairCat {
             inner_one: icat_vptr,
             inner_two: idomesticanimal_vptr,
             ref_count: 0,
-        };
-        // let out = BritishShortHairCat {
-        //     inner_one: ICat { inner: icat_inner },
-        //     inner_two: IDomesticAnimal {
-        //         inner: idomesticanimal_inner,
-        //     },
-        //     ref_count: 0,
-        // };
-
-        out
+        }
     }
 }

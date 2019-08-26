@@ -1,7 +1,7 @@
-use com::{failed, IUnknownMethods, IUnknownVPtr, IID_IUNKNOWN, ComPtr, IUnknown, };
+use com::{failed, IUnknownVPtr, IID_IUNKNOWN, ComPtr, IUnknown, IUnknownVTable};
 use interface::{
     ifilemanager::{
-        IFileManager, IFileManagerMethods, IFileManagerVTable, IFileManagerVPtr, IID_IFILE_MANAGER,
+        IFileManager, IFileManagerVTable, IFileManagerVPtr, IID_IFILE_MANAGER,
     },
     ilocalfilemanager::IID_ILOCAL_FILE_MANAGER,
 };
@@ -122,19 +122,17 @@ impl WindowsFileManager {
         println!("Allocating new Vtable...");
 
         // Initialising VTable for IFileManager
-        let ifilemanager_iunknown = IUnknownMethods {
+        let ifilemanager_iunknown = IUnknownVTable {
             QueryInterface: ifilemanager_query_interface,
             Release: ifilemanager_release,
             AddRef: ifilemanager_add_ref,
         };
 
-        let ifilemanager = IFileManagerMethods {
+        let ifilemanager = IFileManagerVTable {
+            base: ifilemanager_iunknown,
             DeleteAll: delete_all,
         };
-        let ifilemanager_vptr = Box::into_raw(Box::new(IFileManagerVTable(
-            ifilemanager_iunknown,
-            ifilemanager,
-        )));
+        let ifilemanager_vptr = Box::into_raw(Box::new(ifilemanager));
 
         let out = WindowsFileManager {
             inner_one: ifilemanager_vptr,

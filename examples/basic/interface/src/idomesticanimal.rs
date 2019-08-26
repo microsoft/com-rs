@@ -1,5 +1,5 @@
-use super::ianimal::{IAnimalMethods, IAnimal,};
-use com::{ComInterface, ComPtr, IUnknownMethods, IUnknown,};
+use super::ianimal::{IAnimal,};
+use com::{ComInterface, ComPtr, IUnknown,};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
@@ -15,6 +15,7 @@ pub trait IDomesticAnimal: IAnimal {
 }
 
 unsafe impl ComInterface for IDomesticAnimal {
+    type VTable = IDomesticAnimalVTable;
     const IID: IID = IID_IDOMESTIC_ANIMAL;
 }
 
@@ -23,19 +24,13 @@ pub type IDomesticAnimalVPtr = *const IDomesticAnimalVTable;
 impl <T: IDomesticAnimal + ComInterface + ?Sized> IDomesticAnimal for ComPtr<T> {
     fn train(&mut self) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut IDomesticAnimalVPtr;
-        unsafe { ((**itf_ptr).2.Train)(itf_ptr) }
+        unsafe { ((**itf_ptr).Train)(itf_ptr) }
     }
 }
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct IDomesticAnimalMethods {
+pub struct IDomesticAnimalVTable {
+    pub base: <IAnimal as ComInterface>::VTable,
     pub Train: unsafe extern "stdcall" fn(*mut IDomesticAnimalVPtr) -> HRESULT,
 }
-
-#[repr(C)]
-pub struct IDomesticAnimalVTable(
-    pub IUnknownMethods,
-    pub IAnimalMethods,
-    pub IDomesticAnimalMethods,
-);

@@ -1,7 +1,7 @@
 // An issue with having T be Human is that I am never
 // actually possessing the entire Human struct, just
 // an interface pointer.
-use crate::{ComInterface, failed};
+use crate::{failed, ComInterface};
 
 use std::ptr::NonNull;
 
@@ -32,12 +32,17 @@ impl<T: ComInterface + ?Sized> ComPtr<T> {
     }
 
     fn cast_and_add_ref(&mut self) {
-        unsafe { (*(self as *const _ as *mut ComPtr<IUnknown>)).add_ref(); }
+        unsafe {
+            (*(self as *const _ as *mut ComPtr<IUnknown>)).add_ref();
+        }
     }
 
     pub fn get_interface<S: ComInterface + ?Sized>(&mut self) -> Option<ComPtr<S>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
-        let hr = unsafe { (*(self as *const _ as *mut ComPtr<IUnknown>)).query_interface(&S::IID as *const IID, &mut ppv) };
+        let hr = unsafe {
+            (*(self as *const _ as *mut ComPtr<IUnknown>))
+                .query_interface(&S::IID as *const IID, &mut ppv)
+        };
         if failed(hr) {
             assert!(hr == E_NOINTERFACE);
             return None;
@@ -59,7 +64,7 @@ impl<T: ComInterface> Clone for ComPtr<T> {
     fn clone(&self) -> Self {
         let mut new_ptr = ComPtr {
             ptr: self.ptr,
-            phantom: PhantomData
+            phantom: PhantomData,
         };
         new_ptr.cast_and_add_ref();
         new_ptr
