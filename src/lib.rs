@@ -1,8 +1,10 @@
+mod comoutptr;
 mod comptr;
 mod iclassfactory;
 mod inproc;
 mod iunknown;
 
+pub use comoutptr::ComOutPtr;
 pub use comptr::ComPtr;
 pub use iclassfactory::{IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IID_ICLASSFACTORY};
 pub use inproc::*;

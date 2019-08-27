@@ -1,6 +1,3 @@
-// An issue with having T be Human is that I am never
-// actually possessing the entire Human struct, just
-// an interface pointer.
 use crate::{failed, ComInterface};
 
 use std::ptr::NonNull;
