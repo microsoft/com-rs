@@ -5,11 +5,8 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 
 type HelperTokenStream = proc_macro2::TokenStream;
-use quote::{quote, ToTokens, format_ident,};
-use syn::{
-    FnArg, Type, TypeParamBound,
-    TraitItem, ItemTrait, TraitItemMethod, LitInt,
-};
+use quote::{format_ident, quote, ToTokens};
+use syn::{FnArg, ItemTrait, LitInt, TraitItem, TraitItemMethod, Type, TypeParamBound};
 
 use std::iter::FromIterator;
 
@@ -20,7 +17,7 @@ pub fn com_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
     println!("Macro expansion start for item: \n\n{}", item);
     let input = syn::parse_macro_input!(item as syn::ItemTrait);
 
-    let mut out : Vec::<TokenStream> = Vec::new();
+    let mut out: Vec<TokenStream> = Vec::new();
     out.push(input.to_token_stream().into());
     out.push(gen_vtable(&input).into());
     out.push(gen_vptr_type(&input).into());
@@ -50,7 +47,7 @@ fn get_vptr_ident(trait_ident: &Ident) -> Ident {
 fn snake_to_camel(input: String) -> String {
     let mut new = String::new();
 
-    let tokens : Vec<&str> = input.split('_').collect();
+    let tokens: Vec<&str> = input.split('_').collect();
     for token in &tokens {
         let mut chars = token.chars();
         let title_string = match chars.next() {
@@ -146,7 +143,6 @@ fn gen_vptr_type(itf: &ItemTrait) -> HelperTokenStream {
 // pub struct IUnknownVTable.
 
 fn gen_vtable(itf: &ItemTrait) -> HelperTokenStream {
-
     let trait_ident = &itf.ident;
     let vtable_ident = get_vtable_ident(&itf.ident);
 
@@ -167,7 +163,7 @@ fn gen_vtable(itf: &ItemTrait) -> HelperTokenStream {
 
         let base_trait_ident = match itf.supertraits.first().unwrap() {
             TypeParamBound::Trait(t) => t.path.get_ident().unwrap(),
-            _ => panic!("Unhandled super trait typeparambound")
+            _ => panic!("Unhandled super trait typeparambound"),
         };
 
         quote!(
@@ -179,11 +175,10 @@ fn gen_vtable(itf: &ItemTrait) -> HelperTokenStream {
             }
         )
     }
-
 }
 
 fn gen_vtable_methods(itf: &ItemTrait) -> HelperTokenStream {
-    let mut methods : Vec::<HelperTokenStream> = Vec::new();
+    let mut methods: Vec<HelperTokenStream> = Vec::new();
     for trait_item in &itf.items {
         match trait_item {
             TraitItem::Method(n) => methods.push(gen_vtable_method(&itf.ident, n)),
@@ -217,11 +212,11 @@ fn gen_raw_params(trait_ident: &Ident, method: &TraitItemMethod) -> HelperTokenS
                 params.push(quote!(
                     *mut #vptr_ident,
                 ));
-            },
+            }
             FnArg::Typed(t) => {
                 params.push(gen_raw_type(&*t.ty));
-            },
-        }   
+            }
+        }
     }
 
     HelperTokenStream::from_iter(params)
@@ -240,10 +235,8 @@ fn gen_raw_type(t: &Type) -> HelperTokenStream {
         Type::Path(n) => {
             println!("Path found: {}", n.to_token_stream().to_string());
             quote!(#t,)
-        },
-        Type::Ptr(_n) => {
-            quote!(#t,)
-        },
+        }
+        Type::Ptr(_n) => quote!(#t,),
         Type::Reference(_n) => panic!("Reference type unhandled!"),
         Type::Slice(_n) => panic!("Slice type unhandled!"),
         Type::TraitObject(_n) => panic!("TraitObject type unhandled!"),
@@ -255,13 +248,13 @@ fn gen_raw_type(t: &Type) -> HelperTokenStream {
 
 fn gen_comptr_impl(itf: &ItemTrait) -> HelperTokenStream {
     let trait_ident = &itf.ident;
-    let mut impl_methods : Vec::<HelperTokenStream> = Vec::new();
-    
+    let mut impl_methods: Vec<HelperTokenStream> = Vec::new();
+
     for trait_item in &itf.items {
         match trait_item {
             TraitItem::Method(n) => {
                 impl_methods.push(gen_comptr_impl_method(&itf.ident, n));
-            },
+            }
             _ => println!("Ignored trait item for comptr_impl"),
         }
     }
