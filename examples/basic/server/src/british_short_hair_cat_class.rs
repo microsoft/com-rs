@@ -4,7 +4,7 @@ use com::{
     IID_IUNKNOWN, IClassFactory, IUnknownVPtr, IClassFactoryVPtr, IUnknown
 };
 use interface::icat_class::{
-    ICatClass, ICatClassVTable, IID_ICAT_CLASS, ICatClassVPtr
+    ICatClassVTable, IID_ICAT_CLASS, ICatClassVPtr
 };
 
 use winapi::{
@@ -33,12 +33,12 @@ impl IClassFactory for BritishShortHairCatClass {
         cat.add_ref();
         let hr = cat.query_interface(riid, ppv);
         cat.release();
-        let ptr = Box::into_raw(cat);
+        Box::into_raw(cat);
 
         hr
     }
 
-    fn lock_server(&mut self, increment: BOOL) -> HRESULT {
+    fn lock_server(&mut self, _increment: BOOL) -> HRESULT {
         println!("LockServer called");
         S_OK
     }

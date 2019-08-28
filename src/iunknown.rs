@@ -30,13 +30,13 @@ macro_rules! iunknown_gen_vtable {
             let this = this.sub($offset) as *mut $type;
             (*this).release()
         }
-        
+
         IUnknownVTable {
             QueryInterface: iunknown_query_interface,
             Release: iunknown_release,
             AddRef: iunknown_add_ref,
         }
-    }}
+    }};
 }
 
 // --------------- DESIRED EXPANSION --------------

@@ -1,7 +1,7 @@
 use crate::WindowsFileManager;
 use com::{
     failed, IClassFactory, IClassFactoryVTable, IUnknownVTable,
-    IClassFactoryVPtr, IUnknownVPtr, IID_ICLASSFACTORY, IID_IUNKNOWN, IUnknown, ComPtr,
+    IClassFactoryVPtr, IUnknownVPtr, IID_ICLASSFACTORY, IID_IUNKNOWN, IUnknown,
 };
 use interface::CLSID_LOCAL_FILE_MANAGER_CLASS;
 
@@ -66,7 +66,7 @@ impl IClassFactory for WindowsFileManagerClass {
         }
     }
 
-    fn lock_server(&mut self, increment: BOOL) -> HRESULT {
+    fn lock_server(&mut self, _increment: BOOL) -> HRESULT {
         println!("LockServer called");
         S_OK
     }

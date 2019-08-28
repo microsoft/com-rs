@@ -1,9 +1,7 @@
 use super::ianimal::{IAnimal,};
-use com::{ComInterface, ComPtr, IUnknown,};
+use com::{ComInterface, ComPtr,};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
-
-use super::*;
 
 pub const IID_IDOMESTIC_ANIMAL: IID = IID {
     Data1: 0xc22425df,

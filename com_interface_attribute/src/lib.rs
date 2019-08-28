@@ -8,9 +8,7 @@ type HelperTokenStream = proc_macro2::TokenStream;
 use quote::{quote, ToTokens, format_ident,};
 use syn::{
     FnArg, Type, TypeParamBound,
-    TraitItem, PatType, Token,
-    parse_macro_input, DeriveInput, ItemTrait, TraitItemMethod,
-    TypeMacro, TypeNever, LitInt,
+    TraitItem, ItemTrait, TraitItemMethod, LitInt,
 };
 
 use std::iter::FromIterator;
@@ -215,7 +213,7 @@ fn gen_raw_params(trait_ident: &Ident, method: &TraitItemMethod) -> HelperTokenS
     let vptr_ident = get_vptr_ident(trait_ident);
     for param in method.sig.inputs.iter() {
         match param {
-            FnArg::Receiver(n) => {
+            FnArg::Receiver(_n) => {
                 params.push(quote!(
                     *mut #vptr_ident,
                 ));
@@ -231,27 +229,26 @@ fn gen_raw_params(trait_ident: &Ident, method: &TraitItemMethod) -> HelperTokenS
 
 fn gen_raw_type(t: &Type) -> HelperTokenStream {
     match t {
-        Type::Array(n) => panic!("Array type unhandled!"),
-        Type::BareFn(n) => panic!("BareFn type unhandled!"),
-        Type::Group(n) => panic!("Group type unhandled!"),
-        Type::ImplTrait(n) => panic!("ImplTrait type unhandled!"),
-        Type::Infer(n) => panic!("Infer type unhandled!"),
-        Type::Macro(n) => panic!("TypeMacro type unhandled!"),
-        Type::Never(n) => panic!("TypeNever type unhandled!"),
-        Type::Paren(n) => panic!("Paren type unhandled!"),
+        Type::Array(_n) => panic!("Array type unhandled!"),
+        Type::BareFn(_n) => panic!("BareFn type unhandled!"),
+        Type::Group(_n) => panic!("Group type unhandled!"),
+        Type::ImplTrait(_n) => panic!("ImplTrait type unhandled!"),
+        Type::Infer(_n) => panic!("Infer type unhandled!"),
+        Type::Macro(_n) => panic!("TypeMacro type unhandled!"),
+        Type::Never(_n) => panic!("TypeNever type unhandled!"),
+        Type::Paren(_n) => panic!("Paren type unhandled!"),
         Type::Path(n) => {
             println!("Path found: {}", n.to_token_stream().to_string());
             quote!(#t,)
         },
-        Type::Ptr(n) => {
-            let inner_type = gen_raw_type(&*n.elem);
+        Type::Ptr(_n) => {
             quote!(#t,)
         },
-        Type::Reference(n) => panic!("Reference type unhandled!"),
-        Type::Slice(n) => panic!("Slice type unhandled!"),
-        Type::TraitObject(n) => panic!("TraitObject type unhandled!"),
-        Type::Tuple(n) => panic!("Tuple type unhandled!"),
-        Type::Verbatim(n) => panic!("Verbatim type unhandled!"),
+        Type::Reference(_n) => panic!("Reference type unhandled!"),
+        Type::Slice(_n) => panic!("Slice type unhandled!"),
+        Type::TraitObject(_n) => panic!("TraitObject type unhandled!"),
+        Type::Tuple(_n) => panic!("Tuple type unhandled!"),
+        Type::Verbatim(_n) => panic!("Verbatim type unhandled!"),
         _ => panic!("Rest unhandled!"),
     }
 }
@@ -285,7 +282,7 @@ fn gen_comptr_impl_method(trait_ident: &Ident, method: &TraitItemMethod) -> Help
     let mut params = Vec::new();
     for param in method.sig.inputs.iter() {
         match param {
-            FnArg::Receiver(n) => params.push(quote!(#itf_ptr_ident)),
+            FnArg::Receiver(_n) => params.push(quote!(#itf_ptr_ident)),
             // TODO: This may go wrong, I am using everything on the LHS.
             FnArg::Typed(n) => params.push(n.pat.to_token_stream()),
         }

@@ -72,7 +72,7 @@ impl IClassFactory for LocalFileManagerClass {
         }
     }
 
-    fn lock_server(&mut self, increment: BOOL) -> HRESULT {
+    fn lock_server(&mut self, _increment: BOOL) -> HRESULT {
         println!("LockServer called");
         S_OK
     }

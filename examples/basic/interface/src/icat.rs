@@ -1,6 +1,5 @@
 use super::ianimal::{IAnimal};
-use com::{ComInterface, ComPtr, IUnknown};
-use super::*;
+use com::{ComInterface, ComPtr};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 

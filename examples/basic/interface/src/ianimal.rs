@@ -2,8 +2,6 @@ use winapi::shared::guiddef::IID;
 use com::{ComInterface, ComPtr, IUnknown};
 use winapi::um::winnt::HRESULT;
 
-use super::*;
-
 pub const IID_IANIMAL: IID = IID {
     Data1: 0xeff8970e,
     Data2: 0xc50f,

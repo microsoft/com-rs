@@ -17,7 +17,7 @@ use winapi::{
 };
 
 use std::convert::TryInto;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 
 pub struct RegistryKeyInfo {
     key_path: CString,
@@ -134,13 +134,13 @@ fn remove_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
 
 pub fn get_dll_file_path() -> String {
     unsafe {
-        let MAX_FILE_PATH_LENGTH = 260;
+        let max_file_path_length = 260;
         let h_module = GetModuleHandleA(CString::new("server.dll").unwrap().as_ptr());
-        let raw_ptr = CString::new(Vec::with_capacity(MAX_FILE_PATH_LENGTH))
+        let raw_ptr = CString::new(Vec::with_capacity(max_file_path_length))
             .expect("Failed to create empty string!")
             .into_raw();
 
-        GetModuleFileNameA(h_module, raw_ptr, MAX_FILE_PATH_LENGTH.try_into().unwrap());
+        GetModuleFileNameA(h_module, raw_ptr, max_file_path_length.try_into().unwrap());
 
         CString::from_raw(raw_ptr).into_string().unwrap()
     }

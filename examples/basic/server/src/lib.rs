@@ -1,8 +1,7 @@
 use com::{
     class_inproc_key_path, class_key_path, failed, get_dll_file_path, register_keys,
-    unregister_keys, IUnknownVPtr, RegistryKeyInfo, IUnknown
+    unregister_keys, RegistryKeyInfo, IUnknown
 };
-use std::ffi::{CStr, CString};
 use winapi::shared::{
     guiddef::{IsEqualGUID, REFCLSID, REFIID},
     minwindef::LPVOID,
