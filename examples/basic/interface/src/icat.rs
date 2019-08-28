@@ -1,5 +1,6 @@
 use super::ianimal::{IAnimal};
 use com::{ComInterface, ComPtr, IUnknown};
+use super::*;
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
@@ -33,4 +34,21 @@ impl <T: ICat + ComInterface + ?Sized> ICat for ComPtr<T> {
 pub struct ICatVTable {
     pub base: <IAnimal as ComInterface>::VTable,
     pub IgnoreHumans: unsafe extern "stdcall" fn(*mut ICatVPtr) -> HRESULT,
+}
+
+#[macro_export]
+macro_rules! icat_gen_vtable {
+    ($type:ty, $offset:literal) => {{
+        let ianimal_vtable = ianimal_gen_vtable!($type, $offset);
+
+        unsafe extern "stdcall" fn icat_ignore_humans(this: *mut ICatVPtr) -> HRESULT {
+            let this = this.sub($offset) as *mut $type;
+            (*this).ignore_humans()
+        }
+        
+        ICatVTable {
+            base: ianimal_vtable,
+            IgnoreHumans: icat_ignore_humans,
+        }
+    }}
 }

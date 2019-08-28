@@ -3,6 +3,8 @@ use com::{ComInterface, ComPtr, IUnknown,};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
+use super::*;
+
 pub const IID_IDOMESTIC_ANIMAL: IID = IID {
     Data1: 0xc22425df,
     Data2: 0xefb2,
@@ -33,4 +35,21 @@ impl <T: IDomesticAnimal + ComInterface + ?Sized> IDomesticAnimal for ComPtr<T> 
 pub struct IDomesticAnimalVTable {
     pub base: <IAnimal as ComInterface>::VTable,
     pub Train: unsafe extern "stdcall" fn(*mut IDomesticAnimalVPtr) -> HRESULT,
+}
+
+#[macro_export]
+macro_rules! idomesticanimal_gen_vtable {
+    ($type:ty, $offset:literal) => {{
+        let ianimal_vtable = ianimal_gen_vtable!($type, $offset);
+
+        unsafe extern "stdcall" fn idomesticanimal_train(this: *mut IDomesticAnimalVPtr) -> HRESULT {
+            let this = this.sub($offset) as *mut $type;
+            (*this).train()
+        }
+        
+        IDomesticAnimalVTable {
+            base: ianimal_vtable,
+            Train: idomesticanimal_train,
+        }
+    }}
 }

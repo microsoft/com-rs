@@ -2,6 +2,8 @@ use winapi::shared::guiddef::IID;
 use com::{ComInterface, ComPtr, IUnknown};
 use winapi::um::winnt::HRESULT;
 
+use super::*;
+
 pub const IID_IANIMAL: IID = IID {
     Data1: 0xeff8970e,
     Data2: 0xc50f,
@@ -32,4 +34,21 @@ impl <T: IAnimal + ComInterface + ?Sized> IAnimal for ComPtr<T> {
 pub struct IAnimalVTable {
     pub base: <IUnknown as ComInterface>::VTable,
     pub Eat: unsafe extern "stdcall" fn(*mut IAnimalVPtr) -> HRESULT,
+}
+
+#[macro_export]
+macro_rules! ianimal_gen_vtable {
+    ($type:ty, $offset:literal) => {{
+        let iunknown_vtable = iunknown_gen_vtable!($type, $offset);
+
+        unsafe extern "stdcall" fn ianimal_eat(this: *mut IAnimalVPtr) -> HRESULT {
+            let this = this.sub($offset) as *mut $type;
+            (*this).eat()
+        }
+        
+        IAnimalVTable {
+            base: iunknown_vtable,
+            Eat: ianimal_eat,
+        }
+    }}
 }
