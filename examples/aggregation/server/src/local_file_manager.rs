@@ -12,7 +12,6 @@ use winapi::{
 };
 
 use core::mem::forget;
-use std::ptr::NonNull;
 
 /// The implementation class
 #[repr(C)]
@@ -85,7 +84,7 @@ unsafe extern "stdcall" fn ilocalfilemanager_query_interface(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     let lfm = this as *mut LocalFileManager;
-    let mut iunk_to_use: ComPtr<IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
+    let mut iunk_to_use: ComPtr<dyn IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
     let hr = iunk_to_use.query_interface(riid, ppv);
     forget(iunk_to_use);
 
@@ -94,7 +93,7 @@ unsafe extern "stdcall" fn ilocalfilemanager_query_interface(
 
 unsafe extern "stdcall" fn ilocalfilemanager_add_ref(this: *mut IUnknownVPtr) -> u32 {
     let lfm = this as *mut LocalFileManager;
-    let mut iunk_to_use: ComPtr<IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
+    let mut iunk_to_use: ComPtr<dyn IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
     let hr = iunk_to_use.add_ref();
     forget(iunk_to_use);
 
@@ -103,7 +102,7 @@ unsafe extern "stdcall" fn ilocalfilemanager_add_ref(this: *mut IUnknownVPtr) ->
 
 unsafe extern "stdcall" fn ilocalfilemanager_release(this: *mut IUnknownVPtr) -> u32 {
     let lfm = this as *mut LocalFileManager;
-    let mut iunk_to_use: ComPtr<IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
+    let mut iunk_to_use: ComPtr<dyn IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
     let hr = iunk_to_use.release();
     forget(iunk_to_use);
 

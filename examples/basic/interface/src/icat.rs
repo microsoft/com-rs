@@ -14,7 +14,7 @@ pub trait ICat: IAnimal {
     fn ignore_humans(&mut self) -> HRESULT;
 }
 
-unsafe impl ComInterface for ICat {
+unsafe impl ComInterface for dyn ICat {
     type VTable = ICatVTable;
     const IID: IID = IID_ICAT;
 }
@@ -31,7 +31,7 @@ impl<T: ICat + ComInterface + ?Sized> ICat for ComPtr<T> {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct ICatVTable {
-    pub base: <IAnimal as ComInterface>::VTable,
+    pub base: <dyn IAnimal as ComInterface>::VTable,
     pub IgnoreHumans: unsafe extern "stdcall" fn(*mut ICatVPtr) -> HRESULT,
 }
 

@@ -11,7 +11,7 @@ pub const IID_ICAT_CLASS: IID = IID {
 
 pub trait ICatClass: IUnknown {}
 
-unsafe impl ComInterface for ICatClass {
+unsafe impl ComInterface for dyn ICatClass {
     type VTable = ICatClassVTable;
     const IID: IID = IID_ICAT_CLASS;
 }
@@ -23,5 +23,5 @@ impl<T: ICatClass + ComInterface + ?Sized> ICatClass for ComPtr<T> {}
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct ICatClassVTable {
-    pub base: <IClassFactory as ComInterface>::VTable,
+    pub base: <dyn IClassFactory as ComInterface>::VTable,
 }

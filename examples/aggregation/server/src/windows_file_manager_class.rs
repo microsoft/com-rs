@@ -1,4 +1,4 @@
-use crate::WindowsFileManager;
+use crate::windows_file_manager::WindowsFileManager;
 use com::{
     failed, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
     IUnknownVTable, IID_ICLASSFACTORY, IID_IUNKNOWN,

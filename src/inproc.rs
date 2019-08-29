@@ -175,10 +175,10 @@ pub fn guid_to_string(guid: &GUID) -> String {
 macro_rules! com_inproc_dll_module {
     (($clsid_one:ident, $classtype_one:ty), $(($clsid:ident, $classtype:ty)),*) => {
         #[no_mangle]
-        extern "stdcall" fn DllGetClassObject(rclsid: winapi::shared::guiddef::REFCLSID, riid: winapi::shared::guiddef::REFIID, ppv: *mut winapi::shared::minwindef::LPVOID) -> winapi::shared::winerror::HRESULT {
+        extern "stdcall" fn DllGetClassObject(rclsid: $crate::_winapi::shared::guiddef::REFCLSID, riid: $crate::_winapi::shared::guiddef::REFIID, ppv: *mut $crate::_winapi::shared::minwindef::LPVOID) -> $crate::_winapi::shared::winerror::HRESULT {
             use com::IUnknown;
             let rclsid = unsafe{ &*rclsid };
-            if winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid_one) {
+            if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid_one) {
                 let mut instance = Box::new(<$classtype_one>::new());
                 instance.add_ref();
                 let hr = instance.query_interface(riid, ppv);
@@ -186,7 +186,7 @@ macro_rules! com_inproc_dll_module {
                 Box::into_raw(instance);
 
                 hr
-            } $(else if winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid) {
+            } $(else if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid) {
                 let mut instance = Box::new(<$classtype>::new());
                 instance.add_ref();
                 let hr = instance.query_interface(riid, ppv);
@@ -195,12 +195,12 @@ macro_rules! com_inproc_dll_module {
 
                 hr
             })* else  {
-                winapi::shared::winerror::CLASS_E_CLASSNOTAVAILABLE
+                $crate::_winapi::shared::winerror::CLASS_E_CLASSNOTAVAILABLE
             }
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllRegisterServer() -> winapi::shared::winerror::HRESULT {
+        extern "stdcall" fn DllRegisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
             let hr = com::register_keys(get_relevant_registry_keys());
             if com::failed(hr) {
                 DllUnregisterServer();
@@ -211,7 +211,7 @@ macro_rules! com_inproc_dll_module {
 
         // Function tries to delete as many registry keys as possible.
         #[no_mangle]
-        extern "stdcall" fn DllUnregisterServer() -> winapi::shared::winerror::HRESULT {
+        extern "stdcall" fn DllUnregisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
             let mut registry_keys_to_remove = get_relevant_registry_keys();
             registry_keys_to_remove.reverse();
             com::unregister_keys(registry_keys_to_remove)
@@ -233,7 +233,7 @@ macro_rules! com_inproc_dll_module {
                     file_path.clone().as_str(),
                 ),
                 $(com::RegistryKeyInfo::new(
-                    class_key_path($clsid).as_str(),
+                    com::class_key_path($clsid).as_str(),
                     "",
                     stringify!($classtype),
                 ),

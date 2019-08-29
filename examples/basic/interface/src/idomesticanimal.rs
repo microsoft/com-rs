@@ -14,7 +14,7 @@ pub trait IDomesticAnimal: IAnimal {
     fn train(&mut self) -> HRESULT;
 }
 
-unsafe impl ComInterface for IDomesticAnimal {
+unsafe impl ComInterface for dyn IDomesticAnimal {
     type VTable = IDomesticAnimalVTable;
     const IID: IID = IID_IDOMESTIC_ANIMAL;
 }
@@ -31,7 +31,7 @@ impl<T: IDomesticAnimal + ComInterface + ?Sized> IDomesticAnimal for ComPtr<T> {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IDomesticAnimalVTable {
-    pub base: <IAnimal as ComInterface>::VTable,
+    pub base: <dyn IAnimal as ComInterface>::VTable,
     pub Train: unsafe extern "stdcall" fn(*mut IDomesticAnimalVPtr) -> HRESULT,
 }
 
