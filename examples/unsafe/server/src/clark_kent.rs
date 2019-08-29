@@ -1,13 +1,13 @@
-use com::{IUnknownMethods, IUnknownVPtr, IID_IUNKNOWN, IUnknown};
-use interface::{
-    isuperman::{ISuperman, ISupermanMethods, ISupermanVTable, ISupermanVPtr, IID_ISUPERMAN},
+use com::{IUnknown, IUnknownMethods, IUnknownVPtr, IID_IUNKNOWN};
+use interface::isuperman::{
+    ISuperman, ISupermanMethods, ISupermanVPtr, ISupermanVTable, IID_ISUPERMAN,
 };
 
 use winapi::{
     ctypes::c_void,
     shared::{
         guiddef::{IsEqualGUID, IID},
-        winerror::{E_NOINTERFACE, HRESULT, NOERROR, E_FAIL, S_OK},
+        winerror::{E_FAIL, E_NOINTERFACE, HRESULT, NOERROR, S_OK},
     },
 };
 
@@ -38,18 +38,22 @@ impl ISuperman for ClarkKent {
 
     fn populate_output(&mut self, out_var: *mut u32) -> HRESULT {
         // let allocated_value = Box::into_raw(Box::new(6));
-        unsafe { *out_var = 6; }
+        unsafe {
+            *out_var = 6;
+        }
 
         S_OK
     }
 
     fn mutate_and_return(&mut self, in_out_var: *mut u32) -> HRESULT {
-        unsafe { *in_out_var = 100; }
+        unsafe {
+            *in_out_var = 100;
+        }
         S_OK
     }
 
     fn take_input_ptr(&mut self, in_ptr_var: *const u32) -> HRESULT {
-        unsafe { 
+        unsafe {
             let in_ptr_var = *in_ptr_var;
             if (in_ptr_var > 5) {
                 return E_FAIL;
@@ -75,7 +79,7 @@ impl IUnknown for ClarkKent {
 
             println!("Successful!.");
             self.add_ref();
-            NOERROR 
+            NOERROR
         }
     }
 
@@ -122,7 +126,7 @@ unsafe extern "stdcall" fn release(this: *mut IUnknownVPtr) -> u32 {
 
 unsafe extern "stdcall" fn take_input(this: *mut ISupermanVPtr, in_var: u32) -> HRESULT {
     let this = this as *mut ClarkKent;
-    (*this).take_input(in_var)    
+    (*this).take_input(in_var)
 }
 
 unsafe extern "stdcall" fn populate_output(this: *mut ISupermanVPtr, out_var: *mut u32) -> HRESULT {
@@ -130,12 +134,18 @@ unsafe extern "stdcall" fn populate_output(this: *mut ISupermanVPtr, out_var: *m
     (*this).populate_output(out_var)
 }
 
-unsafe extern "stdcall" fn mutate_and_return(this: *mut ISupermanVPtr, in_out_var: *mut u32) -> HRESULT {
+unsafe extern "stdcall" fn mutate_and_return(
+    this: *mut ISupermanVPtr,
+    in_out_var: *mut u32,
+) -> HRESULT {
     let this = this as *mut ClarkKent;
     (*this).mutate_and_return(in_out_var)
 }
 
-unsafe extern "stdcall" fn take_input_ptr(this: *mut ISupermanVPtr, in_ptr_var: *const u32) -> HRESULT {
+unsafe extern "stdcall" fn take_input_ptr(
+    this: *mut ISupermanVPtr,
+    in_ptr_var: *const u32,
+) -> HRESULT {
     let this = this as *mut ClarkKent;
     (*this).take_input_ptr(in_ptr_var)
 }

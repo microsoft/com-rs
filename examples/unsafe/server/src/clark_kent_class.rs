@@ -1,7 +1,7 @@
-use crate::clark_kent::{ClarkKent};
+use crate::clark_kent::ClarkKent;
 use com::{
-    IClassFactoryMethods, IUnknownMethods, IID_ICLASS_FACTORY,
-    IID_IUNKNOWN, IClassFactory, IUnknownVPtr, IClassFactoryVPtr, IUnknown, IClassFactoryVTable
+    IClassFactory, IClassFactoryMethods, IClassFactoryVPtr, IClassFactoryVTable, IUnknown,
+    IUnknownMethods, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 
 use winapi::{
@@ -20,7 +20,12 @@ pub struct ClarkKentClass {
 }
 
 impl IClassFactory for ClarkKentClass {
-    fn create_instance(&mut self, aggr: *mut IUnknownVPtr, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT {
+    fn create_instance(
+        &mut self,
+        aggr: *mut IUnknownVPtr,
+        riid: REFIID,
+        ppv: *mut *mut c_void,
+    ) -> HRESULT {
         println!("Creating instance...");
         if !aggr.is_null() {
             return CLASS_E_NOAGGREGATION;
@@ -46,8 +51,7 @@ impl IUnknown for ClarkKentClass {
         /* TODO: This should be the safe wrapper. You shouldn't need to write unsafe code here. */
         unsafe {
             let riid = &*riid;
-            if IsEqualGUID(riid, &IID_IUNKNOWN) || IsEqualGUID(riid, &IID_ICLASS_FACTORY)
-            {
+            if IsEqualGUID(riid, &IID_IUNKNOWN) || IsEqualGUID(riid, &IID_ICLASS_FACTORY) {
                 *ppv = self as *const _ as *mut c_void;
                 self.add_ref();
                 NOERROR
@@ -131,10 +135,7 @@ impl ClarkKentClass {
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
-        let vptr = Box::into_raw(Box::new(IClassFactoryVTable(
-            iunknown,
-            iclassfactory,
-        )));
+        let vptr = Box::into_raw(Box::new(IClassFactoryVTable(iunknown, iclassfactory)));
         ClarkKentClass {
             inner: vptr,
             ref_count: 0,

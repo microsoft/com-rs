@@ -1,28 +1,23 @@
 use com::{
     class_inproc_key_path, class_key_path, failed, get_dll_file_path, register_keys,
-    unregister_keys, IUnknownVPtr, RegistryKeyInfo, IUnknown, ComOutPtr,
+    unregister_keys, ComOutPtr, IUnknown, IUnknownVPtr, RegistryKeyInfo,
 };
-use std::ffi::{CStr, CString};
 use winapi::shared::{
     guiddef::{IsEqualGUID, REFCLSID, REFIID},
     minwindef::LPVOID,
     winerror::{CLASS_E_CLASSNOTAVAILABLE, HRESULT},
 };
 
-pub use interface::{
-    CLSID_CLARK_KENT_CLASS,
-};
+pub use interface::CLSID_CLARK_KENT_CLASS;
 
 mod clark_kent;
 mod clark_kent_class;
-
 
 use clark_kent::ClarkKent;
 use clark_kent_class::ClarkKentClass;
 
 #[no_mangle]
 extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut LPVOID) -> HRESULT {
-
     unsafe {
         let rclsid = &*rclsid;
         if IsEqualGUID(rclsid, &CLSID_CLARK_KENT_CLASS) {

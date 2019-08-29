@@ -1,5 +1,5 @@
-use winapi::shared::guiddef::IID;
 use com::{ComInterface, ComPtr, IUnknown, IUnknownMethods};
+use winapi::shared::guiddef::IID;
 use winapi::um::winnt::HRESULT;
 
 pub const IID_ISUPERMAN: IID = IID {
@@ -27,7 +27,6 @@ pub trait ISuperman: IUnknown {
 
     // // [out] Interface
     // fn populate_interface(ComOutPtr<ComItf>);
-    
 }
 
 unsafe impl ComInterface for ISuperman {
@@ -36,7 +35,7 @@ unsafe impl ComInterface for ISuperman {
 
 pub type ISupermanVPtr = *const ISupermanVTable;
 
-impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
+impl<T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
     fn take_input(&mut self, in_var: u32) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
         unsafe { ((**itf_ptr).1.TakeInput)(itf_ptr, in_var) }
@@ -56,7 +55,6 @@ impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
         unsafe { ((**itf_ptr).1.TakeInputPtr)(itf_ptr, in_ptr_var) }
     }
-
 }
 
 #[repr(C)]
@@ -66,7 +64,10 @@ pub struct ISupermanVTable(pub IUnknownMethods, pub ISupermanMethods);
 #[repr(C)]
 pub struct ISupermanMethods {
     pub TakeInput: unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_var: u32) -> HRESULT,
-    pub PopulateOutput: unsafe extern "stdcall" fn(*mut ISupermanVPtr, out_var: *mut u32) -> HRESULT,
-    pub MutateAndReturn: unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_out_var: *mut u32) -> HRESULT,
-    pub TakeInputPtr: unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_ptr_var: *const u32) -> HRESULT,
+    pub PopulateOutput:
+        unsafe extern "stdcall" fn(*mut ISupermanVPtr, out_var: *mut u32) -> HRESULT,
+    pub MutateAndReturn:
+        unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_out_var: *mut u32) -> HRESULT,
+    pub TakeInputPtr:
+        unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_ptr_var: *const u32) -> HRESULT,
 }

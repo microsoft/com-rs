@@ -1,8 +1,8 @@
-use winapi::shared::guiddef::IID;
-use com::{ComInterface, ComPtr, IUnknown, IUnknownVTable, ComOutPtr};
-use winapi::um::winnt::HRESULT;
-use winapi::shared::winerror::S_OK;
+use com::{ComInterface, ComOutPtr, ComPtr, IUnknown, IUnknownVTable};
 use std::mem::MaybeUninit;
+use winapi::shared::guiddef::IID;
+use winapi::shared::winerror::S_OK;
+use winapi::um::winnt::HRESULT;
 
 pub const IID_ISUPERMAN: IID = IID {
     Data1: 0xa56b76e4,
@@ -29,7 +29,6 @@ pub trait ISuperman: IUnknown {
 
     // // [out] Interface
     // fn populate_interface(ComOutPtr<ComItf>);
-    
 }
 
 unsafe impl ComInterface for ISuperman {
@@ -39,7 +38,7 @@ unsafe impl ComInterface for ISuperman {
 
 pub type ISupermanVPtr = *const ISupermanVTable;
 
-impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
+impl<T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
     fn take_input(&mut self, in_var: u32) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
         unsafe { ((**itf_ptr).TakeInput)(itf_ptr, in_var) }
@@ -47,7 +46,7 @@ impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
 
     fn populate_output(&mut self, out_var: &mut ComOutPtr<u32>) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
-        
+
         // Let called-procedure write to possibly uninit memory.
         let mut proxy = MaybeUninit::<u32>::uninit();
 
@@ -57,9 +56,8 @@ impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
 
             // Consumes the MaybeUninit. Not exactly sure what happens to the
             // allocated memory here. Working verison for now.
-            let mut value = proxy.assume_init();
+            let value = proxy.assume_init();
             out_var.set(value);
-
 
             // Attempt 2:
             // out_var.wrap(proxy.as_mut_ptr());
@@ -69,9 +67,9 @@ impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
             // Remarks: This should be the ideal way to do it (with the old "set" that
             // just writes to the underlying pointer), as we are
             // pointing to the same location that the server wrote to.
-            // However, failed later during client code when doing 
+            // However, failed later during client code when doing
             // &*com_out_ptr.as_mut_ptr(). Might be triggering UB somewhere.
-            
+
             hr
         }
     }
@@ -80,7 +78,7 @@ impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
         let in_out_raw = match in_out_var {
             Some(ref mut n) => n.as_mut() as *mut u32,
-            None => std::ptr::null_mut::<u32>()
+            None => std::ptr::null_mut::<u32>(),
         };
 
         unsafe { ((**itf_ptr).MutateAndReturn)(itf_ptr, in_out_raw) }
@@ -90,12 +88,11 @@ impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
         let in_out_raw = match in_ptr_var {
             Some(n) => n as *const u32,
-            None => std::ptr::null_mut::<u32>()
+            None => std::ptr::null_mut::<u32>(),
         };
 
         unsafe { ((**itf_ptr).TakeInputPtr)(itf_ptr, in_out_raw) }
     }
-
 }
 
 #[allow(non_snake_case)]
@@ -103,7 +100,10 @@ impl <T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
 pub struct ISupermanVTable {
     pub base: IUnknownVTable,
     pub TakeInput: unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_var: u32) -> HRESULT,
-    pub PopulateOutput: unsafe extern "stdcall" fn(*mut ISupermanVPtr, out_var: *mut u32) -> HRESULT,
-    pub MutateAndReturn: unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_out_var: *mut u32) -> HRESULT,
-    pub TakeInputPtr: unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_ptr_var: *const u32) -> HRESULT,
+    pub PopulateOutput:
+        unsafe extern "stdcall" fn(*mut ISupermanVPtr, out_var: *mut u32) -> HRESULT,
+    pub MutateAndReturn:
+        unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_out_var: *mut u32) -> HRESULT,
+    pub TakeInputPtr:
+        unsafe extern "stdcall" fn(*mut ISupermanVPtr, in_ptr_var: *const u32) -> HRESULT,
 }
