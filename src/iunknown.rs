@@ -1,71 +1,110 @@
-use crate::{comptr::ComPtr, failed, ComInterface};
+use super::*;
+use com_interface_attribute::com_interface;
+use winapi::ctypes::c_void;
+use winapi::shared::guiddef::GUID;
+use winapi::shared::ntdef::HRESULT;
 
-use winapi::{
-    ctypes::c_void,
-    shared::{guiddef::IID, winerror::E_NOINTERFACE},
-    um::winnt::HRESULT,
-};
-
-#[allow(non_upper_case_globals)]
-pub const IID_IUNKNOWN: IID = IID {
-    Data1: 0u32,
-    Data2: 0u16,
-    Data3: 0u16,
-    Data4: [192u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 70u8],
-};
-
-#[allow(non_snake_case)]
-#[repr(C)]
-pub struct IUnknownMethods {
-    pub QueryInterface:
-        unsafe extern "stdcall" fn(*mut RawIUnknown, *const IID, *mut *mut c_void) -> HRESULT,
-    pub AddRef: unsafe extern "stdcall" fn(*mut RawIUnknown) -> u32,
-    pub Release: unsafe extern "stdcall" fn(*mut RawIUnknown) -> u32,
-}
-#[repr(C)]
-pub struct IUnknownVTable(pub IUnknownMethods);
-
-#[repr(C)]
-pub struct RawIUnknown {
-    pub vtable: *const IUnknownVTable,
+#[com_interface(00000000-0000-0000-C000-000000000046)]
+pub trait IUnknown {
+    fn query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT;
+    fn add_ref(&mut self) -> u32;
+    fn release(&mut self) -> u32;
 }
 
-impl RawIUnknown {
-    pub unsafe fn raw_query_interface(
-        &mut self,
-        riid: *const IID,
-        ppv: *mut *mut c_void,
-    ) -> HRESULT {
-        ((*self.vtable).0.QueryInterface)(self, riid, ppv)
-    }
-    pub unsafe fn raw_add_ref(&mut self) -> u32 {
-        ((*self.vtable).0.AddRef)(self)
-    }
-    pub unsafe fn raw_release(&mut self) -> u32 {
-        ((*self.vtable).0.Release)(self)
-    }
-    pub fn query_interface<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
-        let mut ppv = std::ptr::null_mut::<c_void>();
-        let hr = unsafe { self.raw_query_interface(&T::IID as *const IID, &mut ppv) };
-        if failed(hr) {
-            assert!(hr == E_NOINTERFACE);
-            return None;
+#[macro_export]
+macro_rules! iunknown_gen_vtable {
+    ($type:ty, $offset:literal) => {{
+        unsafe extern "stdcall" fn iunknown_query_interface(
+            this: *mut IUnknownVPtr,
+            riid: *const IID,
+            ppv: *mut *mut c_void,
+        ) -> HRESULT {
+            let this = this.sub($offset) as *mut $type;
+            (*this).query_interface(riid, ppv)
         }
-        Some(ComPtr::new(std::ptr::NonNull::new(ppv as *mut T)?))
-    }
+        unsafe extern "stdcall" fn iunknown_add_ref(this: *mut IUnknownVPtr) -> u32 {
+            let this = this.sub($offset) as *mut $type;
+            (*this).add_ref()
+        }
+        unsafe extern "stdcall" fn iunknown_release(this: *mut IUnknownVPtr) -> u32 {
+            let this = this.sub($offset) as *mut $type;
+            (*this).release()
+        }
+
+        IUnknownVTable {
+            QueryInterface: iunknown_query_interface,
+            Release: iunknown_release,
+            AddRef: iunknown_add_ref,
+        }
+    }};
 }
 
-#[repr(C)]
-pub struct IUnknown {
-    inner: RawIUnknown,
-}
+// --------------- DESIRED EXPANSION --------------
+// use super::*;
+// use winapi::shared::guiddef::GUID;
+// use winapi::shared::ntdef::HRESULT;
+// use winapi::ctypes::c_void;
 
-impl IUnknown {
-    pub fn query_interface<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
-        self.inner.query_interface()
-    }
-}
+// #[allow(non_upper_case_globals)]
+// pub const IID_IUNKNOWN: GUID = GUID {
+//     Data1: 0u32,
+//     Data2: 0u16,
+//     Data3: 0u16,
+//     Data4: [192u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 70u8],
+// };
 
-unsafe impl ComInterface for IUnknown {
-    const IID: IID = IID_IUNKNOWN;
-}
+// #[allow(non_snake_case)]
+// #[repr(C)]
+// pub struct IUnknownVTable {
+//     pub QueryInterface:
+//         unsafe extern "stdcall" fn(*mut IUnknownVPtr, *const IID, *mut *mut c_void) -> HRESULT,
+//     pub AddRef: unsafe extern "stdcall" fn(*mut IUnknownVPtr) -> u32,
+//     pub Release: unsafe extern "stdcall" fn(*mut IUnknownVPtr) -> u32,
+// }
+
+// pub type IUnknownVPtr = *const IUnknownVTable;
+
+// pub trait IUnknown {
+//     fn query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT;
+//     fn add_ref(&mut self) -> u32;
+//     fn release(&mut self) -> u32;
+// }
+
+// impl <T: IUnknown + ComInterface + ?Sized> IUnknown for ComPtr<T> {
+//     fn query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
+//         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
+//         unsafe { ((**itf_ptr).QueryInterface)(itf_ptr, riid, ppv) }
+//     }
+
+//     fn add_ref(&mut self) -> u32 {
+//         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
+//         unsafe { ((**itf_ptr).AddRef)(itf_ptr) }
+//     }
+
+//     fn release(&mut self) -> u32 {
+//         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
+//         unsafe { ((**itf_ptr).Release)(itf_ptr) }
+//     }
+// }
+
+// unsafe impl ComInterface for IUnknown {
+//     type VTable = IUnknownVTable;
+//     const IID: IID = IID_IUNKNOWN;
+// }
+
+// impl<T: IUnknown + ComInterface + ?Sized> ComPtr<T> {
+//     fn query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
+//         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
+//         unsafe { ((**itf_ptr).QueryInterface)(itf_ptr, riid, ppv) }
+//     }
+
+//     fn add_ref(&mut self) -> u32 {
+//         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
+//         unsafe { ((**itf_ptr).AddRef)(itf_ptr) }
+//     }
+
+//     fn release(&mut self) -> u32 {
+//         let itf_ptr = self.into_raw() as *mut IUnknownVPtr;
+//         unsafe { ((**itf_ptr).Release)(itf_ptr) }
+//     }
+// }

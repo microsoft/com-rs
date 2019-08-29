@@ -1,7 +1,7 @@
-use com::{failed, IUnknownMethods, RawIUnknown, IID_IUNKNOWN};
+use com::{failed, IUnknownVPtr, IID_IUNKNOWN, ComPtr, IUnknown, IUnknownVTable};
 use interface::{
     ifilemanager::{
-        IFileManager, IFileManagerMethods, IFileManagerVTable, RawIFileManager, IID_IFILE_MANAGER,
+        IFileManager, IFileManagerVTable, IFileManagerVPtr, IID_IFILE_MANAGER,
     },
     ilocalfilemanager::IID_ILOCAL_FILE_MANAGER,
 };
@@ -14,76 +14,107 @@ use winapi::{
     },
 };
 
+use std::ptr::NonNull;
+use std::mem::forget;
+
 /// The implementation class
 #[repr(C)]
 pub struct WindowsFileManager {
-    inner_one: IFileManager,
+    inner_one: IFileManagerVPtr,
     ref_count: u32,
-    pub p_unk_local_file_manager: *mut RawIUnknown,
+    pub lfm_iunknown: *mut IUnknownVPtr,
 }
 
 impl Drop for WindowsFileManager {
     fn drop(&mut self) {
         unsafe {
-            (*self.p_unk_local_file_manager).raw_release();
-            Box::from_raw(self.inner_one.inner.vtable as *mut IFileManagerVTable)
+            let mut lfm_iunknown : ComPtr<IUnknown> = ComPtr::new(NonNull::new(self.lfm_iunknown as *mut c_void).unwrap());
+            lfm_iunknown.release();
+            Box::from_raw(self.inner_one as *mut IFileManagerVTable);
+
+            forget(lfm_iunknown);
         };
     }
 }
 
+impl IFileManager for WindowsFileManager {
+    fn delete_all(&mut self) -> HRESULT {
+        println!("Deleting all by delegating to Local and Remote File Managers...");
+        NOERROR
+    }
+}
+
+impl IUnknown for WindowsFileManager {
+    fn query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
+        /* TODO: This should be the safe wrapper. You shouldn't need to write unsafe code here. */
+        unsafe {
+            let riid = &*riid;
+            if IsEqualGUID(riid, &IID_IUNKNOWN) | IsEqualGUID(riid, &IID_IFILE_MANAGER) {
+                *ppv = self as *const _ as *mut c_void;
+            } else if IsEqualGUID(riid, &IID_ILOCAL_FILE_MANAGER) {
+
+                let mut lfm_iunknown : ComPtr<IUnknown> = ComPtr::new(NonNull::new(self.lfm_iunknown as *mut c_void).unwrap());
+                let hr = lfm_iunknown.query_interface(riid, ppv);
+                if failed(hr) {
+                    return E_NOINTERFACE;
+                }
+
+                // We release it as the previous call add_ref-ed the inner object.
+                // The intention is to transfer reference counting logic to the
+                // outer object.
+                lfm_iunknown.release();
+
+                forget(lfm_iunknown);
+            } else {
+                return E_NOINTERFACE;
+            }
+
+            self.add_ref();
+            NOERROR
+        }
+    }
+
+    fn add_ref(&mut self) -> u32 {
+        self.ref_count += 1;
+        println!("Count now {}", self.ref_count);
+        self.ref_count
+    }
+
+    fn release(&mut self) -> u32 {
+        self.ref_count -= 1;
+        println!("Count now {}", self.ref_count);
+        let count = self.ref_count;
+        if count == 0 {
+            println!("Count is 0 for WindowsFileManager. Freeing memory...");
+            drop(self);
+        }
+        count
+    }
+}
+
 unsafe extern "stdcall" fn ifilemanager_query_interface(
-    this: *mut RawIUnknown,
+    this: *mut IUnknownVPtr,
     riid: *const IID,
     ppv: *mut *mut c_void,
 ) -> HRESULT {
-    let obj = this as *mut WindowsFileManager;
-
-    let riid_ref = &*riid;
-    if IsEqualGUID(riid_ref, &IID_IUNKNOWN) | IsEqualGUID(riid_ref, &IID_IFILE_MANAGER) {
-        *ppv = this as *mut c_void;
-    } else if IsEqualGUID(riid_ref, &IID_ILOCAL_FILE_MANAGER) {
-        let hr = (*((*obj).p_unk_local_file_manager)).raw_query_interface(riid, ppv);
-        if failed(hr) {
-            return E_NOINTERFACE;
-        }
-
-        // We release it as the previous call add_ref-ed the inner object.
-        // The intention is to transfer reference counting logic to the
-        // outer object.
-        (*((*obj).p_unk_local_file_manager)).raw_release();
-    } else {
-        return E_NOINTERFACE;
-    }
-
-    (*this).raw_add_ref();
-    NOERROR
+    let this = this as *mut WindowsFileManager;
+    (*this).query_interface(riid, ppv)
 }
 
-unsafe extern "stdcall" fn ifilemanager_add_ref(this: *mut RawIUnknown) -> u32 {
-    println!("Adding ref...");
+unsafe extern "stdcall" fn ifilemanager_add_ref(this: *mut IUnknownVPtr) -> u32 {
     let this = this as *mut WindowsFileManager;
-    (*this).ref_count += 1;
-    println!("WFM Count now {}", (*this).ref_count);
-    (*this).ref_count
+    (*this).add_ref()
 }
 
 // TODO: This could potentially be null or pointing to some invalid memory
-unsafe extern "stdcall" fn ifilemanager_release(this: *mut RawIUnknown) -> u32 {
-    println!("Releasing...");
+unsafe extern "stdcall" fn ifilemanager_release(this: *mut IUnknownVPtr) -> u32 {
     let this = this as *mut WindowsFileManager;
-    (*this).ref_count -= 1;
-    println!("WFM Count now {}", (*this).ref_count);
-    let count = (*this).ref_count;
-    if count == 0 {
-        println!("Count is 0. Freeing memory...");
-        let _ = Box::from_raw(this);
-    }
-    count
+    (*this).release()
 }
 
-unsafe extern "stdcall" fn delete_all(_this: *mut RawIFileManager) -> HRESULT {
-    println!("Deleting all by delegating to Local and Remote File Managers...");
-    NOERROR
+unsafe extern "stdcall" fn delete_all(this: *mut IFileManagerVPtr) -> HRESULT {
+    let this = this as *mut WindowsFileManager;
+    (*this).delete_all()
 }
 
 impl WindowsFileManager {
@@ -91,29 +122,22 @@ impl WindowsFileManager {
         println!("Allocating new Vtable...");
 
         // Initialising VTable for IFileManager
-        let ifilemanager_iunknown = IUnknownMethods {
+        let ifilemanager_iunknown = IUnknownVTable {
             QueryInterface: ifilemanager_query_interface,
             Release: ifilemanager_release,
             AddRef: ifilemanager_add_ref,
         };
 
-        let ifilemanager = IFileManagerMethods {
+        let ifilemanager = IFileManagerVTable {
+            base: ifilemanager_iunknown,
             DeleteAll: delete_all,
         };
-        let ifilemanager_vtable = Box::into_raw(Box::new(IFileManagerVTable(
-            ifilemanager_iunknown,
-            ifilemanager,
-        )));
-        let ifilemanager_inner = RawIFileManager {
-            vtable: ifilemanager_vtable,
-        };
+        let ifilemanager_vptr = Box::into_raw(Box::new(ifilemanager));
 
         let out = WindowsFileManager {
-            inner_one: IFileManager {
-                inner: ifilemanager_inner,
-            },
+            inner_one: ifilemanager_vptr,
             ref_count: 0,
-            p_unk_local_file_manager: std::ptr::null_mut::<RawIUnknown>(),
+            lfm_iunknown: std::ptr::null_mut::<IUnknownVPtr>(),
         };
 
         out

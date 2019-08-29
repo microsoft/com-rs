@@ -1,5 +1,5 @@
-use super::ianimal::{IAnimalMethods, RawIAnimal};
-use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown};
+use super::ianimal::{IAnimal,};
+use com::{ComInterface, ComPtr,};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
@@ -10,75 +10,44 @@ pub const IID_IDOMESTIC_ANIMAL: IID = IID {
     Data4: [0x93, 0x3e, 0x9c, 0xf7, 0xb2, 0x34, 0x59, 0xe8],
 };
 
-#[repr(C)]
-pub struct IDomesticAnimal {
-    pub inner: RawIDomesticAnimal,
-}
-
-impl IDomesticAnimal {
-    pub fn query_interface<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
-        let inner: &mut RawIUnknown = self.inner.as_mut();
-        inner.query_interface()
-    }
-
-    pub fn eat(&mut self) {
-        let inner: &mut RawIAnimal = self.inner.as_mut();
-        inner.eat()
-    }
-
-    pub fn train(&mut self) {
-        let _ = unsafe { self.inner.raw_train() };
-    }
+pub trait IDomesticAnimal: IAnimal {
+    fn train(&mut self) -> HRESULT;
 }
 
 unsafe impl ComInterface for IDomesticAnimal {
+    type VTable = IDomesticAnimalVTable;
     const IID: IID = IID_IDOMESTIC_ANIMAL;
 }
 
-#[repr(C)]
-pub struct RawIDomesticAnimal {
-    pub vtable: *const IDomesticAnimalVTable,
-}
+pub type IDomesticAnimalVPtr = *const IDomesticAnimalVTable;
 
-impl RawIDomesticAnimal {
-    unsafe fn raw_train(&mut self) -> HRESULT {
-        ((*self.vtable).2.Train)(self as *mut RawIDomesticAnimal)
-    }
-}
-
-impl std::convert::AsRef<RawIUnknown> for RawIDomesticAnimal {
-    fn as_ref(&self) -> &RawIUnknown {
-        unsafe { &*(self as *const RawIDomesticAnimal as *const RawIUnknown) }
-    }
-}
-
-impl std::convert::AsMut<RawIUnknown> for RawIDomesticAnimal {
-    fn as_mut(&mut self) -> &mut RawIUnknown {
-        unsafe { &mut *(self as *mut RawIDomesticAnimal as *mut RawIUnknown) }
-    }
-}
-
-impl std::convert::AsRef<RawIAnimal> for RawIDomesticAnimal {
-    fn as_ref(&self) -> &RawIAnimal {
-        unsafe { &*(self as *const RawIDomesticAnimal as *const RawIAnimal) }
-    }
-}
-
-impl std::convert::AsMut<RawIAnimal> for RawIDomesticAnimal {
-    fn as_mut(&mut self) -> &mut RawIAnimal {
-        unsafe { &mut *(self as *mut RawIDomesticAnimal as *mut RawIAnimal) }
+impl <T: IDomesticAnimal + ComInterface + ?Sized> IDomesticAnimal for ComPtr<T> {
+    fn train(&mut self) -> HRESULT {
+        let itf_ptr = self.into_raw() as *mut IDomesticAnimalVPtr;
+        unsafe { ((**itf_ptr).Train)(itf_ptr) }
     }
 }
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct IDomesticAnimalMethods {
-    pub Train: unsafe extern "stdcall" fn(*mut RawIDomesticAnimal) -> HRESULT,
+pub struct IDomesticAnimalVTable {
+    pub base: <IAnimal as ComInterface>::VTable,
+    pub Train: unsafe extern "stdcall" fn(*mut IDomesticAnimalVPtr) -> HRESULT,
 }
 
-#[repr(C)]
-pub struct IDomesticAnimalVTable(
-    pub IUnknownMethods,
-    pub IAnimalMethods,
-    pub IDomesticAnimalMethods,
-);
+#[macro_export]
+macro_rules! idomesticanimal_gen_vtable {
+    ($type:ty, $offset:literal) => {{
+        let ianimal_vtable = ianimal_gen_vtable!($type, $offset);
+
+        unsafe extern "stdcall" fn idomesticanimal_train(this: *mut IDomesticAnimalVPtr) -> HRESULT {
+            let this = this.sub($offset) as *mut $type;
+            (*this).train()
+        }
+        
+        IDomesticAnimalVTable {
+            base: ianimal_vtable,
+            Train: idomesticanimal_train,
+        }
+    }}
+}

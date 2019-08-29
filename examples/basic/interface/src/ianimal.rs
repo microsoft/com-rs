@@ -1,6 +1,6 @@
-use com::{ComInterface, ComPtr, IUnknownMethods, RawIUnknown};
-
-use winapi::shared::{guiddef::IID, winerror::HRESULT};
+use winapi::shared::guiddef::IID;
+use com::{ComInterface, ComPtr, IUnknown};
+use winapi::um::winnt::HRESULT;
 
 pub const IID_IANIMAL: IID = IID {
     Data1: 0xeff8970e,
@@ -9,58 +9,44 @@ pub const IID_IANIMAL: IID = IID {
     Data4: [0x92, 0x84, 0x29, 0x1c, 0xe5, 0xa6, 0xf7, 0x71],
 };
 
-#[repr(C)]
-pub struct IAnimal {
-    inner: RawIAnimal,
-}
-
-impl IAnimal {
-    pub fn eat(&mut self) {
-        self.inner.eat()
-    }
-
-    pub fn query_interface<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
-        let inner: &mut RawIUnknown = self.inner.as_mut();
-        inner.query_interface()
-    }
+pub trait IAnimal: IUnknown {
+    fn eat(&mut self) -> HRESULT;
 }
 
 unsafe impl ComInterface for IAnimal {
+    type VTable = IAnimalVTable;
     const IID: IID = IID_IANIMAL;
 }
 
-#[repr(C)]
-pub struct RawIAnimal {
-    vtable: *const IAnimalVTable,
-}
+pub type IAnimalVPtr = *const IAnimalVTable;
 
-impl RawIAnimal {
-    pub fn eat(&mut self) {
-        let _ = unsafe { self.raw_eat() };
-    }
-
-    unsafe fn raw_eat(&mut self) -> HRESULT {
-        ((*self.vtable).1.Eat)(self as *mut RawIAnimal)
+impl <T: IAnimal + ComInterface + ?Sized> IAnimal for ComPtr<T> {
+    fn eat(&mut self) -> HRESULT {
+        let itf_ptr = self.into_raw() as *mut IAnimalVPtr;
+        unsafe { ((**itf_ptr).Eat)(itf_ptr) }
     }
 }
-
-impl std::convert::AsRef<RawIUnknown> for RawIAnimal {
-    fn as_ref(&self) -> &RawIUnknown {
-        unsafe { &*(self as *const RawIAnimal as *const RawIUnknown) }
-    }
-}
-
-impl std::convert::AsMut<RawIUnknown> for RawIAnimal {
-    fn as_mut(&mut self) -> &mut RawIUnknown {
-        unsafe { &mut *(self as *mut RawIAnimal as *mut RawIUnknown) }
-    }
-}
-
-#[repr(C)]
-pub struct IAnimalVTable(IUnknownMethods, IAnimalMethods);
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct IAnimalMethods {
-    pub Eat: unsafe extern "stdcall" fn(*mut RawIAnimal) -> HRESULT,
+pub struct IAnimalVTable {
+    pub base: <IUnknown as ComInterface>::VTable,
+    pub Eat: unsafe extern "stdcall" fn(*mut IAnimalVPtr) -> HRESULT,
+}
+
+#[macro_export]
+macro_rules! ianimal_gen_vtable {
+    ($type:ty, $offset:literal) => {{
+        let iunknown_vtable = iunknown_gen_vtable!($type, $offset);
+
+        unsafe extern "stdcall" fn ianimal_eat(this: *mut IAnimalVPtr) -> HRESULT {
+            let this = this.sub($offset) as *mut $type;
+            (*this).eat()
+        }
+        
+        IAnimalVTable {
+            base: iunknown_vtable,
+            Eat: ianimal_eat,
+        }
+    }}
 }

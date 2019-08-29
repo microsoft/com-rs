@@ -1,8 +1,7 @@
 use com::{
     class_inproc_key_path, class_key_path, failed, get_dll_file_path, register_keys,
-    unregister_keys, RawIUnknown, RegistryKeyInfo,
+    unregister_keys, RegistryKeyInfo, IUnknown
 };
-use std::ffi::{CStr, CString};
 use winapi::shared::{
     guiddef::{IsEqualGUID, REFCLSID, REFIID},
     minwindef::LPVOID,
@@ -10,8 +9,9 @@ use winapi::shared::{
 };
 
 pub use interface::{
-    IAnimal, ICat, IDomesticAnimal, IExample, IFileManager, ILocalFileManager, CLSID_CAT_CLASS,
-    CLSID_LOCAL_FILE_MANAGER_CLASS, CLSID_WINDOWS_FILE_MANAGER_CLASS,
+    IAnimal, ICat, IDomesticAnimal, CLSID_CAT_CLASS, IExample,
+    IFileManager, CLSID_WINDOWS_FILE_MANAGER_CLASS,
+    ILocalFileManager, CLSID_LOCAL_FILE_MANAGER_CLASS,
 };
 
 mod british_short_hair_cat;
@@ -30,28 +30,35 @@ use windows_file_manager_class::WindowsFileManagerClass;
 
 #[no_mangle]
 extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut LPVOID) -> HRESULT {
+
     unsafe {
         let rclsid_ref = &*rclsid;
         if IsEqualGUID(rclsid_ref, &CLSID_CAT_CLASS) {
             println!("Allocating new object CatClass...");
-            let cat = Box::into_raw(Box::new(BritishShortHairCatClass::new()));
-            (*(cat as *mut RawIUnknown)).raw_add_ref();
-            let hr = (*(cat as *mut RawIUnknown)).raw_query_interface(riid, ppv);
-            (*(cat as *mut RawIUnknown)).raw_release();
+            let mut cat = Box::new(BritishShortHairCatClass::new());
+            cat.add_ref();
+            let hr = cat.query_interface(riid, ppv);
+            cat.release();
+            Box::into_raw(cat);
+
             hr
         } else if IsEqualGUID(rclsid_ref, &CLSID_WINDOWS_FILE_MANAGER_CLASS) {
             println!("Allocating new object WindowsFileManagerClass...");
-            let wfm = Box::into_raw(Box::new(WindowsFileManagerClass::new()));
-            (*(wfm as *mut RawIUnknown)).raw_add_ref();
-            let hr = (*(wfm as *mut RawIUnknown)).raw_query_interface(riid, ppv);
-            (*(wfm as *mut RawIUnknown)).raw_release();
+            let mut wfm = Box::new(WindowsFileManagerClass::new());
+            wfm.add_ref();
+            let hr = wfm.query_interface(riid, ppv);
+            wfm.release();
+            Box::into_raw(wfm);
+
             hr
         } else if IsEqualGUID(rclsid_ref, &CLSID_LOCAL_FILE_MANAGER_CLASS) {
             println!("Allocating new object LocalFileManagerClass...");
-            let lfm = Box::into_raw(Box::new(LocalFileManagerClass::new()));
-            (*(lfm as *mut RawIUnknown)).raw_add_ref();
-            let hr = (*(lfm as *mut RawIUnknown)).raw_query_interface(riid, ppv);
-            (*(lfm as *mut RawIUnknown)).raw_release();
+            let mut lfm = Box::new(LocalFileManagerClass::new());
+            lfm.add_ref();
+            let hr = lfm.query_interface(riid, ppv);
+            lfm.release();
+            Box::into_raw(lfm);
+
             hr
         } else {
             CLASS_E_CLASSNOTAVAILABLE

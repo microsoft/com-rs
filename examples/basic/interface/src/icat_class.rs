@@ -1,4 +1,4 @@
-use com::{ComInterface, ComPtr, IClassFactoryMethods, IUnknownMethods, RawIUnknown};
+use com::{ComInterface, ComPtr, IUnknown, IClassFactory};
 
 use winapi::shared::guiddef::IID;
 
@@ -9,46 +9,21 @@ pub const IID_ICAT_CLASS: IID = IID {
     Data4: [0x8d, 0x92, 0xd2, 0x74, 0xc7, 0x57, 0x8b, 0x53],
 };
 
-#[repr(C)]
-pub struct ICatClass {
-    pub inner: RawICatClass,
-}
-
-impl ICatClass {
-    pub fn query_interface<T: ComInterface>(&mut self) -> Option<ComPtr<T>> {
-        let inner: &mut RawIUnknown = self.inner.as_mut();
-        inner.query_interface()
-    }
-}
+pub trait ICatClass: IUnknown {}
 
 unsafe impl ComInterface for ICatClass {
+    type VTable = ICatClassVTable;
     const IID: IID = IID_ICAT_CLASS;
 }
 
-#[repr(C)]
-pub struct RawICatClass {
-    pub vtable: *const ICatClassVTable,
-}
+pub type ICatClassVPtr = *const ICatClassVTable;
 
-impl std::convert::AsRef<RawIUnknown> for RawICatClass {
-    fn as_ref(&self) -> &RawIUnknown {
-        unsafe { &*(self as *const RawICatClass as *const RawIUnknown) }
-    }
-}
-
-impl std::convert::AsMut<RawIUnknown> for RawICatClass {
-    fn as_mut(&mut self) -> &mut RawIUnknown {
-        unsafe { &mut *(self as *mut RawICatClass as *mut RawIUnknown) }
-    }
-}
+impl <T: ICatClass + ComInterface + ?Sized> ICatClass for ComPtr<T> {}
 
 #[allow(non_snake_case)]
 #[repr(C)]
-pub struct ICatClassMethods {}
+pub struct ICatClassVTable {
+    pub base: <IClassFactory as ComInterface>::VTable,
+}
 
-#[repr(C)]
-pub struct ICatClassVTable(
-    pub IUnknownMethods,
-    pub IClassFactoryMethods,
-    pub ICatClassMethods,
-);
+
