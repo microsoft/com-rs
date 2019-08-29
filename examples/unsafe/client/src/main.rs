@@ -13,7 +13,7 @@ use winapi::{
     shared::{
         guiddef::{IID, REFCLSID, REFIID},
         minwindef::LPVOID,
-        winerror::{HRESULT, S_OK, E_FAIL,},
+        winerror::{E_FAIL, HRESULT, S_OK},
         wtypesbase::CLSCTX_INPROC_SERVER,
     },
     um::{
@@ -22,10 +22,11 @@ use winapi::{
     },
 };
 
-use com::{failed, ComInterface, ComPtr, IClassFactory, IUnknown, IID_ICLASS_FACTORY};
-use interface::{
-    CLSID_CLARK_KENT_CLASS, ISuperman,
+use com::{
+    create_instance, initialize_ex, uninitialize, ComInterface, ComPtr, IClassFactory, IUnknown,
+    IID_ICLASSFACTORY,
 };
+use interface::{ISuperman, CLSID_CLARK_KENT_CLASS};
 
 fn main() {
     let result = initialize_ex();
@@ -49,7 +50,7 @@ fn run_safe_test() {
         }
     };
     println!("Got clark kent!");
-    
+
     // [in] tests
     assert!(clark_kent.take_input(10) == E_FAIL);
     assert!(clark_kent.take_input(4) == S_OK);
@@ -72,62 +73,4 @@ fn run_safe_test() {
     assert!(clark_kent.take_input_ptr(in_var) == S_OK);
 
     println!("Tests passed!");
-}
-
-// TODO: accept threading options
-fn initialize_ex() -> Result<(), HRESULT> {
-    let hr = unsafe { CoInitializeEx(std::ptr::null_mut::<c_void>(), COINIT_APARTMENTTHREADED) };
-    if failed(hr) {
-        // TODO: https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
-        // A thread must call CoUninitialize once for each successful call it has made to the
-        // CoInitialize or CoInitializeEx function, including any call that returns S_FALSE.
-        return Err(hr);
-    }
-    Ok(())
-}
-
-// TODO: accept server options
-fn get_class_object(iid: &IID) -> Result<ComPtr<IClassFactory>, HRESULT> {
-    let mut class_factory = std::ptr::null_mut::<c_void>();
-    let hr = unsafe {
-        CoGetClassObject(
-            iid as REFCLSID,
-            CLSCTX_INPROC_SERVER,
-            std::ptr::null_mut::<c_void>(),
-            &IID_ICLASS_FACTORY as REFIID,
-            &mut class_factory as *mut LPVOID,
-        )
-    };
-    if failed(hr) {
-        return Err(hr);
-    }
-
-    Ok(ComPtr::new(
-        std::ptr::NonNull::new(class_factory as *mut c_void).unwrap(),
-    ))
-}
-
-// TODO: accept server options
-fn create_instance<T: ComInterface + ?Sized>(clsid: &IID) -> Result<ComPtr<T>, HRESULT> {
-    let mut instance = std::ptr::null_mut::<c_void>();
-    let hr = unsafe {
-        CoCreateInstance(
-            clsid as REFCLSID,
-            std::ptr::null_mut(),
-            CLSCTX_INPROC_SERVER,
-            &T::IID as REFIID,
-            &mut instance as *mut LPVOID,
-        )
-    };
-    if failed(hr) {
-        return Err(hr);
-    }
-
-    Ok(ComPtr::new(
-        std::ptr::NonNull::new(instance as *mut c_void).unwrap(),
-    ))
-}
-
-fn uninitialize() {
-    unsafe { CoUninitialize() }
 }

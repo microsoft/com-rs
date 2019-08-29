@@ -1,13 +1,11 @@
-use com::{IUnknownVPtr, IID_IUNKNOWN, IUnknown, ComOutPtr, IUnknownVTable,};
-use interface::{
-    isuperman::{ISuperman, ISupermanVTable, ISupermanVPtr, IID_ISUPERMAN},
-};
+use com::{ComOutPtr, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
+use interface::isuperman::{ISuperman, ISupermanVPtr, ISupermanVTable, IID_ISUPERMAN};
 
 use winapi::{
     ctypes::c_void,
     shared::{
         guiddef::{IsEqualGUID, IID},
-        winerror::{E_NOINTERFACE, HRESULT, NOERROR, E_FAIL, S_OK},
+        winerror::{E_FAIL, E_NOINTERFACE, HRESULT, NOERROR, S_OK},
     },
 };
 
@@ -43,7 +41,7 @@ impl ISuperman for ClarkKent {
     fn mutate_and_return(&mut self, in_out_var: &mut Option<Box<u32>>) -> HRESULT {
         match in_out_var {
             Some(n) => **n = 100,
-            None => println!("Received null, unable to mutate!")
+            None => println!("Received null, unable to mutate!"),
         };
 
         S_OK
@@ -57,7 +55,7 @@ impl ISuperman for ClarkKent {
                 } else {
                     return S_OK;
                 }
-            },
+            }
             None => {
                 return E_FAIL;
             }
@@ -80,7 +78,7 @@ impl IUnknown for ClarkKent {
 
             println!("Successful!.");
             self.add_ref();
-            NOERROR 
+            NOERROR
         }
     }
 
@@ -126,7 +124,7 @@ unsafe extern "stdcall" fn release(this: *mut IUnknownVPtr) -> u32 {
 
 unsafe extern "stdcall" fn take_input(this: *mut ISupermanVPtr, in_var: u32) -> HRESULT {
     let this = this as *mut ClarkKent;
-    (*this).take_input(in_var)    
+    (*this).take_input(in_var)
 }
 
 unsafe extern "stdcall" fn populate_output(this: *mut ISupermanVPtr, out_var: *mut u32) -> HRESULT {
@@ -135,7 +133,10 @@ unsafe extern "stdcall" fn populate_output(this: *mut ISupermanVPtr, out_var: *m
     (*this).populate_output(&mut ptr)
 }
 
-unsafe extern "stdcall" fn mutate_and_return(this: *mut ISupermanVPtr, in_out_var: *mut u32) -> HRESULT {
+unsafe extern "stdcall" fn mutate_and_return(
+    this: *mut ISupermanVPtr,
+    in_out_var: *mut u32,
+) -> HRESULT {
     let this = this as *mut ClarkKent;
     let mut opt = if in_out_var.is_null() {
         None
@@ -144,19 +145,22 @@ unsafe extern "stdcall" fn mutate_and_return(this: *mut ISupermanVPtr, in_out_va
     };
 
     let hr = (*this).mutate_and_return(&mut opt);
-    
+
     // Server side should not be responsible for memory allocated by client.
     match opt {
         Some(n) => {
             Box::into_raw(n);
-        },
+        }
         _ => (),
     };
-    
+
     hr
 }
 
-unsafe extern "stdcall" fn take_input_ptr(this: *mut ISupermanVPtr, in_ptr_var: *const u32) -> HRESULT {
+unsafe extern "stdcall" fn take_input_ptr(
+    this: *mut ISupermanVPtr,
+    in_ptr_var: *const u32,
+) -> HRESULT {
     let this = this as *mut ClarkKent;
     let opt = if in_ptr_var.is_null() {
         None
