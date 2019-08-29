@@ -12,6 +12,17 @@ jobs:
       - bash: |
           set -ex
           export RUST_BACKTRACE=1
-          cargo fmt --all -- --check 
-          cargo check --all 
-          cargo test --all 
+          cargo fmt --all -- --check
+          RUSTFLAGS="-D warnings" cargo check --all
+          cargo test --all
+
+      - bash: |
+          set -ex
+          export RUST_BACKTRACE=1
+          for dir in examples/*
+          do
+            cd $dir
+            cargo fmt --all -- --check
+            cargo check --all
+            cargo test --all
+          done
