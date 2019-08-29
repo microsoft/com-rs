@@ -52,8 +52,7 @@ impl IClassFactory for LocalFileManagerClass {
 
             // Here, we create a ComPtr since it is the only way to call IUnknown methods. We also add_ref here, as 
             // ComPtr will call release at the end of this scope.
-            let mut non_delegating_unk : ComPtr<IUnknown> = ComPtr::new(NonNull::new(&lfm.non_delegating_unk as *const _ as *mut c_void).unwrap());
-            // non_delegating_unk.add_ref();
+            let mut non_delegating_unk : ComPtr<IUnknown> = ComPtr::new(&lfm.non_delegating_unk as *const _ as *mut c_void);
 
             // As an aggregable object, we have to add_ref through the
             // non-delegating IUnknown on creation. Otherwise, we might

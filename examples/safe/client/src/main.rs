@@ -113,9 +113,7 @@ fn get_class_object(iid: &IID) -> Result<ComPtr<IClassFactory>, HRESULT> {
         return Err(hr);
     }
 
-    Ok(ComPtr::new(
-        std::ptr::NonNull::new(class_factory as *mut c_void).unwrap(),
-    ))
+    unsafe { Ok(ComPtr::new(class_factory)) }
 }
 
 // TODO: accept server options
@@ -134,9 +132,7 @@ fn create_instance<T: ComInterface + ?Sized>(clsid: &IID) -> Result<ComPtr<T>, H
         return Err(hr);
     }
 
-    Ok(ComPtr::new(
-        std::ptr::NonNull::new(instance as *mut c_void).unwrap(),
-    ))
+    unsafe { Ok(ComPtr::new(instance)) }
 }
 
 fn uninitialize() {

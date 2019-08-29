@@ -25,7 +25,7 @@ impl ComPtr<IClassFactory> {
             // TODO: decide what failures are possible
             return None;
         }
-        Some(ComPtr::new(std::ptr::NonNull::new(ppv as *mut c_void)?))
+        unsafe { Some(ComPtr::new(ppv)) }
     }
 }
 

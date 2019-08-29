@@ -28,7 +28,7 @@ pub struct WindowsFileManager {
 impl Drop for WindowsFileManager {
     fn drop(&mut self) {
         unsafe {
-            let mut lfm_iunknown : ComPtr<IUnknown> = ComPtr::new(NonNull::new(self.lfm_iunknown as *mut c_void).unwrap());
+            let mut lfm_iunknown : ComPtr<IUnknown> = ComPtr::new(self.lfm_iunknown as *mut c_void);
             lfm_iunknown.release();
             Box::from_raw(self.inner_one as *mut IFileManagerVTable);
 
@@ -53,7 +53,7 @@ impl IUnknown for WindowsFileManager {
                 *ppv = self as *const _ as *mut c_void;
             } else if IsEqualGUID(riid, &IID_ILOCAL_FILE_MANAGER) {
 
-                let mut lfm_iunknown : ComPtr<IUnknown> = ComPtr::new(NonNull::new(self.lfm_iunknown as *mut c_void).unwrap());
+                let mut lfm_iunknown : ComPtr<IUnknown> = ComPtr::new(self.lfm_iunknown as *mut c_void);
                 let hr = lfm_iunknown.query_interface(riid, ppv);
                 if failed(hr) {
                     return E_NOINTERFACE;
