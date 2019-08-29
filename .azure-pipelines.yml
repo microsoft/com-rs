@@ -25,4 +25,5 @@ jobs:
             cargo fmt --all -- --check
             cargo check --all
             cargo test --all
+            cd ../..
           done
