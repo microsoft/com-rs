@@ -8,24 +8,9 @@
 //   HRESULT IgnoreHumans(void);
 // }
 
-use winapi::{
-    ctypes::c_void,
-    shared::{
-        guiddef::{IID, REFCLSID, REFIID},
-        minwindef::LPVOID,
-        winerror::{E_FAIL, HRESULT, S_OK},
-        wtypesbase::CLSCTX_INPROC_SERVER,
-    },
-    um::{
-        combaseapi::{CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize},
-        objbase::COINIT_APARTMENTTHREADED,
-    },
-};
+use com::{create_instance, initialize_ex, uninitialize};
+use winapi::shared::winerror::{E_FAIL, S_OK};
 
-use com::{
-    create_instance, initialize_ex, uninitialize, ComInterface, ComPtr, IClassFactory, IUnknown,
-    IID_ICLASSFACTORY,
-};
 use interface::{ISuperman, CLSID_CLARK_KENT_CLASS};
 
 fn main() {
@@ -42,7 +27,7 @@ fn main() {
 }
 
 fn run_safe_test() {
-    let mut clark_kent = match create_instance::<ISuperman>(&CLSID_CLARK_KENT_CLASS) {
+    let mut clark_kent = match create_instance::<dyn ISuperman>(&CLSID_CLARK_KENT_CLASS) {
         Ok(clark_kent) => clark_kent,
         Err(e) => {
             println!("Failed to get clark kent, {:x}", e as u32);
@@ -62,7 +47,7 @@ fn run_safe_test() {
     assert!(var_to_populate == 6);
 
     // [in, out] tests
-    let mut ptr_to_mutate = Box::into_raw(Box::new(6));
+    let ptr_to_mutate = Box::into_raw(Box::new(6));
     clark_kent.mutate_and_return(ptr_to_mutate);
     assert!(unsafe { *ptr_to_mutate == 100 });
 

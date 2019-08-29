@@ -26,7 +26,7 @@ impl Drop for ClarkKent {
 impl ISuperman for ClarkKent {
     fn take_input(&mut self, in_var: u32) -> HRESULT {
         println!("Received Input! Input is: {}", in_var);
-        if (in_var > 5) {
+        if in_var > 5 {
             return E_FAIL;
         }
 
