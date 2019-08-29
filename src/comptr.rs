@@ -13,9 +13,18 @@ pub struct ComPtr<T: ComInterface + ?Sized> {
 }
 
 impl<T: ComInterface + ?Sized> ComPtr<T> {
-    pub fn new(ptr: NonNull<c_void>) -> Self {
+    /// Creates a new ComPtr that comforms to the interface T
+    ///
+    /// # Safety
+    ///
+    /// `ptr` must point to a valid VTable for the Interface T
+    ///
+    /// # Panics
+    ///
+    /// Panics if `ptr` is null
+    pub unsafe fn new(ptr: *mut c_void) -> ComPtr<T> {
         ComPtr {
-            ptr,
+            ptr: NonNull::new(ptr).expect("ptr was null"),
             phantom: PhantomData,
         }
     }
@@ -44,7 +53,7 @@ impl<T: ComInterface + ?Sized> ComPtr<T> {
             assert!(hr == E_NOINTERFACE);
             return None;
         }
-        Some(ComPtr::new(std::ptr::NonNull::new(ppv as *mut c_void)?))
+        unsafe { Some(ComPtr::new(ppv)) }
     }
 }
 
