@@ -1,8 +1,7 @@
 use com::{
     class_inproc_key_path, class_key_path, failed, get_dll_file_path, register_keys,
-    unregister_keys, IUnknown, IUnknownVPtr, RegistryKeyInfo,
+    unregister_keys, IUnknown, RegistryKeyInfo,
 };
-use std::ffi::{CStr, CString};
 use winapi::shared::{
     guiddef::{IsEqualGUID, REFCLSID, REFIID},
     minwindef::LPVOID,
@@ -14,7 +13,6 @@ pub use interface::CLSID_CLARK_KENT_CLASS;
 mod clark_kent;
 mod clark_kent_class;
 
-use clark_kent::ClarkKent;
 use clark_kent_class::ClarkKentClass;
 
 #[no_mangle]

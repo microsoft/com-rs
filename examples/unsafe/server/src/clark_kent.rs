@@ -1,7 +1,5 @@
-use com::{IUnknown, IUnknownMethods, IUnknownVPtr, IID_IUNKNOWN};
-use interface::isuperman::{
-    ISuperman, ISupermanMethods, ISupermanVPtr, ISupermanVTable, IID_ISUPERMAN,
-};
+use com::{IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
+use interface::isuperman::{ISuperman, ISupermanVPtr, ISupermanVTable, IID_ISUPERMAN};
 
 use winapi::{
     ctypes::c_void,
@@ -29,7 +27,7 @@ impl Drop for ClarkKent {
 impl ISuperman for ClarkKent {
     fn take_input(&mut self, in_var: u32) -> HRESULT {
         println!("Received Input! Input is: {}", in_var);
-        if (in_var > 5) {
+        if in_var > 5 {
             return E_FAIL;
         }
 
@@ -55,7 +53,7 @@ impl ISuperman for ClarkKent {
     fn take_input_ptr(&mut self, in_ptr_var: *const u32) -> HRESULT {
         unsafe {
             let in_ptr_var = *in_ptr_var;
-            if (in_ptr_var > 5) {
+            if in_ptr_var > 5 {
                 return E_FAIL;
             }
         }
@@ -155,18 +153,19 @@ impl ClarkKent {
         println!("Allocating new Vtable...");
 
         /* Initialising VTable for ISuperman */
-        let iunknown = IUnknownMethods {
+        let iunknown = IUnknownVTable {
             QueryInterface: query_interface,
             Release: release,
             AddRef: add_ref,
         };
-        let isuperman = ISupermanMethods {
+        let isuperman = ISupermanVTable {
+            base: iunknown,
             TakeInput: take_input,
             PopulateOutput: populate_output,
             MutateAndReturn: mutate_and_return,
             TakeInputPtr: take_input_ptr,
         };
-        let vptr = Box::into_raw(Box::new(ISupermanVTable(iunknown, isuperman)));
+        let vptr = Box::into_raw(Box::new(isuperman));
 
         ClarkKent {
             inner: vptr,

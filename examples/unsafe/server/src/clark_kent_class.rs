@@ -1,7 +1,7 @@
 use crate::clark_kent::ClarkKent;
 use com::{
-    IClassFactory, IClassFactoryMethods, IClassFactoryVPtr, IClassFactoryVTable, IUnknown,
-    IUnknownMethods, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN,
+    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr, IUnknownVTable,
+    IID_ICLASSFACTORY, IID_IUNKNOWN,
 };
 
 use winapi::{
@@ -35,12 +35,12 @@ impl IClassFactory for ClarkKentClass {
         ck.add_ref();
         let hr = ck.query_interface(riid, ppv);
         ck.release();
-        let ptr = Box::into_raw(ck);
+        let _ptr = Box::into_raw(ck);
 
         hr
     }
 
-    fn lock_server(&mut self, increment: BOOL) -> HRESULT {
+    fn lock_server(&mut self, _increment: BOOL) -> HRESULT {
         println!("LockServer called");
         S_OK
     }
@@ -51,7 +51,7 @@ impl IUnknown for ClarkKentClass {
         /* TODO: This should be the safe wrapper. You shouldn't need to write unsafe code here. */
         unsafe {
             let riid = &*riid;
-            if IsEqualGUID(riid, &IID_IUNKNOWN) || IsEqualGUID(riid, &IID_ICLASS_FACTORY) {
+            if IsEqualGUID(riid, &IID_IUNKNOWN) || IsEqualGUID(riid, &IID_ICLASSFACTORY) {
                 *ppv = self as *const _ as *mut c_void;
                 self.add_ref();
                 NOERROR
@@ -126,16 +126,17 @@ unsafe extern "stdcall" fn lock_server(this: *mut IClassFactoryVPtr, increment: 
 impl ClarkKentClass {
     pub(crate) fn new() -> ClarkKentClass {
         println!("Allocating new Vtable for ClarkKentClass...");
-        let iunknown = IUnknownMethods {
+        let iunknown = IUnknownVTable {
             QueryInterface: query_interface,
             Release: release,
             AddRef: add_ref,
         };
-        let iclassfactory = IClassFactoryMethods {
+        let iclassfactory = IClassFactoryVTable {
+            base: iunknown,
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
-        let vptr = Box::into_raw(Box::new(IClassFactoryVTable(iunknown, iclassfactory)));
+        let vptr = Box::into_raw(Box::new(iclassfactory));
         ClarkKentClass {
             inner: vptr,
             ref_count: 0,

@@ -24,7 +24,7 @@ use winapi::{
 
 use com::{
     create_instance, initialize_ex, uninitialize, ComInterface, ComPtr, IClassFactory, IUnknown,
-    IID_ICLASS_FACTORY,
+    IID_ICLASSFACTORY,
 };
 use interface::{ISuperman, CLSID_CLARK_KENT_CLASS};
 
