@@ -1,4 +1,4 @@
-use std::process::{Command,};
+use std::process::Command;
 
 fn main() {
     let mut child_proc = Command::new("cmd")

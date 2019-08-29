@@ -5,5 +5,5 @@ authors = ["Microsoft Corp"]
 edition = "2018"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["winuser", "winreg", "winerror", "winnt", "libloaderapi", "olectl"] }
+winapi = { version = "0.3", features = ["winuser", "winreg", "winerror", "winnt", "libloaderapi", "olectl", "objbase",] }
 com_interface_attribute = { path = "com_interface_attribute" }

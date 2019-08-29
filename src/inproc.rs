@@ -170,3 +170,78 @@ pub fn guid_to_string(guid: &GUID) -> String {
         guid.Data4[7],
     )
 }
+
+#[macro_export]
+macro_rules! com_inproc_dll_module {
+    (($clsid_one:ident, $classtype_one:ty), $(($clsid:ident, $classtype:ty)),*) => {
+        #[no_mangle]
+        extern "stdcall" fn DllGetClassObject(rclsid: REFCLSID, riid: REFIID, ppv: *mut LPVOID) -> HRESULT {
+            let rclsid = unsafe{ &*rclsid };
+            if IsEqualGUID(rclsid, &$clsid_one) {
+                let mut instance = Box::new(<$classtype_one>::new());
+                instance.add_ref();
+                let hr = instance.query_interface(riid, ppv);
+                instance.release();
+                Box::into_raw(instance);
+
+                hr
+            } $(else if IsEqualGUID(rclsid, &$clsid) {
+                let mut instance = Box::new(<$classtype>::new());
+                instance.add_ref();
+                let hr = instance.query_interface(riid, ppv);
+                instance.release();
+                Box::into_raw(instance);
+
+                hr
+            })* else  {
+                CLASS_E_CLASSNOTAVAILABLE
+            }
+        }
+
+        #[no_mangle]
+        extern "stdcall" fn DllRegisterServer() -> HRESULT {
+            let hr = register_keys(get_relevant_registry_keys());
+            if failed(hr) {
+                DllUnregisterServer();
+            }
+
+            hr
+        }
+
+        // Function tries to delete as many registry keys as possible.
+        #[no_mangle]
+        extern "stdcall" fn DllUnregisterServer() -> HRESULT {
+            let mut registry_keys_to_remove = get_relevant_registry_keys();
+            registry_keys_to_remove.reverse();
+            unregister_keys(registry_keys_to_remove)
+        }
+
+
+        fn get_relevant_registry_keys() -> Vec<RegistryKeyInfo> {
+            let file_path = get_dll_file_path();
+            // IMPORTANT: Assumption of order: Subkeys are located at a higher index than the parent key.
+            vec![
+                RegistryKeyInfo::new(
+                    class_key_path($clsid_one).as_str(),
+                    "",
+                    stringify!($classtype_one),
+                ),
+                RegistryKeyInfo::new(
+                    class_inproc_key_path($clsid_one).as_str(),
+                    "",
+                    file_path.clone().as_str(),
+                ),
+                $(RegistryKeyInfo::new(
+                    class_key_path($clsid).as_str(),
+                    "",
+                    stringify!($classtype),
+                ),
+                RegistryKeyInfo::new(
+                    class_inproc_key_path($clsid).as_str(),
+                    "",
+                    file_path.clone().as_str(),
+                )),*
+            ]
+        }
+    }
+}

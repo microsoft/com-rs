@@ -1,5 +1,5 @@
-use super::ianimal::{IAnimal,};
-use com::{ComInterface, ComPtr,};
+use super::ianimal::IAnimal;
+use com::{ComInterface, ComPtr};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
@@ -21,7 +21,7 @@ unsafe impl ComInterface for IDomesticAnimal {
 
 pub type IDomesticAnimalVPtr = *const IDomesticAnimalVTable;
 
-impl <T: IDomesticAnimal + ComInterface + ?Sized> IDomesticAnimal for ComPtr<T> {
+impl<T: IDomesticAnimal + ComInterface + ?Sized> IDomesticAnimal for ComPtr<T> {
     fn train(&mut self) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut IDomesticAnimalVPtr;
         unsafe { ((**itf_ptr).Train)(itf_ptr) }
@@ -40,14 +40,16 @@ macro_rules! idomesticanimal_gen_vtable {
     ($type:ty, $offset:literal) => {{
         let ianimal_vtable = ianimal_gen_vtable!($type, $offset);
 
-        unsafe extern "stdcall" fn idomesticanimal_train(this: *mut IDomesticAnimalVPtr) -> HRESULT {
+        unsafe extern "stdcall" fn idomesticanimal_train(
+            this: *mut IDomesticAnimalVPtr,
+        ) -> HRESULT {
             let this = this.sub($offset) as *mut $type;
             (*this).train()
         }
-        
+
         IDomesticAnimalVTable {
             base: ianimal_vtable,
             Train: idomesticanimal_train,
         }
-    }}
+    }};
 }

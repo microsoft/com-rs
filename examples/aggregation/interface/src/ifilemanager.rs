@@ -1,4 +1,4 @@
-use com::{ComInterface, ComPtr, IUnknown,};
+use com::{ComInterface, ComPtr, IUnknown};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
@@ -20,7 +20,7 @@ unsafe impl ComInterface for IFileManager {
 
 pub type IFileManagerVPtr = *const IFileManagerVTable;
 
-impl <T: IFileManager + ComInterface + ?Sized> IFileManager for ComPtr<T> {
+impl<T: IFileManager + ComInterface + ?Sized> IFileManager for ComPtr<T> {
     fn delete_all(&mut self) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut IFileManagerVPtr;
         unsafe { ((**itf_ptr).DeleteAll)(itf_ptr) }

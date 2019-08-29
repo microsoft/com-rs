@@ -1,11 +1,9 @@
 use crate::BritishShortHairCat;
 use com::{
-    IClassFactoryVTable, IUnknownVTable, IID_ICLASSFACTORY,
-    IID_IUNKNOWN, IClassFactory, IUnknownVPtr, IClassFactoryVPtr, IUnknown
+    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr, IUnknownVTable,
+    IID_ICLASSFACTORY, IID_IUNKNOWN,
 };
-use interface::icat_class::{
-    ICatClassVTable, IID_ICAT_CLASS, ICatClassVPtr
-};
+use interface::icat_class::{ICatClassVPtr, ICatClassVTable, IID_ICAT_CLASS};
 
 use winapi::{
     ctypes::c_void,
@@ -23,7 +21,12 @@ pub struct BritishShortHairCatClass {
 }
 
 impl IClassFactory for BritishShortHairCatClass {
-    fn create_instance(&mut self, aggr: *mut IUnknownVPtr, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT {
+    fn create_instance(
+        &mut self,
+        aggr: *mut IUnknownVPtr,
+        riid: REFIID,
+        ppv: *mut *mut c_void,
+    ) -> HRESULT {
         println!("Creating instance...");
         if !aggr.is_null() {
             return CLASS_E_NOAGGREGATION;

@@ -1,7 +1,7 @@
 use crate::LocalFileManager;
 use com::{
-    IClassFactory, IClassFactoryVTable, IUnknownVTable, IClassFactoryVPtr,
-    IUnknownVPtr, IID_ICLASSFACTORY, IID_IUNKNOWN, ComPtr, IUnknown,
+    ComPtr, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
+    IUnknownVTable, IID_ICLASSFACTORY, IID_IUNKNOWN,
 };
 
 use winapi::{
@@ -13,8 +13,8 @@ use winapi::{
     },
 };
 
-use std::ptr::NonNull;
 use core::mem::forget;
+use std::ptr::NonNull;
 
 #[repr(C)]
 pub struct LocalFileManagerClass {
@@ -29,7 +29,12 @@ impl Drop for LocalFileManagerClass {
 }
 
 impl IClassFactory for LocalFileManagerClass {
-    fn create_instance(&mut self, aggr: *mut IUnknownVPtr, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT {
+    fn create_instance(
+        &mut self,
+        aggr: *mut IUnknownVPtr,
+        riid: REFIID,
+        ppv: *mut *mut c_void,
+    ) -> HRESULT {
         println!("Creating instance...");
 
         unsafe {
@@ -50,9 +55,10 @@ impl IClassFactory for LocalFileManagerClass {
 
             // TODO: Put else here better?
 
-            // Here, we create a ComPtr since it is the only way to call IUnknown methods. We also add_ref here, as 
+            // Here, we create a ComPtr since it is the only way to call IUnknown methods. We also add_ref here, as
             // ComPtr will call release at the end of this scope.
-            let mut non_delegating_unk : ComPtr<IUnknown> = ComPtr::new(&lfm.non_delegating_unk as *const _ as *mut c_void);
+            let mut non_delegating_unk: ComPtr<IUnknown> =
+                ComPtr::new(&lfm.non_delegating_unk as *const _ as *mut c_void);
 
             // As an aggregable object, we have to add_ref through the
             // non-delegating IUnknown on creation. Otherwise, we might
@@ -75,7 +81,6 @@ impl IClassFactory for LocalFileManagerClass {
         println!("LockServer called");
         S_OK
     }
-    
 }
 
 impl IUnknown for LocalFileManagerClass {

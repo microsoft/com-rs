@@ -1,4 +1,4 @@
-use super::ianimal::{IAnimal};
+use super::ianimal::IAnimal;
 use com::{ComInterface, ComPtr};
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
@@ -21,7 +21,7 @@ unsafe impl ComInterface for ICat {
 
 pub type ICatVPtr = *const ICatVTable;
 
-impl <T: ICat + ComInterface + ?Sized> ICat for ComPtr<T> {
+impl<T: ICat + ComInterface + ?Sized> ICat for ComPtr<T> {
     fn ignore_humans(&mut self) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ICatVPtr;
         unsafe { ((**itf_ptr).IgnoreHumans)(itf_ptr) }
@@ -44,10 +44,10 @@ macro_rules! icat_gen_vtable {
             let this = this.sub($offset) as *mut $type;
             (*this).ignore_humans()
         }
-        
+
         ICatVTable {
             base: ianimal_vtable,
             IgnoreHumans: icat_ignore_humans,
         }
-    }}
+    }};
 }

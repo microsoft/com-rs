@@ -1,4 +1,4 @@
-use com::{ComInterface, ComPtr, IUnknown, IClassFactory};
+use com::{ComInterface, ComPtr, IClassFactory, IUnknown};
 
 use winapi::shared::guiddef::IID;
 
@@ -18,12 +18,10 @@ unsafe impl ComInterface for ICatClass {
 
 pub type ICatClassVPtr = *const ICatClassVTable;
 
-impl <T: ICatClass + ComInterface + ?Sized> ICatClass for ComPtr<T> {}
+impl<T: ICatClass + ComInterface + ?Sized> ICatClass for ComPtr<T> {}
 
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct ICatClassVTable {
     pub base: <IClassFactory as ComInterface>::VTable,
 }
-
-

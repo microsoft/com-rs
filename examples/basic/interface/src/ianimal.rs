@@ -1,5 +1,5 @@
-use winapi::shared::guiddef::IID;
 use com::{ComInterface, ComPtr, IUnknown};
+use winapi::shared::guiddef::IID;
 use winapi::um::winnt::HRESULT;
 
 pub const IID_IANIMAL: IID = IID {
@@ -20,7 +20,7 @@ unsafe impl ComInterface for IAnimal {
 
 pub type IAnimalVPtr = *const IAnimalVTable;
 
-impl <T: IAnimal + ComInterface + ?Sized> IAnimal for ComPtr<T> {
+impl<T: IAnimal + ComInterface + ?Sized> IAnimal for ComPtr<T> {
     fn eat(&mut self) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut IAnimalVPtr;
         unsafe { ((**itf_ptr).Eat)(itf_ptr) }
@@ -43,10 +43,10 @@ macro_rules! ianimal_gen_vtable {
             let this = this.sub($offset) as *mut $type;
             (*this).eat()
         }
-        
+
         IAnimalVTable {
             base: iunknown_vtable,
             Eat: ianimal_eat,
         }
-    }}
+    }};
 }
