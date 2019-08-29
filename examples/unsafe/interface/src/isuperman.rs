@@ -29,7 +29,7 @@ pub trait ISuperman: IUnknown {
     // fn populate_interface(ComOutPtr<ComItf>);
 }
 
-unsafe impl ComInterface for ISuperman {
+unsafe impl ComInterface for dyn ISuperman {
     type VTable = ISupermanVTable;
     const IID: IID = IID_ISUPERMAN;
 }

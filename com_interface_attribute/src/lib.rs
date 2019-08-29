@@ -119,7 +119,7 @@ fn gen_cominterface_impl(itf: &ItemTrait) -> HelperTokenStream {
     let iid_ident = get_iid_ident(trait_ident);
 
     quote!(
-        unsafe impl ComInterface for #trait_ident {
+        unsafe impl ComInterface for dyn #trait_ident {
             type VTable = #vtable_ident;
             const IID: IID = #iid_ident;
         }
@@ -167,7 +167,7 @@ fn gen_vtable(itf: &ItemTrait) -> HelperTokenStream {
             #[allow(non_snake_case)]
             #[repr(C)]
             pub struct #vtable_ident {
-                pub base: <#base_trait_ident as ComInterface>::VTable,
+                pub base: <dyn #base_trait_ident as ComInterface>::VTable,
                 #methods
             }
         )

@@ -13,7 +13,7 @@ pub trait IFileManager: IUnknown {
     fn delete_all(&mut self) -> HRESULT;
 }
 
-unsafe impl ComInterface for IFileManager {
+unsafe impl ComInterface for dyn IFileManager {
     type VTable = IFileManagerVTable;
     const IID: IID = IID_IFILE_MANAGER;
 }
@@ -30,6 +30,6 @@ impl<T: IFileManager + ComInterface + ?Sized> IFileManager for ComPtr<T> {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IFileManagerVTable {
-    pub base: <IUnknown as ComInterface>::VTable,
+    pub base: <dyn IUnknown as ComInterface>::VTable,
     pub DeleteAll: unsafe extern "stdcall" fn(*mut IFileManagerVPtr) -> HRESULT,
 }

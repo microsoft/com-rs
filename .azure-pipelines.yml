@@ -13,7 +13,7 @@ jobs:
           set -ex
           export RUST_BACKTRACE=1
           cargo fmt --all -- --check
-          cargo check --all
+          RUSTFLAGS="-D warnings" cargo check --all
           cargo test --all
 
       - bash: |
@@ -23,7 +23,7 @@ jobs:
           do
             cd $dir
             cargo fmt --all -- --check
-            cargo check --all
+            RUSTFLAGS="-D warnings" cargo check --all
             cargo test --all
             cd ../..
           done

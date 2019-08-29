@@ -8,24 +8,9 @@
 //   HRESULT IgnoreHumans(void);
 // }
 
-use winapi::{
-    ctypes::c_void,
-    shared::{
-        guiddef::{IID, REFCLSID, REFIID},
-        minwindef::LPVOID,
-        winerror::{E_FAIL, HRESULT, S_OK},
-        wtypesbase::CLSCTX_INPROC_SERVER,
-    },
-    um::{
-        combaseapi::{CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize},
-        objbase::COINIT_APARTMENTTHREADED,
-    },
-};
+use winapi::shared::winerror::{E_FAIL, S_OK};
 
-use com::{
-    create_instance, initialize_ex, uninitialize, ComInterface, ComOutPtr, ComPtr, IClassFactory,
-    IUnknown, IID_ICLASSFACTORY,
-};
+use com::{create_instance, initialize_ex, uninitialize, ComOutPtr};
 use interface::{ISuperman, CLSID_CLARK_KENT_CLASS};
 
 fn main() {
@@ -42,7 +27,7 @@ fn main() {
 }
 
 fn run_safe_test() {
-    let mut clark_kent = match create_instance::<ISuperman>(&CLSID_CLARK_KENT_CLASS) {
+    let mut clark_kent = match create_instance::<dyn ISuperman>(&CLSID_CLARK_KENT_CLASS) {
         Ok(clark_kent) => clark_kent,
         Err(e) => {
             println!("Failed to get clark kent, {:x}", e as u32);
@@ -71,7 +56,7 @@ fn run_safe_test() {
     let mut ptr_to_mutate = None;
     clark_kent.mutate_and_return(&mut ptr_to_mutate);
     match ptr_to_mutate {
-        Some(n) => assert!(false),
+        Some(_n) => assert!(false),
         None => (),
     };
 
