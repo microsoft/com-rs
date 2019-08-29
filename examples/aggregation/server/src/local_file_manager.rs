@@ -1,7 +1,6 @@
-use com::{IUnknownVTable, IUnknown, IUnknownVPtr, IID_IUNKNOWN, ComPtr,};
+use com::{ComPtr, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
 use interface::ilocalfilemanager::{
-    ILocalFileManager, ILocalFileManagerVTable, ILocalFileManagerVPtr,
-    IID_ILOCAL_FILE_MANAGER,
+    ILocalFileManager, ILocalFileManagerVPtr, ILocalFileManagerVTable, IID_ILOCAL_FILE_MANAGER,
 };
 
 use winapi::{
@@ -12,8 +11,8 @@ use winapi::{
     },
 };
 
-use std::ptr::NonNull;
 use core::mem::forget;
+use std::ptr::NonNull;
 
 /// The implementation class
 #[repr(C)]
@@ -26,8 +25,7 @@ pub struct LocalFileManager {
 
 impl Drop for LocalFileManager {
     fn drop(&mut self) {
-        let _ =
-            unsafe { Box::from_raw(self.inner_one as *mut ILocalFileManagerVTable) };
+        let _ = unsafe { Box::from_raw(self.inner_one as *mut ILocalFileManagerVTable) };
     }
 }
 
@@ -87,28 +85,28 @@ unsafe extern "stdcall" fn ilocalfilemanager_query_interface(
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     let lfm = this as *mut LocalFileManager;
-    let mut iunk_to_use : ComPtr<IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
+    let mut iunk_to_use: ComPtr<IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
     let hr = iunk_to_use.query_interface(riid, ppv);
     forget(iunk_to_use);
-    
+
     hr
 }
 
 unsafe extern "stdcall" fn ilocalfilemanager_add_ref(this: *mut IUnknownVPtr) -> u32 {
     let lfm = this as *mut LocalFileManager;
-    let mut iunk_to_use : ComPtr<IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
+    let mut iunk_to_use: ComPtr<IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
     let hr = iunk_to_use.add_ref();
     forget(iunk_to_use);
-    
+
     hr
 }
 
 unsafe extern "stdcall" fn ilocalfilemanager_release(this: *mut IUnknownVPtr) -> u32 {
     let lfm = this as *mut LocalFileManager;
-    let mut iunk_to_use : ComPtr<IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
+    let mut iunk_to_use: ComPtr<IUnknown> = ComPtr::new((*lfm).iunk_to_use as *mut c_void);
     let hr = iunk_to_use.release();
     forget(iunk_to_use);
-    
+
     hr
 }
 
@@ -122,12 +120,16 @@ unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_query_interface(
     (*this).query_interface(riid, ppv)
 }
 
-unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_add_ref(this: *mut IUnknownVPtr) -> u32 {
+unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_add_ref(
+    this: *mut IUnknownVPtr,
+) -> u32 {
     let this = this.sub(1) as *mut LocalFileManager;
     (*this).add_ref()
 }
 
-unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_release(this: *mut IUnknownVPtr) -> u32 {
+unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_release(
+    this: *mut IUnknownVPtr,
+) -> u32 {
     let this = this.sub(1) as *mut LocalFileManager;
     (*this).release()
 }

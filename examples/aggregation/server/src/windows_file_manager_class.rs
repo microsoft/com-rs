@@ -1,7 +1,7 @@
 use crate::WindowsFileManager;
 use com::{
-    failed, IClassFactory, IClassFactoryVTable, IUnknownVTable,
-    IClassFactoryVPtr, IUnknownVPtr, IID_ICLASSFACTORY, IID_IUNKNOWN, IUnknown,
+    failed, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
+    IUnknownVTable, IID_ICLASSFACTORY, IID_IUNKNOWN,
 };
 use interface::CLSID_LOCAL_FILE_MANAGER_CLASS;
 
@@ -29,7 +29,12 @@ impl Drop for WindowsFileManagerClass {
 }
 
 impl IClassFactory for WindowsFileManagerClass {
-    fn create_instance(&mut self, aggr: *mut IUnknownVPtr, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT {
+    fn create_instance(
+        &mut self,
+        aggr: *mut IUnknownVPtr,
+        riid: REFIID,
+        ppv: *mut *mut c_void,
+    ) -> HRESULT {
         println!("Creating instance...");
         if aggr != std::ptr::null_mut() {
             return CLASS_E_NOAGGREGATION;

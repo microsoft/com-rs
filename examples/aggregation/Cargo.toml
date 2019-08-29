@@ -1,0 +1,12 @@
+[package]
+name = "basic"
+version = "0.0.1"
+authors = ["Microsoft Corp"]
+edition = "2018"
+
+[workspace]
+members = [
+    "client",
+    "interface",
+    "server",
+]

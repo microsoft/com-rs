@@ -1,8 +1,6 @@
-use com::{failed, IUnknownVPtr, IID_IUNKNOWN, ComPtr, IUnknown, IUnknownVTable};
+use com::{failed, ComPtr, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
 use interface::{
-    ifilemanager::{
-        IFileManager, IFileManagerVTable, IFileManagerVPtr, IID_IFILE_MANAGER,
-    },
+    ifilemanager::{IFileManager, IFileManagerVPtr, IFileManagerVTable, IID_IFILE_MANAGER},
     ilocalfilemanager::IID_ILOCAL_FILE_MANAGER,
 };
 
@@ -14,8 +12,8 @@ use winapi::{
     },
 };
 
-use std::ptr::NonNull;
 use std::mem::forget;
+use std::ptr::NonNull;
 
 /// The implementation class
 #[repr(C)]
@@ -28,7 +26,7 @@ pub struct WindowsFileManager {
 impl Drop for WindowsFileManager {
     fn drop(&mut self) {
         unsafe {
-            let mut lfm_iunknown : ComPtr<IUnknown> = ComPtr::new(self.lfm_iunknown as *mut c_void);
+            let mut lfm_iunknown: ComPtr<IUnknown> = ComPtr::new(self.lfm_iunknown as *mut c_void);
             lfm_iunknown.release();
             Box::from_raw(self.inner_one as *mut IFileManagerVTable);
 
@@ -52,8 +50,8 @@ impl IUnknown for WindowsFileManager {
             if IsEqualGUID(riid, &IID_IUNKNOWN) | IsEqualGUID(riid, &IID_IFILE_MANAGER) {
                 *ppv = self as *const _ as *mut c_void;
             } else if IsEqualGUID(riid, &IID_ILOCAL_FILE_MANAGER) {
-
-                let mut lfm_iunknown : ComPtr<IUnknown> = ComPtr::new(self.lfm_iunknown as *mut c_void);
+                let mut lfm_iunknown: ComPtr<IUnknown> =
+                    ComPtr::new(self.lfm_iunknown as *mut c_void);
                 let hr = lfm_iunknown.query_interface(riid, ppv);
                 if failed(hr) {
                     return E_NOINTERFACE;

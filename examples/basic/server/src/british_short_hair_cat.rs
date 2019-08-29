@@ -1,12 +1,13 @@
-use com::{IUnknownVPtr, IID_IUNKNOWN, IUnknown, IUnknownVTable, iunknown_gen_vtable};
+use com::{iunknown_gen_vtable, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
 use interface::{
-    ianimal::{IAnimal, IAnimalVPtr, IID_IANIMAL, IAnimalVTable,},
-    icat::{ICat, ICatVTable, ICatVPtr, IID_ICAT},
+    ianimal::{IAnimal, IAnimalVPtr, IAnimalVTable, IID_IANIMAL},
+    ianimal_gen_vtable,
+    icat::{ICat, ICatVPtr, ICatVTable, IID_ICAT},
+    icat_gen_vtable,
     idomesticanimal::{
-        IDomesticAnimal, IDomesticAnimalVTable, IDomesticAnimalVPtr,
-        IID_IDOMESTIC_ANIMAL,
+        IDomesticAnimal, IDomesticAnimalVPtr, IDomesticAnimalVTable, IID_IDOMESTIC_ANIMAL,
     },
-    icat_gen_vtable, idomesticanimal_gen_vtable, ianimal_gen_vtable,
+    idomesticanimal_gen_vtable,
 };
 
 use winapi::{
@@ -77,7 +78,7 @@ impl IUnknown for BritishShortHairCat {
 
             println!("Successful!.");
             self.add_ref();
-            NOERROR 
+            NOERROR
         }
     }
 

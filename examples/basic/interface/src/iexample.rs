@@ -1,4 +1,4 @@
-use com::{ComInterface, ComPtr, IUnknown,};
+use com::{ComInterface, ComPtr, IUnknown};
 
 use winapi::shared::guiddef::IID;
 
@@ -18,7 +18,7 @@ unsafe impl ComInterface for IExample {
 
 pub type IExampleVPtr = *const IExampleVTable;
 
-impl <T: IExample + ComInterface + ?Sized> IExample for ComPtr<T> {}
+impl<T: IExample + ComInterface + ?Sized> IExample for ComPtr<T> {}
 
 #[repr(C)]
 pub struct IExampleVTable {

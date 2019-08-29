@@ -1,9 +1,11 @@
+mod comlibrary;
 mod comoutptr;
 mod comptr;
 mod iclassfactory;
 mod inproc;
 mod iunknown;
 
+pub use comlibrary::*;
 pub use comoutptr::ComOutPtr;
 pub use comptr::ComPtr;
 pub use iclassfactory::{IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IID_ICLASSFACTORY};

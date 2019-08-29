@@ -1,33 +1,8 @@
-// import "unknwn.idl";
-// [object, uuid(DF12E151-A29A-l1dO-8C2D-00BOC73925BA)]
-// interface IAnimal : IUnknown {
-//   HRESULT Eat(void);
-// }
-// [object, uuid(DF12E152-A29A-l1dO-8C2D-0080C73925BA)]
-// interface ICat : IAnimal {
-//   HRESULT IgnoreHumans(void);
-// }
-
-use winapi::{
-    ctypes::c_void,
-    shared::{
-        guiddef::{IID, REFCLSID, REFIID},
-        minwindef::LPVOID,
-        winerror::HRESULT,
-        wtypesbase::CLSCTX_INPROC_SERVER,
-    },
-    um::{
-        combaseapi::{CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize},
-        objbase::COINIT_APARTMENTTHREADED,
-    },
+use com::{
+    create_instance, failed, get_class_object, initialize_ex, uninitialize, ComInterface, ComPtr,
+    IClassFactory, IUnknown, IID_ICLASSFACTORY,
 };
-
-use com::{failed, ComInterface, ComPtr, IClassFactory, IUnknown, IID_ICLASSFACTORY};
-use interface::{
-    IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS,
-    CLSID_LOCAL_FILE_MANAGER_CLASS, ILocalFileManager,
-    CLSID_WINDOWS_FILE_MANAGER_CLASS, IFileManager,
-};
+use interface::{IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS};
 
 fn main() {
     let result = initialize_ex();
@@ -36,8 +11,6 @@ fn main() {
         println!("Failed to initialize COM Library: {}", hr);
         return;
     }
-
-    run_aggr_test();
 
     let result = get_class_object(&CLSID_CAT_CLASS);
     let mut factory = match result {
@@ -136,93 +109,4 @@ fn main() {
     drop(factory);
 
     uninitialize();
-}
-
-fn run_aggr_test() {
-    let result = create_instance::<IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
-    let mut filemanager = match result {
-        Ok(filemanager) => filemanager,
-        Err(e) => {
-            println!("Failed to get filemanager, {:x}", e as u32);
-            return;
-        }
-    };
-    println!("Got filemanager!");
-    filemanager.delete_all();
-
-    let result = filemanager.get_interface::<ILocalFileManager>();
-    let mut lfm = match result {
-        Some(lfm) => lfm,
-        None => {
-            println!("Failed to get Local File Manager!");
-            return;
-        }
-    };
-    println!("Got Local File Manager.");
-    lfm.delete_local();
-
-    let result = create_instance::<ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
-    let mut localfilemanager = match result {
-        Ok(localfilemanager) => localfilemanager,
-        Err(e) => {
-            println!("Failed to get localfilemanager, {:x}", e as u32);
-            return;
-        }
-    };
-    println!("Got localfilemanager!");
-    localfilemanager.delete_local();
-}
-
-// TODO: accept threading options
-fn initialize_ex() -> Result<(), HRESULT> {
-    let hr = unsafe { CoInitializeEx(std::ptr::null_mut::<c_void>(), COINIT_APARTMENTTHREADED) };
-    if failed(hr) {
-        // TODO: https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
-        // A thread must call CoUninitialize once for each successful call it has made to the
-        // CoInitialize or CoInitializeEx function, including any call that returns S_FALSE.
-        return Err(hr);
-    }
-    Ok(())
-}
-
-// TODO: accept server options
-fn get_class_object(iid: &IID) -> Result<ComPtr<IClassFactory>, HRESULT> {
-    let mut class_factory = std::ptr::null_mut::<c_void>();
-    let hr = unsafe {
-        CoGetClassObject(
-            iid as REFCLSID,
-            CLSCTX_INPROC_SERVER,
-            std::ptr::null_mut::<c_void>(),
-            &IID_ICLASSFACTORY as REFIID,
-            &mut class_factory as *mut LPVOID,
-        )
-    };
-    if failed(hr) {
-        return Err(hr);
-    }
-
-    unsafe { Ok(ComPtr::new(class_factory)) }
-}
-
-// TODO: accept server options
-fn create_instance<T: ComInterface + ?Sized>(clsid: &IID) -> Result<ComPtr<T>, HRESULT> {
-    let mut instance = std::ptr::null_mut::<c_void>();
-    let hr = unsafe {
-        CoCreateInstance(
-            clsid as REFCLSID,
-            std::ptr::null_mut(),
-            CLSCTX_INPROC_SERVER,
-            &T::IID as REFIID,
-            &mut instance as *mut LPVOID,
-        )
-    };
-    if failed(hr) {
-        return Err(hr);
-    }
-
-    unsafe { Ok(ComPtr::new(instance)) }
-}
-
-fn uninitialize() {
-    unsafe { CoUninitialize() }
 }
