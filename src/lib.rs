@@ -10,7 +10,6 @@ pub use iclassfactory::{IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, I
 pub use inproc::*;
 pub use iunknown::{IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
 
-extern crate winapi;
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
 pub fn failed(result: HRESULT) -> bool {

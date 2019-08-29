@@ -16,7 +16,7 @@ pub trait IClassFactory: IUnknown {
     fn lock_server(&mut self, increment: BOOL) -> HRESULT;
 }
 
-impl ComPtr<IClassFactory> {
+impl ComPtr<dyn IClassFactory> {
     pub fn get_instance<T: ComInterface + ?Sized>(&mut self) -> Option<ComPtr<T>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
         let aggr = std::ptr::null_mut();
