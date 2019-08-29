@@ -14,7 +14,6 @@ use std::iter::FromIterator;
 
 #[proc_macro_attribute]
 pub fn com_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
-    println!("Macro expansion start for item: \n\n{}", item);
     let input = syn::parse_macro_input!(item as syn::ItemTrait);
 
     let mut out: Vec<TokenStream> = Vec::new();
@@ -25,9 +24,7 @@ pub fn com_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
     out.push(gen_cominterface_impl(&input).into());
     out.push(gen_iid_struct(&attr, &input.ident).into());
 
-    let out = TokenStream::from_iter(out);
-    // println!("Result:\n{}", out.to_string());
-    out
+    TokenStream::from_iter(out)
 }
 
 // Helper functions
@@ -232,10 +229,7 @@ fn gen_raw_type(t: &Type) -> HelperTokenStream {
         Type::Macro(_n) => panic!("TypeMacro type unhandled!"),
         Type::Never(_n) => panic!("TypeNever type unhandled!"),
         Type::Paren(_n) => panic!("Paren type unhandled!"),
-        Type::Path(n) => {
-            println!("Path found: {}", n.to_token_stream().to_string());
-            quote!(#t,)
-        }
+        Type::Path(_n) => quote!(#t,),
         Type::Ptr(_n) => quote!(#t,),
         Type::Reference(_n) => panic!("Reference type unhandled!"),
         Type::Slice(_n) => panic!("Slice type unhandled!"),

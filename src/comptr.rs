@@ -39,14 +39,14 @@ impl<T: ComInterface + ?Sized> ComPtr<T> {
 
     fn cast_and_add_ref(&mut self) {
         unsafe {
-            (*(self as *const _ as *mut ComPtr<IUnknown>)).add_ref();
+            (*(self as *const _ as *mut ComPtr<dyn IUnknown>)).add_ref();
         }
     }
 
     pub fn get_interface<S: ComInterface + ?Sized>(&mut self) -> Option<ComPtr<S>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
         let hr = unsafe {
-            (*(self as *const _ as *mut ComPtr<IUnknown>))
+            (*(self as *const _ as *mut ComPtr<dyn IUnknown>))
                 .query_interface(&S::IID as *const IID, &mut ppv)
         };
         if failed(hr) {
@@ -61,7 +61,7 @@ impl<T: ComInterface + ?Sized> Drop for ComPtr<T> {
     fn drop(&mut self) {
         println!("Dropped!");
         unsafe {
-            (*(self as *const _ as *mut ComPtr<IUnknown>)).release();
+            (*(self as *const _ as *mut ComPtr<dyn IUnknown>)).release();
         }
     }
 }
