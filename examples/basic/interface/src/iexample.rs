@@ -11,7 +11,7 @@ pub const IID_IEXAMPLE: IID = IID {
 
 pub trait IExample: IUnknown {}
 
-unsafe impl ComInterface for IExample {
+unsafe impl ComInterface for dyn IExample {
     type VTable = IExampleVTable;
     const IID: IID = IID_IEXAMPLE;
 }
@@ -22,5 +22,5 @@ impl<T: IExample + ComInterface + ?Sized> IExample for ComPtr<T> {}
 
 #[repr(C)]
 pub struct IExampleVTable {
-    pub base: <IUnknown as ComInterface>::VTable,
+    pub base: <dyn IUnknown as ComInterface>::VTable,
 }

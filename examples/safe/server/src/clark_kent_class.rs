@@ -1,7 +1,7 @@
 use crate::clark_kent::ClarkKent;
 use com::{
-    ComOutPtr, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
-    IUnknownVTable, IID_ICLASSFACTORY, IID_IUNKNOWN,
+    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr, IUnknownVTable,
+    IID_ICLASSFACTORY, IID_IUNKNOWN,
 };
 
 use winapi::{
@@ -35,12 +35,12 @@ impl IClassFactory for ClarkKentClass {
         ck.add_ref();
         let hr = ck.query_interface(riid, ppv);
         ck.release();
-        let ptr = Box::into_raw(ck);
+        let _ptr = Box::into_raw(ck);
 
         hr
     }
 
-    fn lock_server(&mut self, increment: BOOL) -> HRESULT {
+    fn lock_server(&mut self, _increment: BOOL) -> HRESULT {
         println!("LockServer called");
         S_OK
     }

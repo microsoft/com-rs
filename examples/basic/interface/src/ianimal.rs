@@ -13,7 +13,7 @@ pub trait IAnimal: IUnknown {
     fn eat(&mut self) -> HRESULT;
 }
 
-unsafe impl ComInterface for IAnimal {
+unsafe impl ComInterface for dyn IAnimal {
     type VTable = IAnimalVTable;
     const IID: IID = IID_IANIMAL;
 }
@@ -30,7 +30,7 @@ impl<T: IAnimal + ComInterface + ?Sized> IAnimal for ComPtr<T> {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IAnimalVTable {
-    pub base: <IUnknown as ComInterface>::VTable,
+    pub base: <dyn IUnknown as ComInterface>::VTable,
     pub Eat: unsafe extern "stdcall" fn(*mut IAnimalVPtr) -> HRESULT,
 }
 

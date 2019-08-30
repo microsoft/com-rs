@@ -1,7 +1,4 @@
-use com::{
-    create_instance, failed, initialize_ex, uninitialize, ComInterface, ComPtr, IClassFactory,
-    IUnknown, IID_ICLASSFACTORY,
-};
+use com::{create_instance, initialize_ex, uninitialize};
 use interface::{
     IFileManager, ILocalFileManager, CLSID_LOCAL_FILE_MANAGER_CLASS,
     CLSID_WINDOWS_FILE_MANAGER_CLASS,
@@ -21,7 +18,7 @@ fn main() {
 }
 
 fn run_aggr_test() {
-    let result = create_instance::<IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
+    let result = create_instance::<dyn IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
     let mut filemanager = match result {
         Ok(filemanager) => filemanager,
         Err(e) => {
@@ -32,7 +29,7 @@ fn run_aggr_test() {
     println!("Got filemanager!");
     filemanager.delete_all();
 
-    let result = filemanager.get_interface::<ILocalFileManager>();
+    let result = filemanager.get_interface::<dyn ILocalFileManager>();
     let mut lfm = match result {
         Some(lfm) => lfm,
         None => {
@@ -43,7 +40,7 @@ fn run_aggr_test() {
     println!("Got Local File Manager.");
     lfm.delete_local();
 
-    let result = create_instance::<ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
+    let result = create_instance::<dyn ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
     let mut localfilemanager = match result {
         Ok(localfilemanager) => localfilemanager,
         Err(e) => {

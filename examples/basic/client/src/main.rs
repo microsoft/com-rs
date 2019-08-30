@@ -1,7 +1,4 @@
-use com::{
-    create_instance, failed, get_class_object, initialize_ex, uninitialize, ComInterface, ComPtr,
-    IClassFactory, IUnknown, IID_ICLASSFACTORY,
-};
+use com::{create_instance, get_class_object, initialize_ex, uninitialize, IUnknown};
 use interface::{IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS};
 
 fn main() {
@@ -22,7 +19,7 @@ fn main() {
     };
 
     println!("Got factory.");
-    let result = factory.get_instance::<IUnknown>();
+    let result = factory.get_instance::<dyn IUnknown>();
     let mut unknown = match result {
         Some(unknown) => unknown,
         None => {
@@ -31,7 +28,7 @@ fn main() {
         }
     };
 
-    let result = unknown.get_interface::<IAnimal>();
+    let result = unknown.get_interface::<dyn IAnimal>();
     let mut animal = match result {
         Some(animal) => animal,
         None => {
@@ -44,7 +41,7 @@ fn main() {
     animal.eat();
 
     // Test cross-vtable interface queries for both directions.
-    let result = animal.get_interface::<IDomesticAnimal>();
+    let result = animal.get_interface::<dyn IDomesticAnimal>();
     let mut domestic_animal = match result {
         Some(domestic_animal) => domestic_animal,
         None => {
@@ -55,7 +52,7 @@ fn main() {
     println!("Got domestic animal.");
     domestic_animal.train();
 
-    let result = domestic_animal.get_interface::<ICat>();
+    let result = domestic_animal.get_interface::<dyn ICat>();
     let mut new_cat = match result {
         Some(new_cat) => new_cat,
         None => {
@@ -67,7 +64,7 @@ fn main() {
     new_cat.ignore_humans();
 
     // Test querying within second vtable.
-    let result = domestic_animal.get_interface::<IDomesticAnimal>();
+    let result = domestic_animal.get_interface::<dyn IDomesticAnimal>();
     let mut domestic_animal_two = match result {
         Some(domestic_animal_two) => domestic_animal_two,
         None => {
@@ -83,21 +80,21 @@ fn main() {
     // animal.raw_add_ref();
     // animal.add_ref();
 
-    let result = create_instance::<ICat>(&CLSID_CAT_CLASS);
+    let result = create_instance::<dyn ICat>(&CLSID_CAT_CLASS);
     let mut cat = match result {
         Ok(cat) => cat,
         Err(e) => {
-            println!("Failed to get an cat, {:x}", e as u32);
+            println!("Failed to get an cat, {:x}", e);
             return;
         }
     };
     println!("Got cat.");
     cat.eat();
 
-    assert!(animal.get_interface::<ICat>().is_some());
-    assert!(animal.get_interface::<IUnknown>().is_some());
-    assert!(animal.get_interface::<IExample>().is_none());
-    assert!(animal.get_interface::<IDomesticAnimal>().is_some());
+    assert!(animal.get_interface::<dyn ICat>().is_some());
+    assert!(animal.get_interface::<dyn IUnknown>().is_some());
+    assert!(animal.get_interface::<dyn IExample>().is_none());
+    assert!(animal.get_interface::<dyn IDomesticAnimal>().is_some());
 
     // We must drop them now or else we'll get an error when they drop after we've uninitialized COM
     drop(domestic_animal);

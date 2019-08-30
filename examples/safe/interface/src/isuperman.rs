@@ -1,8 +1,6 @@
 use com::{ComInterface, ComOutPtr, ComPtr, IUnknown, IUnknownVTable};
 use std::mem::MaybeUninit;
-use winapi::shared::guiddef::IID;
-use winapi::shared::winerror::S_OK;
-use winapi::um::winnt::HRESULT;
+use winapi::{shared::guiddef::IID, um::winnt::HRESULT};
 
 pub const IID_ISUPERMAN: IID = IID {
     Data1: 0xa56b76e4,
@@ -31,7 +29,7 @@ pub trait ISuperman: IUnknown {
     // fn populate_interface(ComOutPtr<ComItf>);
 }
 
-unsafe impl ComInterface for ISuperman {
+unsafe impl ComInterface for dyn ISuperman {
     type VTable = ISupermanVTable;
     const IID: IID = IID_ISUPERMAN;
 }

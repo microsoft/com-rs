@@ -1,4 +1,5 @@
-use crate::LocalFileManager;
+use crate::local_file_manager::LocalFileManager;
+
 use com::{
     ComPtr, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
     IUnknownVTable, IID_ICLASSFACTORY, IID_IUNKNOWN,
@@ -14,7 +15,6 @@ use winapi::{
 };
 
 use core::mem::forget;
-use std::ptr::NonNull;
 
 #[repr(C)]
 pub struct LocalFileManagerClass {
@@ -57,7 +57,7 @@ impl IClassFactory for LocalFileManagerClass {
 
             // Here, we create a ComPtr since it is the only way to call IUnknown methods. We also add_ref here, as
             // ComPtr will call release at the end of this scope.
-            let mut non_delegating_unk: ComPtr<IUnknown> =
+            let mut non_delegating_unk: ComPtr<dyn IUnknown> =
                 ComPtr::new(&lfm.non_delegating_unk as *const _ as *mut c_void);
 
             // As an aggregable object, we have to add_ref through the

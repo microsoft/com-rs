@@ -30,7 +30,7 @@ pub fn initialize_ex() -> Result<(), HRESULT> {
 }
 
 // TODO: accept server options
-pub fn get_class_object(iid: &IID) -> Result<ComPtr<IClassFactory>, HRESULT> {
+pub fn get_class_object(iid: &IID) -> Result<ComPtr<dyn IClassFactory>, HRESULT> {
     let mut class_factory = std::ptr::null_mut::<c_void>();
     let hr = unsafe {
         CoGetClassObject(

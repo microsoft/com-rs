@@ -1,4 +1,4 @@
-use crate::BritishShortHairCat;
+use crate::british_short_hair_cat::BritishShortHairCat;
 use com::{
     IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr, IUnknownVTable,
     IID_ICLASSFACTORY, IID_IUNKNOWN,

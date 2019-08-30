@@ -13,7 +13,7 @@ pub trait ILocalFileManager: IUnknown {
     fn delete_local(&mut self) -> HRESULT;
 }
 
-unsafe impl ComInterface for ILocalFileManager {
+unsafe impl ComInterface for dyn ILocalFileManager {
     type VTable = ILocalFileManagerVTable;
     const IID: IID = IID_ILOCAL_FILE_MANAGER;
 }
@@ -29,6 +29,6 @@ impl<T: ILocalFileManager + ComInterface + ?Sized> ILocalFileManager for ComPtr<
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct ILocalFileManagerVTable {
-    pub base: <IUnknown as ComInterface>::VTable,
+    pub base: <dyn IUnknown as ComInterface>::VTable,
     pub DeleteLocal: unsafe extern "stdcall" fn(*mut ILocalFileManagerVPtr) -> HRESULT,
 }

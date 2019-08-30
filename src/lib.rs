@@ -24,3 +24,7 @@ pub unsafe trait ComInterface {
     type VTable;
     const IID: IID;
 }
+
+// Export winapi for use by macros
+#[doc(hidden)]
+pub extern crate winapi as _winapi;
