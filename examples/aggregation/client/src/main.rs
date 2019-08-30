@@ -1,24 +1,26 @@
-use com::{create_instance, initialize_ex, uninitialize};
+use com::Runtime;
 use interface::{
     IFileManager, ILocalFileManager, CLSID_LOCAL_FILE_MANAGER_CLASS,
     CLSID_WINDOWS_FILE_MANAGER_CLASS,
 };
 
 fn main() {
-    let result = initialize_ex();
+    let runtime = match Runtime::new() {
+        Ok(runtime) => {
+            println!("Got a runtime");
+            runtime
+        }
+        Err(hr) => {
+            println!("Failed to initialize COM Library: {}", hr);
+            return;
+        }
+    };
 
-    if let Err(hr) = result {
-        println!("Failed to initialize COM Library: {}", hr);
-        return;
-    }
-
-    run_aggr_test();
-
-    uninitialize();
+    run_aggr_test(runtime);
 }
 
-fn run_aggr_test() {
-    let result = create_instance::<dyn IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
+fn run_aggr_test(runtime: Runtime) {
+    let result = runtime.create_instance::<dyn IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
     let mut filemanager = match result {
         Ok(filemanager) => filemanager,
         Err(e) => {
@@ -40,7 +42,7 @@ fn run_aggr_test() {
     println!("Got Local File Manager.");
     lfm.delete_local();
 
-    let result = create_instance::<dyn ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
+    let result = runtime.create_instance::<dyn ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
     let mut localfilemanager = match result {
         Ok(localfilemanager) => localfilemanager,
         Err(e) => {
