@@ -1,16 +1,16 @@
-mod comlibrary;
 mod comoutptr;
 mod comptr;
 mod iclassfactory;
 mod inproc;
 mod iunknown;
+mod runtime;
 
-pub use comlibrary::*;
 pub use comoutptr::ComOutPtr;
 pub use comptr::ComPtr;
 pub use iclassfactory::{IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IID_ICLASSFACTORY};
 pub use inproc::*;
 pub use iunknown::{IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
+pub use runtime::Runtime;
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 

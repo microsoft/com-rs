@@ -8,26 +8,28 @@
 //   HRESULT IgnoreHumans(void);
 // }
 
+use com::{ComOutPtr, Runtime};
 use winapi::shared::winerror::{E_FAIL, S_OK};
 
-use com::{create_instance, initialize_ex, uninitialize, ComOutPtr};
 use interface::{ISuperman, CLSID_CLARK_KENT_CLASS};
 
 fn main() {
-    let result = initialize_ex();
+    let runtime = match Runtime::new() {
+        Ok(runtime) => {
+            println!("Got a runtime");
+            runtime
+        }
+        Err(hr) => {
+            println!("Failed to initialize COM Library: {}", hr);
+            return;
+        }
+    };
 
-    if let Err(hr) = result {
-        println!("Failed to initialize COM Library: {}", hr);
-        return;
-    }
-
-    run_safe_test();
-
-    uninitialize();
+    run_safe_test(runtime);
 }
 
-fn run_safe_test() {
-    let mut clark_kent = match create_instance::<dyn ISuperman>(&CLSID_CLARK_KENT_CLASS) {
+fn run_safe_test(runtime: Runtime) {
+    let mut clark_kent = match runtime.create_instance::<dyn ISuperman>(&CLSID_CLARK_KENT_CLASS) {
         Ok(clark_kent) => clark_kent,
         Err(e) => {
             println!("Failed to get clark kent, {:x}", e as u32);
