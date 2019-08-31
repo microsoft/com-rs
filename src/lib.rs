@@ -5,7 +5,7 @@ mod inproc;
 mod iunknown;
 mod runtime;
 
-pub use comoutptr::ComOutPtr;
+pub use comoutptr::ComOut;
 pub use comptr::ComPtr;
 pub use iclassfactory::{IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IID_ICLASSFACTORY};
 pub use inproc::*;
