@@ -1,4 +1,4 @@
-use com::{iunknown_gen_vtable, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
+use com::{IUnknown, IID_IUNKNOWN};
 use interface::{
     ianimal::{IAnimal, IAnimalVPtr, IAnimalVTable, IID_IANIMAL},
     ianimal_gen_vtable,
@@ -7,7 +7,7 @@ use interface::{
     idomesticanimal::{
         IDomesticAnimal, IDomesticAnimalVPtr, IDomesticAnimalVTable, IID_IDOMESTIC_ANIMAL,
     },
-    idomesticanimal_gen_vtable,
+    idomestic_animal_gen_vtable,
 };
 
 use winapi::{
@@ -102,10 +102,10 @@ impl IUnknown for BritishShortHairCat {
 
 impl BritishShortHairCat {
     pub(crate) fn new() -> BritishShortHairCat {
-        println!("Allocating new Vtable...");
+        println!("Allocating new vtable for Cat...");
         let icat_vtable = icat_gen_vtable!(BritishShortHairCat, 0);
         let icat_vptr = Box::into_raw(Box::new(icat_vtable));
-        let idomesticanimal_vtable = idomesticanimal_gen_vtable!(BritishShortHairCat, 1);
+        let idomesticanimal_vtable = idomestic_animal_gen_vtable!(BritishShortHairCat, 1);
         let idomesticanimal_vptr = Box::into_raw(Box::new(idomesticanimal_vtable));
 
         BritishShortHairCat {

@@ -56,10 +56,7 @@ fn get_vptr_ident(trait_ident: &Ident) -> Ident {
 fn get_vtable_macro_ident(struct_ident: &Ident) -> Ident {
     format_ident!(
         "{}_gen_vtable",
-        struct_ident
-            .to_string()
-            .replace("VTable", "")
-            .to_lowercase()
+        utils::camel_to_snake(struct_ident.to_string().replace("VTable", ""))
     )
 }
 
@@ -166,6 +163,7 @@ fn gen_parent_vtable_macro(item: &ItemStruct) -> HelperTokenStream {
         if parent_name.ends_with("_base") {
             let vtable_gen = format_ident!("{}_gen_vtable", parent_name.trim_end_matches("_base"));
             return quote! {
+                use com::*;
                 let parent_vtable = #vtable_gen!($type, $offset);
             };
         }

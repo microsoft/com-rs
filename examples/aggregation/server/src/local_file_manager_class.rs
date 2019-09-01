@@ -2,7 +2,7 @@ use crate::local_file_manager::LocalFileManager;
 
 use com::{
     ComPtr, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
-    IUnknownVTable, IID_ICLASSFACTORY, IID_IUNKNOWN,
+    IUnknownVTable, IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 
 use winapi::{
@@ -90,7 +90,7 @@ impl IUnknown for LocalFileManagerClass {
             println!("Querying interface on LocalFileManagerClass...");
 
             let riid = &*riid;
-            if IsEqualGUID(riid, &IID_IUNKNOWN) | IsEqualGUID(riid, &IID_ICLASSFACTORY) {
+            if IsEqualGUID(riid, &IID_IUNKNOWN) | IsEqualGUID(riid, &IID_ICLASS_FACTORY) {
                 *ppv = self as *const _ as *mut c_void;
                 self.add_ref();
                 NOERROR
@@ -164,7 +164,7 @@ impl LocalFileManagerClass {
             AddRef: add_ref,
         };
         let iclassfactory = IClassFactoryVTable {
-            base: iunknown,
+            iunknown_base: iunknown,
             CreateInstance: create_instance,
             LockServer: lock_server,
         };

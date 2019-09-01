@@ -1,7 +1,7 @@
 use crate::windows_file_manager::WindowsFileManager;
 use com::{
     failed, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
-    IUnknownVTable, IID_ICLASSFACTORY, IID_IUNKNOWN,
+    IUnknownVTable, IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 use interface::CLSID_LOCAL_FILE_MANAGER_CLASS;
 
@@ -84,7 +84,7 @@ impl IUnknown for WindowsFileManagerClass {
             println!("Querying interface on CatClass...");
 
             let riid_ref = &*riid;
-            if IsEqualGUID(riid_ref, &IID_IUNKNOWN) | IsEqualGUID(riid_ref, &IID_ICLASSFACTORY) {
+            if IsEqualGUID(riid_ref, &IID_IUNKNOWN) | IsEqualGUID(riid_ref, &IID_ICLASS_FACTORY) {
                 *ppv = self as *const _ as *mut c_void;
                 self.add_ref();
                 NOERROR
@@ -156,7 +156,7 @@ impl WindowsFileManagerClass {
             AddRef: add_ref,
         };
         let iclassfactory = IClassFactoryVTable {
-            base: iunknown,
+            iunknown_base: iunknown,
             CreateInstance: create_instance,
             LockServer: lock_server,
         };
