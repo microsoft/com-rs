@@ -136,7 +136,7 @@ impl BritishShortHairCatClass {
             AddRef: add_ref,
         };
         let iclassfactory = IClassFactoryVTable {
-            base: iunknown,
+            iunknown_base: iunknown,
             CreateInstance: create_instance,
             LockServer: lock_server,
         };

@@ -28,3 +28,11 @@ pub unsafe trait ComInterface {
 // Export winapi for use by macros
 #[doc(hidden)]
 pub extern crate winapi as _winapi;
+
+#[doc(hidden)]
+pub use com_interface_attribute::*;
+
+// this allows for the crate to refer to itself as `com` to keep macros consistent
+// whether they are used by some other crate or internally
+#[doc(hidden)]
+extern crate self as com;
