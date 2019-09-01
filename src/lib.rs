@@ -7,7 +7,9 @@ mod runtime;
 
 pub use comoutptr::ComOutPtr;
 pub use comptr::ComPtr;
-pub use iclassfactory::{IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IID_ICLASS_FACTORY};
+pub use iclassfactory::{
+    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IID_ICLASS_FACTORY,
+};
 pub use inproc::*;
 pub use iunknown::{IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
 pub use runtime::Runtime;

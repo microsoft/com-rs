@@ -13,7 +13,7 @@ use interface::{
 use winapi::{
     ctypes::c_void,
     shared::{
-        guiddef::{IsEqualGUID, IID},
+        guiddef::{IsEqualGUID, IID, REFIID},
         winerror::{E_NOINTERFACE, HRESULT, NOERROR},
     },
 };

@@ -1,5 +1,4 @@
 use com::{com_interface, IClassFactory};
 
 #[com_interface(F5353C58-CFD9-4204-8D92-D274C7578B53)]
-pub trait ICatClass: IClassFactory {
-}
+pub trait ICatClass: IClassFactory {}

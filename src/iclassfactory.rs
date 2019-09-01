@@ -1,7 +1,18 @@
 use com_interface_attribute::com_interface;
-use winapi::{ctypes::c_void, shared::{guiddef::{IID, REFIID}, minwindef::BOOL, ntdef::HRESULT}};
+use winapi::{
+    ctypes::c_void,
+    shared::{
+        guiddef::{IID, REFIID},
+        minwindef::BOOL,
+        ntdef::HRESULT,
+    },
+};
 
-use crate::{ComPtr, ComInterface, failed, iunknown::{IUnknown, IUnknownVPtr}};
+use crate::{
+    failed,
+    iunknown::{IUnknown, IUnknownVPtr},
+    ComInterface, ComPtr,
+};
 
 #[com_interface(00000001-0000-0000-c000-000000000046)]
 pub trait IClassFactory: IUnknown {
