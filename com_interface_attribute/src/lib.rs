@@ -39,7 +39,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
 // Helper functions
 
 fn get_iid_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("IID_{}", trait_ident.to_string().to_uppercase())
+    format_ident!(
+        "IID_{}",
+        utils::camel_to_snake(trait_ident.to_string()).to_uppercase()
+    )
 }
 
 fn get_vtable_ident(trait_ident: &Ident) -> Ident {
@@ -257,7 +260,6 @@ fn gen_vtable_method_initialization(item: &ItemStruct) -> HelperTokenStream {
                 utils::camel_to_snake(method_ident.to_string())
             )
         };
-        println!("{}", method_ident);
         let method = quote! {
             #method_ident: #function_ident,
         };

@@ -1,7 +1,7 @@
 use crate::british_short_hair_cat::BritishShortHairCat;
 use com::{
     IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr, IUnknownVTable,
-    IID_ICLASSFACTORY, IID_IUNKNOWN,
+    IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 use interface::icat_class::{ICatClassVPtr, ICatClassVTable, IID_ICAT_CLASS};
 
@@ -53,7 +53,7 @@ impl IUnknown for BritishShortHairCatClass {
         unsafe {
             let riid = &*riid;
             if IsEqualGUID(riid, &IID_IUNKNOWN)
-                || IsEqualGUID(riid, &IID_ICLASSFACTORY)
+                || IsEqualGUID(riid, &IID_ICLASS_FACTORY)
                 || IsEqualGUID(riid, &IID_ICAT_CLASS)
             {
                 *ppv = self as *const _ as *mut c_void;
@@ -141,7 +141,7 @@ impl BritishShortHairCatClass {
             LockServer: lock_server,
         };
         let icatclass = ICatClassVTable {
-            base: iclassfactory,
+            iclass_factory_base: iclassfactory,
         };
         let vptr = Box::into_raw(Box::new(icatclass));
 
