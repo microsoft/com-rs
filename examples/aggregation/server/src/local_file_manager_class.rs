@@ -45,34 +45,19 @@ impl IClassFactory for LocalFileManagerClass {
                 return E_INVALIDARG;
             }
 
-            let mut lfm = Box::new(LocalFileManager::new(aggr));
-
+            let mut lfm = Box::new(LocalFileManager::new());
             // This check has to be here because it can only be done after object
             // is allocated on the heap (address of nonDelegatingUnknown fixed)
-            if aggr.is_null() {
-                lfm.iunk_to_use = &lfm.non_delegating_unk as *const _ as *mut IUnknownVPtr;
-            }
-
-            // TODO: Put else here better?
-
-            // Here, we create a ComPtr since it is the only way to call IUnknown methods. We also add_ref here, as
-            // ComPtr will call release at the end of this scope.
-            let mut non_delegating_unk: ComPtr<dyn IUnknown> =
-                ComPtr::new(&lfm.non_delegating_unk as *const _ as *mut c_void);
+            lfm.set_iunknown(aggr);
 
             // As an aggregable object, we have to add_ref through the
             // non-delegating IUnknown on creation. Otherwise, we might
             // add_ref the outer object if aggregated.
-            non_delegating_unk.add_ref();
-            let hr = non_delegating_unk.query_interface(riid, ppv);
-            non_delegating_unk.release();
-            forget(non_delegating_unk);
+            lfm.inner_add_ref();
+            let hr = lfm.inner_query_interface(riid, ppv);
+            lfm.inner_release();
 
             Box::into_raw(lfm);
-
-            // ((*lfm).non_delegating_unk).raw_add_ref();
-            // let hr = (*lfm).non_delegating_unk.raw_query_interface(riid, ppv);
-            // ((*lfm).non_delegating_unk).raw_release();
             hr
         }
     }

@@ -24,6 +24,7 @@ pub struct WindowsFileManagerClass {
 
 impl Drop for WindowsFileManagerClass {
     fn drop(&mut self) {
+        println!("Dropping WindowsFileManagerClass");
         let _ = unsafe { Box::from_raw(self.inner as *mut IClassFactoryVTable) };
     }
 }
@@ -41,34 +42,12 @@ impl IClassFactory for WindowsFileManagerClass {
         }
 
         let mut wfm = Box::new(WindowsFileManager::new());
+        wfm.add_ref();
+        let hr = wfm.query_interface(riid, ppv);
+        wfm.release();
 
-        // Instantiate object to aggregate
-        // TODO: Should change to use safe ComPtr methods instead.
-        let mut unknown_file_manager = std::ptr::null_mut::<c_void>();
-
-        unsafe {
-            let hr = CoCreateInstance(
-                &CLSID_LOCAL_FILE_MANAGER_CLASS as REFCLSID,
-                (&*wfm) as *const _ as winapi::um::unknwnbase::LPUNKNOWN,
-                CLSCTX_INPROC_SERVER,
-                &IID_IUNKNOWN as REFIID,
-                &mut unknown_file_manager as *mut LPVOID,
-            );
-            if failed(hr) {
-                println!("Failed to instantiate aggregate! Error: {:x}", hr as u32);
-                panic!();
-            }
-            wfm.lfm_iunknown = unknown_file_manager as *mut IUnknownVPtr;
-
-            // Start reference count only after aggregation
-            wfm.add_ref();
-            let hr = wfm.query_interface(riid, ppv);
-            wfm.release();
-
-            // Take ownership of of its memory from Rust
-            Box::into_raw(wfm);
-            hr
-        }
+        Box::into_raw(wfm);
+        hr
     }
 
     fn lock_server(&mut self, _increment: BOOL) -> HRESULT {
@@ -80,7 +59,7 @@ impl IClassFactory for WindowsFileManagerClass {
 impl IUnknown for WindowsFileManagerClass {
     fn query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
         unsafe {
-            println!("Querying interface on CatClass...");
+            println!("Querying interface on WindowsFileManagerClass...");
 
             let riid_ref = &*riid;
             if IsEqualGUID(riid_ref, &IID_IUNKNOWN) | IsEqualGUID(riid_ref, &IID_ICLASS_FACTORY) {

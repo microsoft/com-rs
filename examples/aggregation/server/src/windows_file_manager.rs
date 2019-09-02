@@ -2,43 +2,110 @@ use com::{failed, ComPtr, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
 use interface::{
     ifile_manager::{IFileManager, IFileManagerVPtr, IFileManagerVTable, IID_IFILE_MANAGER},
     ilocal_file_manager::IID_ILOCAL_FILE_MANAGER,
+    CLSID_LOCAL_FILE_MANAGER_CLASS,
+    ifile_manager_gen_vtable,
 };
 
 use winapi::{
     ctypes::c_void,
     shared::{
-        guiddef::{IsEqualGUID, IID},
+        guiddef::{IsEqualGUID, IID, REFCLSID, REFIID,},
         winerror::{E_NOINTERFACE, HRESULT, NOERROR},
+        minwindef::{LPVOID, },
+        wtypesbase::CLSCTX_INPROC_SERVER,
+    },
+    um::{
+        combaseapi::CoCreateInstance
     },
 };
 
 use std::mem::forget;
+use std::ops::{Deref, DerefMut,};
 
 /// The implementation class
 #[repr(C)]
-pub struct WindowsFileManager {
-    inner_one: IFileManagerVPtr,
-    ref_count: u32,
-    pub lfm_iunknown: *mut IUnknownVPtr,
+pub struct InitWindowsFileManager {
+    lfm_iunknown: *mut IUnknownVPtr,
 }
 
-impl Drop for WindowsFileManager {
+impl Deref for WindowsFileManager {
+    type Target = InitWindowsFileManager;
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+impl DerefMut for WindowsFileManager {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.value
+    }
+}
+
+impl Drop for InitWindowsFileManager {
     fn drop(&mut self) {
         unsafe {
+            println!("Dropping init struct..");
             let mut lfm_iunknown: ComPtr<dyn IUnknown> =
                 ComPtr::new(self.lfm_iunknown as *mut c_void);
             lfm_iunknown.release();
-            Box::from_raw(self.inner_one as *mut IFileManagerVTable);
-
             forget(lfm_iunknown);
         };
     }
+    
 }
 
 impl IFileManager for WindowsFileManager {
     fn delete_all(&mut self) -> HRESULT {
         println!("Deleting all by delegating to Local and Remote File Managers...");
         NOERROR
+    }
+}
+
+impl WindowsFileManager {
+    pub(crate) fn new() -> Box<WindowsFileManager> {
+        let init = InitWindowsFileManager {
+            lfm_iunknown: std::ptr::null_mut::<IUnknownVPtr>()
+        };
+
+        let mut wfm = WindowsFileManager::allocate(init);
+
+        // Instantiate object to aggregate
+        // TODO: Should change to use safe ComPtr methods instead.
+        let mut unknown_file_manager = std::ptr::null_mut::<c_void>();
+        let hr = unsafe {
+            CoCreateInstance(
+                &CLSID_LOCAL_FILE_MANAGER_CLASS as REFCLSID,
+                &*wfm as *const _ as winapi::um::unknwnbase::LPUNKNOWN,
+                CLSCTX_INPROC_SERVER,
+                &IID_IUNKNOWN as REFIID,
+                &mut unknown_file_manager as *mut LPVOID,
+            )
+        };
+        if failed(hr) {
+            println!("Failed to instantiate aggregate! Error: {:x}", hr as u32);
+            panic!();
+        }
+
+        wfm.lfm_iunknown = unknown_file_manager as *mut IUnknownVPtr;
+
+        wfm
+    }
+}
+
+// ------------------------- MACRO GENERATED --------------------------------
+
+#[repr(C)]
+pub struct WindowsFileManager {
+    ifilemanager: IFileManagerVPtr,
+    ref_count: u32,
+    value: InitWindowsFileManager,
+}
+
+impl Drop for WindowsFileManager {
+    fn drop(&mut self) {
+        unsafe {
+            Box::from_raw(self.ifilemanager as *mut IFileManagerVTable);
+        };
     }
 }
 
@@ -90,54 +157,20 @@ impl IUnknown for WindowsFileManager {
     }
 }
 
-unsafe extern "stdcall" fn ifilemanager_query_interface(
-    this: *mut IUnknownVPtr,
-    riid: *const IID,
-    ppv: *mut *mut c_void,
-) -> HRESULT {
-    let this = this as *mut WindowsFileManager;
-    (*this).query_interface(riid, ppv)
-}
-
-unsafe extern "stdcall" fn ifilemanager_add_ref(this: *mut IUnknownVPtr) -> u32 {
-    let this = this as *mut WindowsFileManager;
-    (*this).add_ref()
-}
-
-// TODO: This could potentially be null or pointing to some invalid memory
-unsafe extern "stdcall" fn ifilemanager_release(this: *mut IUnknownVPtr) -> u32 {
-    let this = this as *mut WindowsFileManager;
-    (*this).release()
-}
-
-unsafe extern "stdcall" fn delete_all(this: *mut IFileManagerVPtr) -> HRESULT {
-    let this = this as *mut WindowsFileManager;
-    (*this).delete_all()
-}
-
 impl WindowsFileManager {
-    pub(crate) fn new() -> WindowsFileManager {
+    fn allocate(value: InitWindowsFileManager) -> Box<WindowsFileManager> {
         println!("Allocating new Vtable...");
 
         // Initialising VTable for IFileManager
-        let ifilemanager_iunknown = IUnknownVTable {
-            QueryInterface: ifilemanager_query_interface,
-            Release: ifilemanager_release,
-            AddRef: ifilemanager_add_ref,
-        };
-
-        let ifilemanager = IFileManagerVTable {
-            iunknown_base: ifilemanager_iunknown,
-            DeleteAll: delete_all,
-        };
+        let ifilemanager = ifile_manager_gen_vtable!(WindowsFileManager, 0);
         let ifilemanager_vptr = Box::into_raw(Box::new(ifilemanager));
 
-        let out = WindowsFileManager {
-            inner_one: ifilemanager_vptr,
+        let wfm = WindowsFileManager {
+            ifilemanager: ifilemanager_vptr,
             ref_count: 0,
-            lfm_iunknown: std::ptr::null_mut::<IUnknownVPtr>(),
+            value
         };
 
-        out
+        Box::new(wfm)
     }
 }
