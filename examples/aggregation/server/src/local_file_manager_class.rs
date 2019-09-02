@@ -1,8 +1,8 @@
 use crate::local_file_manager::LocalFileManager;
 
 use com::{
-    ComPtr, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
-    IUnknownVTable, IID_ICLASS_FACTORY, IID_IUNKNOWN,
+    ComPtr, iclass_factory_gen_vtable, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
+    IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 
 use winapi::{
@@ -120,55 +120,11 @@ impl IUnknown for LocalFileManagerClass {
     }
 }
 
-unsafe extern "stdcall" fn query_interface(
-    this: *mut IUnknownVPtr,
-    riid: *const IID,
-    ppv: *mut *mut c_void,
-) -> HRESULT {
-    let this = this as *mut LocalFileManagerClass;
-    (*this).query_interface(riid, ppv)
-}
-
-unsafe extern "stdcall" fn add_ref(this: *mut IUnknownVPtr) -> u32 {
-    let this = this as *mut LocalFileManagerClass;
-    (*this).add_ref()
-}
-
-// TODO: This could potentially be null or pointing to some invalid memory
-unsafe extern "stdcall" fn release(this: *mut IUnknownVPtr) -> u32 {
-    let this = this as *mut LocalFileManagerClass;
-    (*this).release()
-}
-
-unsafe extern "stdcall" fn create_instance(
-    this: *mut IClassFactoryVPtr,
-    aggregate: *mut IUnknownVPtr,
-    riid: *const IID,
-    ppv: *mut *mut c_void,
-) -> HRESULT {
-    let this = this as *mut LocalFileManagerClass;
-    (*this).create_instance(aggregate, riid, ppv)
-}
-
-unsafe extern "stdcall" fn lock_server(this: *mut IClassFactoryVPtr, increment: BOOL) -> HRESULT {
-    let this = this as *mut LocalFileManagerClass;
-    (*this).lock_server(increment)
-}
-
 impl LocalFileManagerClass {
     pub(crate) fn new() -> LocalFileManagerClass {
         println!("Allocating new Vtable for LocalFileManagerClass...");
-        let iunknown = IUnknownVTable {
-            QueryInterface: query_interface,
-            Release: release,
-            AddRef: add_ref,
-        };
-        let iclassfactory = IClassFactoryVTable {
-            iunknown_base: iunknown,
-            CreateInstance: create_instance,
-            LockServer: lock_server,
-        };
-        let vptr = Box::into_raw(Box::new(iclassfactory));
+        let iclass_factory = iclass_factory_gen_vtable!(LocalFileManagerClass, 0);
+        let vptr = Box::into_raw(Box::new(iclass_factory));
         LocalFileManagerClass {
             inner: vptr,
             ref_count: 0,

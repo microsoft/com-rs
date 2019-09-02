@@ -1,8 +1,8 @@
-pub mod ifilemanager;
-pub mod ilocalfilemanager;
+pub mod ifile_manager;
+pub mod ilocal_file_manager;
 
-pub use ifilemanager::IFileManager;
-pub use ilocalfilemanager::ILocalFileManager;
+pub use ifile_manager::IFileManager;
+pub use ilocal_file_manager::ILocalFileManager;
 
 use winapi::shared::guiddef::IID;
 
