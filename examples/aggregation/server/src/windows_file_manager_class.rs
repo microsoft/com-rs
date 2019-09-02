@@ -1,9 +1,9 @@
 use crate::windows_file_manager::WindowsFileManager;
 use com::{
-    failed, iclass_factory_gen_vtable, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
-    IID_ICLASS_FACTORY, IID_IUNKNOWN,
+    failed, iclass_factory_gen_vtable, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable,
+    IUnknown, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
-use interface::{CLSID_LOCAL_FILE_MANAGER_CLASS};
+use interface::CLSID_LOCAL_FILE_MANAGER_CLASS;
 
 use winapi::{
     ctypes::c_void,

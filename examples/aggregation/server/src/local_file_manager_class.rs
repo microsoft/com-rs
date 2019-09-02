@@ -1,8 +1,8 @@
 use crate::local_file_manager::LocalFileManager;
 
 use com::{
-    ComPtr, iclass_factory_gen_vtable, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
-    IID_ICLASS_FACTORY, IID_IUNKNOWN,
+    iclass_factory_gen_vtable, ComPtr, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable,
+    IUnknown, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 
 use winapi::{

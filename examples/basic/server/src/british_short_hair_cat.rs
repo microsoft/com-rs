@@ -3,11 +3,10 @@ use interface::{
     ianimal::{IAnimal, IAnimalVPtr, IAnimalVTable, IID_IANIMAL},
     ianimal_gen_vtable,
     icat::{ICat, ICatVPtr, ICatVTable, IID_ICAT},
-    icat_gen_vtable,
+    icat_gen_vtable, idomestic_animal_gen_vtable,
     idomesticanimal::{
         IDomesticAnimal, IDomesticAnimalVPtr, IDomesticAnimalVTable, IID_IDOMESTIC_ANIMAL,
     },
-    idomestic_animal_gen_vtable,
 };
 
 use winapi::{
