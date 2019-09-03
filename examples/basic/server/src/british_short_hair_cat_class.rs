@@ -1,9 +1,9 @@
 use crate::british_short_hair_cat::BritishShortHairCat;
-use com::{
-    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr, IUnknownVTable,
-    IID_ICLASSFACTORY, IID_IUNKNOWN,
+use com::{IClassFactory, IUnknown, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN};
+use interface::{
+    icat_class::{ICatClassVPtr, ICatClassVTable, IID_ICAT_CLASS},
+    icat_class_gen_vtable,
 };
-use interface::icat_class::{ICatClassVPtr, ICatClassVTable, IID_ICAT_CLASS};
 
 use winapi::{
     ctypes::c_void,
@@ -53,7 +53,7 @@ impl IUnknown for BritishShortHairCatClass {
         unsafe {
             let riid = &*riid;
             if IsEqualGUID(riid, &IID_IUNKNOWN)
-                || IsEqualGUID(riid, &IID_ICLASSFACTORY)
+                || IsEqualGUID(riid, &IID_ICLASS_FACTORY)
                 || IsEqualGUID(riid, &IID_ICAT_CLASS)
             {
                 *ppv = self as *const _ as *mut c_void;
@@ -89,61 +89,11 @@ impl Drop for BritishShortHairCatClass {
     }
 }
 
-unsafe extern "stdcall" fn query_interface(
-    this: *mut IUnknownVPtr,
-    riid: *const IID,
-    ppv: *mut *mut c_void,
-) -> HRESULT {
-    println!("Querying interface on CatClass...");
-    let this = this as *mut BritishShortHairCatClass;
-    (*this).query_interface(riid, ppv)
-}
-
-unsafe extern "stdcall" fn add_ref(this: *mut IUnknownVPtr) -> u32 {
-    println!("Adding ref...");
-    let this = this as *mut BritishShortHairCatClass;
-    (*this).add_ref()
-}
-
-// TODO: This could potentially be null or pointing to some invalid memory
-unsafe extern "stdcall" fn release(this: *mut IUnknownVPtr) -> u32 {
-    println!("Releasing...");
-    let this = this as *mut BritishShortHairCatClass;
-    (*this).release()
-}
-
-unsafe extern "stdcall" fn create_instance(
-    this: *mut IClassFactoryVPtr,
-    aggregate: *mut IUnknownVPtr,
-    riid: *const IID,
-    ppv: *mut *mut c_void,
-) -> HRESULT {
-    let this = this as *mut BritishShortHairCatClass;
-    (*this).create_instance(aggregate, riid, ppv)
-}
-
-unsafe extern "stdcall" fn lock_server(this: *mut IClassFactoryVPtr, increment: BOOL) -> HRESULT {
-    let this = this as *mut BritishShortHairCatClass;
-    (*this).lock_server(increment)
-}
-
 impl BritishShortHairCatClass {
     pub(crate) fn new() -> BritishShortHairCatClass {
-        println!("Allocating new Vtable for CatClass...");
-        let iunknown = IUnknownVTable {
-            QueryInterface: query_interface,
-            Release: release,
-            AddRef: add_ref,
-        };
-        let iclassfactory = IClassFactoryVTable {
-            base: iunknown,
-            CreateInstance: create_instance,
-            LockServer: lock_server,
-        };
-        let icatclass = ICatClassVTable {
-            base: iclassfactory,
-        };
-        let vptr = Box::into_raw(Box::new(icatclass));
+        println!("Allocating new vtable for CatClass...");
+        let icat_class_vtable = icat_class_gen_vtable!(BritishShortHairCatClass, 0);
+        let vptr = Box::into_raw(Box::new(icat_class_vtable));
 
         BritishShortHairCatClass {
             inner: vptr,

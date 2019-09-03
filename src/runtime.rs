@@ -14,7 +14,7 @@ use winapi::{
 
 use crate::{
     failed,
-    iclassfactory::{IClassFactory, IID_ICLASSFACTORY},
+    iclassfactory::{IClassFactory, IID_ICLASS_FACTORY},
     ComInterface, ComPtr,
 };
 
@@ -43,7 +43,7 @@ impl Runtime {
                 iid as REFCLSID,
                 CLSCTX_INPROC_SERVER,
                 std::ptr::null_mut::<c_void>(),
-                &IID_ICLASSFACTORY as REFIID,
+                &IID_ICLASS_FACTORY as REFIID,
                 &mut class_factory as *mut LPVOID,
             )
         };

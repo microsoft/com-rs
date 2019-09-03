@@ -1,5 +1,5 @@
 use com::{ComPtr, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
-use interface::ilocalfilemanager::{
+use interface::ilocal_file_manager::{
     ILocalFileManager, ILocalFileManagerVPtr, ILocalFileManagerVTable, IID_ILOCAL_FILE_MANAGER,
 };
 
@@ -159,7 +159,7 @@ impl LocalFileManager {
         };
 
         let ilocalfilemanager = ILocalFileManagerVTable {
-            base: ilocalfilemanager_iunknown,
+            iunknown_base: ilocalfilemanager_iunknown,
             DeleteLocal: delete_local,
         };
         let ilocalfilemanager_vptr = Box::into_raw(Box::new(ilocalfilemanager));

@@ -1,7 +1,7 @@
 use com::{failed, ComPtr, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
 use interface::{
-    ifilemanager::{IFileManager, IFileManagerVPtr, IFileManagerVTable, IID_IFILE_MANAGER},
-    ilocalfilemanager::IID_ILOCAL_FILE_MANAGER,
+    ifile_manager::{IFileManager, IFileManagerVPtr, IFileManagerVTable, IID_IFILE_MANAGER},
+    ilocal_file_manager::IID_ILOCAL_FILE_MANAGER,
 };
 
 use winapi::{
@@ -127,7 +127,7 @@ impl WindowsFileManager {
         };
 
         let ifilemanager = IFileManagerVTable {
-            base: ifilemanager_iunknown,
+            iunknown_base: ifilemanager_iunknown,
             DeleteAll: delete_all,
         };
         let ifilemanager_vptr = Box::into_raw(Box::new(ifilemanager));
