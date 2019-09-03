@@ -1,4 +1,4 @@
-use com::{ComInterface, ComOutPtr, ComPtr, IUnknown, IUnknownVTable};
+use com::{ComInterface, ComOut, ComPtr, IUnknown, IUnknownVTable};
 use std::mem::MaybeUninit;
 use winapi::{shared::guiddef::IID, um::winnt::HRESULT};
 
@@ -14,7 +14,7 @@ pub trait ISuperman: IUnknown {
     fn take_input(&mut self, in_var: u32) -> HRESULT;
 
     // [out]
-    fn populate_output(&mut self, out_var: &mut ComOutPtr<u32>) -> HRESULT;
+    fn populate_output(&mut self, out_var: &mut ComOut<u32>) -> HRESULT;
 
     // [in, out]
     fn mutate_and_return(&mut self, in_out_var: &mut Option<Box<u32>>) -> HRESULT;
@@ -26,7 +26,7 @@ pub trait ISuperman: IUnknown {
     // fn take_interface();
 
     // // [out] Interface
-    // fn populate_interface(ComOutPtr<ComItf>);
+    // fn populate_interface(ComOut<ComItf>);
 }
 
 unsafe impl ComInterface for dyn ISuperman {
@@ -42,7 +42,7 @@ impl<T: ISuperman + ComInterface + ?Sized> ISuperman for ComPtr<T> {
         unsafe { ((**itf_ptr).TakeInput)(itf_ptr, in_var) }
     }
 
-    fn populate_output(&mut self, out_var: &mut ComOutPtr<u32>) -> HRESULT {
+    fn populate_output(&mut self, out_var: &mut ComOut<u32>) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut ISupermanVPtr;
 
         // Let called-procedure write to possibly uninit memory.

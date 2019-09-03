@@ -1,4 +1,4 @@
-use com::{ComOutPtr, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
+use com::{ComOut, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
 use interface::isuperman::{ISuperman, ISupermanVPtr, ISupermanVTable, IID_ISUPERMAN};
 
 use winapi::{
@@ -33,7 +33,7 @@ impl ISuperman for ClarkKent {
         S_OK
     }
 
-    fn populate_output(&mut self, out_var: &mut ComOutPtr<u32>) -> HRESULT {
+    fn populate_output(&mut self, out_var: &mut ComOut<u32>) -> HRESULT {
         out_var.set(6);
         S_OK
     }
@@ -129,7 +129,7 @@ unsafe extern "stdcall" fn take_input(this: *mut ISupermanVPtr, in_var: u32) -> 
 
 unsafe extern "stdcall" fn populate_output(this: *mut ISupermanVPtr, out_var: *mut u32) -> HRESULT {
     let this = this as *mut ClarkKent;
-    let mut ptr = ComOutPtr::from_ptr(out_var);
+    let mut ptr = ComOut::from_ptr(out_var);
     (*this).populate_output(&mut ptr)
 }
 

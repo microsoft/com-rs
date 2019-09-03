@@ -8,7 +8,7 @@
 //   HRESULT IgnoreHumans(void);
 // }
 
-use com::{ComOutPtr, Runtime};
+use com::{ComOut, Runtime};
 use winapi::shared::winerror::{E_FAIL, S_OK};
 
 use interface::{ISuperman, CLSID_CLARK_KENT_CLASS};
@@ -43,7 +43,7 @@ fn run_safe_test(runtime: Runtime) {
     assert!(clark_kent.take_input(4) == S_OK);
 
     // [out] tests
-    let mut var_to_populate = ComOutPtr::<u32>::new();
+    let mut var_to_populate = ComOut::<u32>::new();
     clark_kent.populate_output(&mut var_to_populate);
     assert!(*var_to_populate.get().unwrap() == 6);
 

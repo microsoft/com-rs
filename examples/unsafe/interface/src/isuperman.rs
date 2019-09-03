@@ -26,7 +26,7 @@ pub trait ISuperman: IUnknown {
     // fn take_interface();
 
     // // [out] Interface
-    // fn populate_interface(ComOutPtr<ComItf>);
+    // fn populate_interface(ComOut<ComItf>);
 }
 
 unsafe impl ComInterface for dyn ISuperman {
