@@ -45,7 +45,7 @@ impl IClassFactory for LocalFileManagerClass {
                 return E_INVALIDARG;
             }
 
-            let mut lfm = Box::new(LocalFileManager::new());
+            let mut lfm = LocalFileManager::new();
             // This check has to be here because it can only be done after object
             // is allocated on the heap (address of nonDelegatingUnknown fixed)
             lfm.set_iunknown(aggr);

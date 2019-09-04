@@ -30,7 +30,7 @@ impl ILocalFileManager for LocalFileManager {
 }
 
 impl LocalFileManager {
-    pub(crate) fn new() -> LocalFileManager {
+    pub(crate) fn new() -> Box<LocalFileManager> {
         let init = InitLocalFileManager {
             user_field: 2,
         };
@@ -83,7 +83,7 @@ impl IUnknown for LocalFileManager {
 }
 
 impl LocalFileManager {
-    fn allocate(value: InitLocalFileManager) -> LocalFileManager {
+    fn allocate(value: InitLocalFileManager) -> Box<LocalFileManager> {
         println!("Allocating new Vtable for LocalFileManager ASDF...");
 
         // Initialising the non-delegating IUnknown
@@ -98,13 +98,14 @@ impl LocalFileManager {
         let ilocalfilemanager = ilocal_file_manager_gen_vtable!(LocalFileManager, 0);
         let ilocalfilemanager_vptr = Box::into_raw(Box::new(ilocalfilemanager));
 
-        LocalFileManager {
+        let out = LocalFileManager {
             ilocalfilemanager: ilocalfilemanager_vptr,
             non_delegating_unk: non_del_unknown_vptr,
             iunk_to_use: std::ptr::null_mut::<IUnknownVPtr>(),
             ref_count: 0,
             value
-        }
+        };
+        Box::new(out)
     }
 
     // Implementations only for Aggregable objects.

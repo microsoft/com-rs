@@ -31,7 +31,7 @@ impl IClassFactory for BritishShortHairCatClass {
             return CLASS_E_NOAGGREGATION;
         }
 
-        let mut cat = Box::new(BritishShortHairCat::new());
+        let mut cat = BritishShortHairCat::new();
         cat.add_ref();
         let hr = cat.query_interface(riid, ppv);
         cat.release();

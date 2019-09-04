@@ -41,7 +41,7 @@ impl IClassFactory for WindowsFileManagerClass {
             return CLASS_E_NOAGGREGATION;
         }
 
-        let mut wfm = Box::new(WindowsFileManager::new());
+        let mut wfm = WindowsFileManager::new();
         wfm.add_ref();
         let hr = wfm.query_interface(riid, ppv);
         wfm.release();

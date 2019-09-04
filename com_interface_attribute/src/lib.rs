@@ -15,6 +15,16 @@ use syn::{ItemStruct, ItemTrait};
 
 use std::iter::FromIterator;
 
+mod com_class;
+use com_class::expand_com_class;
+
+// Macro entry points.
+#[proc_macro_derive(CoClass, attributes(com_implements))]
+pub fn derive_com_class(item: TokenStream) -> TokenStream {
+    expand_com_class(item)
+}
+
+
 #[proc_macro_attribute]
 pub fn com_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as ItemTrait);

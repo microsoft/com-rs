@@ -46,7 +46,7 @@ impl IAnimal for BritishShortHairCat {
 }
 
 impl BritishShortHairCat {
-    pub(crate) fn new() -> BritishShortHairCat {
+    pub(crate) fn new() -> Box<BritishShortHairCat> {
         let init = InitBritishShortHairCat {
             num_owners: 20
         };
@@ -123,24 +123,19 @@ impl IUnknown for BritishShortHairCat {
 }
 
 impl BritishShortHairCat {
-<<<<<<< 6a63b3e640f183d0bf84e993b0332f879bd358a9
-    pub(crate) fn new() -> BritishShortHairCat {
+    fn allocate(value: InitBritishShortHairCat) -> Box<BritishShortHairCat> {
         println!("Allocating new vtable for Cat...");
         let icat_vtable = com::vtable!(BritishShortHairCat: ICat);
-=======
-    fn allocate(value: InitBritishShortHairCat) -> BritishShortHairCat {
-        println!("Allocating new Vtable...");
-        let icat_vtable = icat_gen_vtable!(BritishShortHairCat, 0);
->>>>>>> Add Init structs for COM objects
         let icat_vptr = Box::into_raw(Box::new(icat_vtable));
         let idomesticanimal_vtable = com::vtable!(BritishShortHairCat: IDomesticAnimal, 1);
         let idomesticanimal_vptr = Box::into_raw(Box::new(idomesticanimal_vtable));
 
-        BritishShortHairCat {
+        let out = BritishShortHairCat {
             icat: icat_vptr,
             idomesticanimal: idomesticanimal_vptr,
             ref_count: 0,
             value
-        }
+        };
+        Box::new(out)
     }
 }
