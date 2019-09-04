@@ -1,7 +1,7 @@
 use crate::clark_kent::ClarkKent;
 use com::{
     IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr, IUnknownVTable,
-    IID_ICLASSFACTORY, IID_IUNKNOWN,
+    IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 
 use winapi::{
@@ -51,7 +51,7 @@ impl IUnknown for ClarkKentClass {
         /* TODO: This should be the safe wrapper. You shouldn't need to write unsafe code here. */
         unsafe {
             let riid = &*riid;
-            if IsEqualGUID(riid, &IID_IUNKNOWN) || IsEqualGUID(riid, &IID_ICLASSFACTORY) {
+            if IsEqualGUID(riid, &IID_IUNKNOWN) || IsEqualGUID(riid, &IID_ICLASS_FACTORY) {
                 *ppv = self as *const _ as *mut c_void;
                 self.add_ref();
                 NOERROR
@@ -132,7 +132,7 @@ impl ClarkKentClass {
             AddRef: add_ref,
         };
         let iclassfactory = IClassFactoryVTable {
-            base: iunknown,
+            iunknown_base: iunknown,
             CreateInstance: create_instance,
             LockServer: lock_server,
         };

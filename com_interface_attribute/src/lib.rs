@@ -1,12 +1,15 @@
 extern crate proc_macro;
-extern crate proc_macro2;
+
+mod utils;
 
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span};
+use proc_macro2::{Ident, Span, TokenStream as HelperTokenStream};
 
-type HelperTokenStream = proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
-use syn::{FnArg, ItemTrait, LitInt, TraitItem, TraitItemMethod, Type, TypeParamBound};
+use syn::{
+    FnArg, ItemStruct, ItemTrait, LitInt, TraitItem, TraitItemMethod, Type, TypeBareFn,
+    TypeParamBound,
+};
 
 use std::iter::FromIterator;
 
@@ -14,7 +17,7 @@ use std::iter::FromIterator;
 
 #[proc_macro_attribute]
 pub fn com_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let input = syn::parse_macro_input!(item as syn::ItemTrait);
+    let input = syn::parse_macro_input!(item as ItemTrait);
 
     let mut out: Vec<TokenStream> = Vec::new();
     out.push(input.to_token_stream().into());
@@ -27,10 +30,19 @@ pub fn com_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from_iter(out)
 }
 
+#[proc_macro_derive(VTableMacro)]
+pub fn derive(input: TokenStream) -> TokenStream {
+    let input = syn::parse_macro_input!(input as ItemStruct);
+    gen_vtable_macro(&input).into()
+}
+
 // Helper functions
 
 fn get_iid_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("IID_{}", trait_ident.to_string().to_uppercase())
+    format_ident!(
+        "IID_{}",
+        utils::camel_to_snake(trait_ident.to_string()).to_uppercase()
+    )
 }
 
 fn get_vtable_ident(trait_ident: &Ident) -> Ident {
@@ -41,21 +53,11 @@ fn get_vptr_ident(trait_ident: &Ident) -> Ident {
     format_ident!("{}VPtr", trait_ident)
 }
 
-fn snake_to_camel(input: String) -> String {
-    let mut new = String::new();
-
-    let tokens: Vec<&str> = input.split('_').collect();
-    for token in &tokens {
-        let mut chars = token.chars();
-        let title_string = match chars.next() {
-            None => String::new(),
-            Some(f) => f.to_uppercase().collect::<String>() + chars.as_str(),
-        };
-
-        new.push_str(title_string.as_str());
-    }
-
-    new
+fn get_vtable_macro_ident(struct_ident: &Ident) -> Ident {
+    format_ident!(
+        "{}_gen_vtable",
+        utils::camel_to_snake(struct_ident.to_string().replace("VTable", ""))
+    )
 }
 
 // pub const IID_IUNKNOWN: GUID = GUID {
@@ -102,7 +104,7 @@ fn gen_iid_struct(attr: &TokenStream, trait_ident: &Ident) -> HelperTokenStream 
 
     quote!(
         #[allow(non_upper_case_globals)]
-        pub const #iid_ident: GUID = GUID {
+        pub const #iid_ident: com::_winapi::shared::guiddef::GUID = com::_winapi::shared::guiddef::GUID {
             Data1: #data1,
             Data2: #data2,
             Data3: #data3,
@@ -119,9 +121,9 @@ fn gen_cominterface_impl(itf: &ItemTrait) -> HelperTokenStream {
     let iid_ident = get_iid_ident(trait_ident);
 
     quote!(
-        unsafe impl ComInterface for dyn #trait_ident {
+        unsafe impl com::ComInterface for dyn #trait_ident {
             type VTable = #vtable_ident;
-            const IID: IID = #iid_ident;
+            const IID: com::_winapi::shared::guiddef::IID = #iid_ident;
         }
     )
 }
@@ -137,6 +139,136 @@ fn gen_vptr_type(itf: &ItemTrait) -> HelperTokenStream {
     )
 }
 
+fn gen_vtable_macro(item: &ItemStruct) -> HelperTokenStream {
+    let vtable_macro = get_vtable_macro_ident(&item.ident);
+    let parent_vtable_macro = gen_parent_vtable_macro(item);
+    let vtable_functions = gen_vtable_functions(item);
+    let initialized_vtable = gen_initialized_vtable(item);
+    quote! {
+        #[macro_export]
+        macro_rules! #vtable_macro {
+            ($type:ty, $offset:literal) => {{
+                #parent_vtable_macro
+                #vtable_functions
+                #initialized_vtable
+            }};
+        }
+    }
+}
+
+fn gen_parent_vtable_macro(item: &ItemStruct) -> HelperTokenStream {
+    let parent = item.fields.iter().nth(0).and_then(|f| f.ident.as_ref());
+    if let Some(parent_name) = parent {
+        let parent_name = parent_name.to_string();
+        if parent_name.ends_with("_base") {
+            let vtable_gen = format_ident!("{}_gen_vtable", parent_name.trim_end_matches("_base"));
+            return quote! {
+                use com::*;
+                let parent_vtable = #vtable_gen!($type, $offset);
+            };
+        }
+    }
+
+    quote! {}
+}
+
+fn gen_vtable_functions(item: &ItemStruct) -> HelperTokenStream {
+    let mut functions = Vec::new();
+    for field in &item.fields {
+        let method_name = field
+            .ident
+            .as_ref()
+            .expect("Only works with structs with named fields");
+        match &field.ty {
+            Type::Path(_) => {}
+            Type::BareFn(fun) => {
+                functions.push(gen_vtable_function(&item.ident, method_name, fun));
+            }
+            _ => panic!("Only supports structs with fields that are functions"),
+        };
+    }
+    quote! {
+        #(#functions)*
+    }
+}
+
+fn gen_vtable_function(
+    struct_ident: &Ident,
+    method_name: &Ident,
+    fun: &TypeBareFn,
+) -> HelperTokenStream {
+    assert!(fun.unsafety.is_some(), "Function must be marked unsafe");
+    assert!(fun.abi.is_some(), "Function must have marked ABI");
+    let method_name = format_ident!("{}", utils::camel_to_snake(method_name.to_string()));
+    let function_ident = format_ident!(
+        "{}_{}",
+        struct_ident
+            .to_string()
+            .replace("VTable", "")
+            .to_lowercase(),
+        method_name
+    );
+    let params: Vec<_> = fun
+        .inputs
+        .iter()
+        .enumerate()
+        .map(|(i, input)| {
+            let ident = format_ident!("arg{}", i);
+            let ty = &input.ty;
+            quote! { #ident: #ty, }
+        })
+        .collect();
+    let args = (0..(params.len())).skip(1).map(|i| {
+        let ident = format_ident!("arg{}", i);
+        quote! { #ident, }
+    });
+    let return_type = &fun.output;
+    quote! {
+        unsafe extern "stdcall" fn #function_ident(#(#params)*) #return_type {
+            let this = arg0.sub($offset) as *mut $type;
+            (*this).#method_name(#(#args)*)
+        }
+    }
+}
+
+fn gen_initialized_vtable(item: &ItemStruct) -> HelperTokenStream {
+    let name = &item.ident;
+    let methods = gen_vtable_method_initialization(item);
+    quote! {
+        #name {
+            #methods
+        }
+    }
+}
+
+fn gen_vtable_method_initialization(item: &ItemStruct) -> HelperTokenStream {
+    let mut methods = Vec::new();
+    for field in &item.fields {
+        let method_ident = field
+            .ident
+            .as_ref()
+            .expect("Only works with structs with named fields");
+
+        let function_ident = if method_ident.to_string().ends_with("_base") {
+            format_ident!("parent_vtable",)
+        } else {
+            format_ident!(
+                "{}_{}",
+                item.ident.to_string().replace("VTable", "").to_lowercase(),
+                utils::camel_to_snake(method_ident.to_string())
+            )
+        };
+        let method = quote! {
+            #method_ident: #function_ident,
+        };
+        methods.push(method);
+    }
+
+    quote!(
+        #(#methods)*
+    )
+}
+
 // pub struct IUnknownVTable.
 
 fn gen_vtable(itf: &ItemTrait) -> HelperTokenStream {
@@ -146,28 +278,41 @@ fn gen_vtable(itf: &ItemTrait) -> HelperTokenStream {
     let methods = gen_vtable_methods(&itf);
 
     if trait_ident.to_string().to_uppercase() == "IUNKNOWN" {
-        assert!(itf.supertraits.len() == 0);
+        assert!(
+            itf.supertraits.len() == 0,
+            "Interfaces must have some other interface as their parent"
+        );
 
         quote!(
             #[allow(non_snake_case)]
             #[repr(C)]
+            #[derive(com::VTableMacro)]
             pub struct #vtable_ident {
                 #methods
             }
         )
     } else {
-        assert!(itf.supertraits.len() == 1);
+        assert!(
+            itf.supertraits.len() == 1,
+            "Multiple inheirtance is not supported in COM interfaces"
+        );
 
         let base_trait_ident = match itf.supertraits.first().unwrap() {
             TypeParamBound::Trait(t) => t.path.get_ident().unwrap(),
             _ => panic!("Unhandled super trait typeparambound"),
         };
 
+        let base_field_ident = format_ident!(
+            "{}_base",
+            utils::camel_to_snake(base_trait_ident.to_string())
+        );
+
         quote!(
             #[allow(non_snake_case)]
             #[repr(C)]
+            #[derive(com::VTableMacro)]
             pub struct #vtable_ident {
-                pub base: <dyn #base_trait_ident as ComInterface>::VTable,
+                pub #base_field_ident: <dyn #base_trait_ident as com::ComInterface>::VTable,
                 #methods
             }
         )
@@ -189,14 +334,28 @@ fn gen_vtable_methods(itf: &ItemTrait) -> HelperTokenStream {
 }
 
 fn gen_vtable_method(trait_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
-    let method_ident = format_ident!("{}", snake_to_camel(method.sig.ident.to_string()));
+    let method_ident = format_ident!("{}", utils::snake_to_camel(method.sig.ident.to_string()));
+    let vtable_function_signature = gen_vtable_function_signature(trait_ident, None, method);
 
+    quote!(
+        pub #method_ident: #vtable_function_signature,
+    )
+}
+
+fn gen_vtable_function_signature(
+    trait_ident: &Ident,
+    name: Option<&Ident>,
+    method: &TraitItemMethod,
+) -> HelperTokenStream {
+    let name = match name {
+        Some(n) => quote! { #n },
+        None => quote! {},
+    };
     let params = gen_raw_params(trait_ident, method);
-
     let return_type = &method.sig.output;
 
     quote!(
-        pub #method_ident: unsafe extern "stdcall" fn(#params) #return_type,
+        unsafe extern "stdcall" fn #name(#params) #return_type
     )
 }
 
@@ -254,7 +413,7 @@ fn gen_comptr_impl(itf: &ItemTrait) -> HelperTokenStream {
     }
 
     quote!(
-        impl <T: #trait_ident + ComInterface + ?Sized> #trait_ident for ComPtr<T> {
+        impl <T: #trait_ident + com::ComInterface + ?Sized> #trait_ident for com::ComPtr<T> {
             #(#impl_methods)*
         }
     )
@@ -263,7 +422,7 @@ fn gen_comptr_impl(itf: &ItemTrait) -> HelperTokenStream {
 fn gen_comptr_impl_method(trait_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
     let method_sig = &method.sig;
     let vptr_ident = get_vptr_ident(trait_ident);
-    let method_ident = format_ident!("{}", snake_to_camel(method.sig.ident.to_string()));
+    let method_ident = format_ident!("{}", utils::snake_to_camel(method.sig.ident.to_string()));
     let itf_ptr_ident = format_ident!("itf_ptr");
 
     let mut params = Vec::new();
