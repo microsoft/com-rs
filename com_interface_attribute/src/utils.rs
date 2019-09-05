@@ -35,6 +35,28 @@ pub fn camel_to_snake(input: &str) -> String {
     new
 }
 
+pub fn get_iid_ident(trait_ident: &Ident) -> Ident {
+    format_ident!(
+        "IID_{}",
+        camel_to_snake(trait_ident.to_string()).to_uppercase()
+    )
+}
+
+pub fn get_vtable_ident(trait_ident: &Ident) -> Ident {
+    format_ident!("{}VTable", trait_ident)
+}
+
+pub fn get_vptr_ident(trait_ident: &Ident) -> Ident {
+    format_ident!("{}VPtr", trait_ident)
+}
+
+pub fn get_vtable_macro_ident(struct_ident: &Ident) -> Ident {
+    format_ident!(
+        "{}_gen_vtable",
+        camel_to_snake(struct_ident.to_string().replace("VTable", ""))
+    )
+}
+
 #[cfg(test)]
 mod tests {
     #[test]

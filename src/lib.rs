@@ -26,6 +26,8 @@ pub fn failed(result: HRESULT) -> bool {
 pub unsafe trait ComInterface {
     type VTable;
     const IID: IID;
+
+    fn iid_in_inheritance_chain(riid: &IID) -> bool;
 }
 
 pub trait ProductionComInterface<T: IUnknown>: ComInterface {
