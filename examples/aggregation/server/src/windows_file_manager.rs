@@ -151,7 +151,7 @@ impl IUnknown for WindowsFileManager {
         let count = self.ref_count;
         if count == 0 {
             println!("Count is 0 for WindowsFileManager. Freeing memory...");
-            drop(self);
+            unsafe { Box::from_raw(self as *const _ as *mut WindowsFileManager); }
         }
         count
     }

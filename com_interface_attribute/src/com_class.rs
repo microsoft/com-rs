@@ -168,7 +168,8 @@ fn gen_iunknown_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Hel
                 let count = self.#ref_count_ident;
                 if count == 0 {
                     println!("Count is 0 for BritishShortHairCat. Freeing memory...");
-                    drop(self)
+                    // drop(self)
+                    unsafe { Box::from_raw(self as *const _ as *mut #real_ident); }
                 }
                 count
             }

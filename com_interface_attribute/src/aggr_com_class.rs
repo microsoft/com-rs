@@ -167,7 +167,8 @@ fn gen_iunknown_fns(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Help
             let count = self.#ref_count_ident;
             if count == 0 {
                 println!("Count is 0 for {}. Freeing memory...", stringify!(#real_ident));
-                drop(self)
+                // drop(self)
+                unsafe { Box::from_raw(self as *const _ as *mut #real_ident); }
             }
             count
         }
@@ -348,6 +349,7 @@ fn gen_real_struct(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Helpe
         #vis struct #real_ident {
             #(#bases_itf_idents,)*
             #non_del_unk_field_ident: IUnknownVPtr,
+            // Non-reference counted interface pointer to outer IUnknown.
             #iunk_to_use_field_ident: *mut IUnknownVPtr,
             #ref_count_ident: u32,
             #inner_init_field_ident: #init_ident
