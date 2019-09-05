@@ -66,9 +66,6 @@ pub fn expand_com_class(item: TokenStream) -> TokenStream {
 
     // Parse attributes
     let base_itf_idents = get_base_interface_idents(&input);
-    for ident in &base_itf_idents {
-        println!("Found base itf ident: {}", ident);
-    }
 
     let mut out: Vec<TokenStream> = Vec::new();
     out.push(gen_real_struct(&base_itf_idents, &input).into());
@@ -148,6 +145,7 @@ fn gen_iunknown_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Hel
                     if IsEqualGUID(riid, &com::IID_IUNKNOWN) {
                         *ppv = &self.#first_vptr_field as *const _ as *mut c_void;
                     } #(#match_arms)* else {
+                        *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
                         println!("Returning NO INTERFACE.");
                         return E_NOINTERFACE;
                     }

@@ -15,9 +15,12 @@ use winapi::{
 };
 
 use core::mem::forget;
+use com_interface_attribute::AggrCoClass;
 
 /// The implementation class
 #[repr(C)]
+#[derive(AggrCoClass)]
+#[com_implements(ILocalFileManager)]
 pub struct InitLocalFileManager {
     user_field: u32,
 }
@@ -38,145 +41,147 @@ impl LocalFileManager {
     }
 }
 
-#[repr(C)]
-pub struct LocalFileManager {
-    ilocalfilemanager: ILocalFileManagerVPtr,
-    non_delegating_unk: IUnknownVPtr,
-    iunk_to_use: *mut IUnknownVPtr,
-    ref_count: u32,
-    value: InitLocalFileManager,
-}
+// ----------------------------------------- MACRO GENERATED ------------------------------------------
 
-impl Drop for LocalFileManager {
-    fn drop(&mut self) {
-        println!("Dropping LocalFileManager");
-        let _ = unsafe { Box::from_raw(self.ilocalfilemanager as *mut ILocalFileManagerVTable) };
-    }
-}
+// #[repr(C)]
+// pub struct LocalFileManager {
+//     ilocalfilemanager: ILocalFileManagerVPtr,
+//     non_delegating_unk: IUnknownVPtr,
+//     iunk_to_use: *mut IUnknownVPtr,
+//     ref_count: u32,
+//     value: InitLocalFileManager,
+// }
 
-// Default implementation should delegate to iunk_to_use.
-impl IUnknown for LocalFileManager {
-    fn query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
-        println!("Delegating QI");
-        let mut iunk_to_use: ComPtr<dyn IUnknown> = unsafe { ComPtr::new(self.iunk_to_use as *mut c_void) };
-        let hr = iunk_to_use.query_interface(riid, ppv);
-        forget(iunk_to_use);
+// impl Drop for LocalFileManager {
+//     fn drop(&mut self) {
+//         println!("Dropping LocalFileManager");
+//         let _ = unsafe { Box::from_raw(self.ilocalfilemanager as *mut ILocalFileManagerVTable) };
+//     }
+// }
 
-        hr
-    }
+// // Default implementation should delegate to iunk_to_use.
+// impl IUnknown for LocalFileManager {
+//     fn query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
+//         println!("Delegating QI");
+//         let mut iunk_to_use: ComPtr<dyn IUnknown> = unsafe { ComPtr::new(self.iunk_to_use as *mut c_void) };
+//         let hr = iunk_to_use.query_interface(riid, ppv);
+//         forget(iunk_to_use);
 
-    fn add_ref(&mut self) -> u32 {
-        let mut iunk_to_use: ComPtr<dyn IUnknown> = unsafe { ComPtr::new(self.iunk_to_use as *mut c_void) };
-        let res = iunk_to_use.add_ref();
-        forget(iunk_to_use);
+//         hr
+//     }
 
-        res
-    }
+//     fn add_ref(&mut self) -> u32 {
+//         let mut iunk_to_use: ComPtr<dyn IUnknown> = unsafe { ComPtr::new(self.iunk_to_use as *mut c_void) };
+//         let res = iunk_to_use.add_ref();
+//         forget(iunk_to_use);
 
-    fn release(&mut self) -> u32 {
-        let mut iunk_to_use: ComPtr<dyn IUnknown> = unsafe { ComPtr::new(self.iunk_to_use as *mut c_void) };
-        let res = iunk_to_use.release();
-        forget(iunk_to_use);
+//         res
+//     }
 
-        res
-    }
-}
+//     fn release(&mut self) -> u32 {
+//         let mut iunk_to_use: ComPtr<dyn IUnknown> = unsafe { ComPtr::new(self.iunk_to_use as *mut c_void) };
+//         let res = iunk_to_use.release();
+//         forget(iunk_to_use);
 
-impl LocalFileManager {
-    fn allocate(value: InitLocalFileManager) -> Box<LocalFileManager> {
-        println!("Allocating new Vtable for LocalFileManager ASDF...");
+//         res
+//     }
+// }
 
-        // Initialising the non-delegating IUnknown
-        let non_del_iunknown = IUnknownVTable {
-            QueryInterface: non_delegating_ilocalfilemanager_query_interface,
-            Release: non_delegating_ilocalfilemanager_release,
-            AddRef: non_delegating_ilocalfilemanager_add_ref,
-        };
-        let non_del_unknown_vptr = Box::into_raw(Box::new(non_del_iunknown));
+// impl LocalFileManager {
+//     fn allocate(value: InitLocalFileManager) -> Box<LocalFileManager> {
+//         println!("Allocating new Vtable for LocalFileManager...");
 
-        // Initialising VTable for ILocalFileManager
-        let ilocalfilemanager = ilocal_file_manager_gen_vtable!(LocalFileManager, 0);
-        let ilocalfilemanager_vptr = Box::into_raw(Box::new(ilocalfilemanager));
+//         // Initialising the non-delegating IUnknown
+//         let non_del_iunknown = IUnknownVTable {
+//             QueryInterface: non_delegating_ilocalfilemanager_query_interface,
+//             Release: non_delegating_ilocalfilemanager_release,
+//             AddRef: non_delegating_ilocalfilemanager_add_ref,
+//         };
+//         let non_del_unknown_vptr = Box::into_raw(Box::new(non_del_iunknown));
 
-        let out = LocalFileManager {
-            ilocalfilemanager: ilocalfilemanager_vptr,
-            non_delegating_unk: non_del_unknown_vptr,
-            iunk_to_use: std::ptr::null_mut::<IUnknownVPtr>(),
-            ref_count: 0,
-            value
-        };
-        Box::new(out)
-    }
+//         // Initialising VTable for ILocalFileManager
+//         let ilocalfilemanager = ilocal_file_manager_gen_vtable!(LocalFileManager, 0);
+//         let ilocalfilemanager_vptr = Box::into_raw(Box::new(ilocalfilemanager));
 
-    // Implementations only for Aggregable objects.
-    pub(crate) fn set_iunknown(&mut self, aggr: *mut IUnknownVPtr) {
-        if aggr.is_null() {
-            self.iunk_to_use = &self.non_delegating_unk as *const _ as *mut IUnknownVPtr;
-        } else {
-            self.iunk_to_use = aggr;
-        }
-    }
+//         let out = LocalFileManager {
+//             ilocalfilemanager: ilocalfilemanager_vptr,
+//             non_delegating_unk: non_del_unknown_vptr,
+//             iunk_to_use: std::ptr::null_mut::<IUnknownVPtr>(),
+//             ref_count: 0,
+//             value
+//         };
+//         Box::new(out)
+//     }
 
-    pub(crate) fn inner_query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
-        println!("Non delegating QI");
+//     // Implementations only for Aggregable objects.
+//     pub(crate) fn set_iunknown(&mut self, aggr: *mut IUnknownVPtr) {
+//         if aggr.is_null() {
+//             self.iunk_to_use = &self.non_delegating_unk as *const _ as *mut IUnknownVPtr;
+//         } else {
+//             self.iunk_to_use = aggr;
+//         }
+//     }
 
-        unsafe {
-            let riid = &*riid;
-            if IsEqualGUID(riid, &IID_IUNKNOWN) {
-                // Returns the nondelegating IUnknown, as in COM specification.
-                *ppv = &self.non_delegating_unk as *const _ as *mut c_void;
-            } else if IsEqualGUID(riid, &IID_ILOCAL_FILE_MANAGER) {
-                // Returns the original VTable.
-                *ppv = &self.ilocalfilemanager as *const _ as *mut c_void;
-            } else {
-                *ppv = std::ptr::null_mut::<c_void>();
-                println!("Returning NO INTERFACE.");
-                return E_NOINTERFACE;
-            }
+//     pub(crate) fn inner_query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
+//         println!("Non delegating QI");
 
-            self.inner_add_ref();
-            NOERROR
-        }
-    }
+//         unsafe {
+//             let riid = &*riid;
+//             if IsEqualGUID(riid, &IID_IUNKNOWN) {
+//                 // Returns the nondelegating IUnknown, as in COM specification.
+//                 *ppv = &self.non_delegating_unk as *const _ as *mut c_void;
+//             } else if IsEqualGUID(riid, &IID_ILOCAL_FILE_MANAGER) {
+//                 // Returns the original VTable.
+//                 *ppv = &self.ilocalfilemanager as *const _ as *mut c_void;
+//             } else {
+//                 *ppv = std::ptr::null_mut::<c_void>();
+//                 println!("Returning NO INTERFACE.");
+//                 return E_NOINTERFACE;
+//             }
 
-    pub(crate) fn inner_add_ref(&mut self) -> u32 {
-        self.ref_count += 1;
-        println!("Count now {}", self.ref_count);
-        self.ref_count
-    }
+//             self.inner_add_ref();
+//             NOERROR
+//         }
+//     }
 
-    pub(crate) fn inner_release(&mut self) -> u32 {
-        self.ref_count -= 1;
-        println!("Count now {}", self.ref_count);
-        let count = self.ref_count;
-        if count == 0 {
-            println!("Count is 0 for LocalFileManager. Freeing memory...");
-            drop(self);
-        }
-        count
-    }
-}
+//     pub(crate) fn inner_add_ref(&mut self) -> u32 {
+//         self.ref_count += 1;
+//         println!("Count now {}", self.ref_count);
+//         self.ref_count
+//     }
 
-// Non-delegating methods.
-unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_query_interface(
-    this: *mut IUnknownVPtr,
-    riid: *const IID,
-    ppv: *mut *mut c_void,
-) -> HRESULT {
-    let this = this.sub(1) as *mut LocalFileManager;
-    (*this).inner_query_interface(riid, ppv)
-}
+//     pub(crate) fn inner_release(&mut self) -> u32 {
+//         self.ref_count -= 1;
+//         println!("Count now {}", self.ref_count);
+//         let count = self.ref_count;
+//         if count == 0 {
+//             println!("Count is 0 for LocalFileManager. Freeing memory...");
+//             drop(self);
+//         }
+//         count
+//     }
+// }
 
-unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_add_ref(
-    this: *mut IUnknownVPtr,
-) -> u32 {
-    let this = this.sub(1) as *mut LocalFileManager;
-    (*this).inner_add_ref()
-}
+// // Non-delegating methods.
+// unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_query_interface(
+//     this: *mut IUnknownVPtr,
+//     riid: *const IID,
+//     ppv: *mut *mut c_void,
+// ) -> HRESULT {
+//     let this = this.sub(1) as *mut LocalFileManager;
+//     (*this).inner_query_interface(riid, ppv)
+// }
 
-unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_release(
-    this: *mut IUnknownVPtr,
-) -> u32 {
-    let this = this.sub(1) as *mut LocalFileManager;
-    (*this).inner_release()
-}
+// unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_add_ref(
+//     this: *mut IUnknownVPtr,
+// ) -> u32 {
+//     let this = this.sub(1) as *mut LocalFileManager;
+//     (*this).inner_add_ref()
+// }
+
+// unsafe extern "stdcall" fn non_delegating_ilocalfilemanager_release(
+//     this: *mut IUnknownVPtr,
+// ) -> u32 {
+//     let this = this.sub(1) as *mut LocalFileManager;
+//     (*this).inner_release()
+// }

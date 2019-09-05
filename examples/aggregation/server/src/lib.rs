@@ -5,6 +5,8 @@ mod local_file_manager_class;
 mod windows_file_manager;
 mod windows_file_manager_class;
 
+mod macro_test;
+
 use local_file_manager_class::LocalFileManagerClass;
 use windows_file_manager_class::WindowsFileManagerClass;
 
