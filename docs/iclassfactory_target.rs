@@ -24,11 +24,11 @@ impl ComPtr<IClassFactory> {
 
 // ----------------------------- DESIRED EXPANSION ------------------------------------------------------
 use super::*;
+use winapi::ctypes::c_void;
 use winapi::shared::guiddef::IID;
 use winapi::shared::guiddef::REFIID;
-use winapi::shared::ntdef::HRESULT;
 use winapi::shared::minwindef::BOOL;
-use winapi::ctypes::c_void;
+use winapi::shared::ntdef::HRESULT;
 
 use std::marker::PhantomData;
 
@@ -54,12 +54,22 @@ pub struct IClassFactoryVTable {
 pub type IClassFactoryVPtr = *const IClassFactoryVTable;
 
 pub trait IClassFactory: IUnknown {
-    fn create_instance(&mut self, aggr: *mut IUnknownVPtr, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT;
+    fn create_instance(
+        &mut self,
+        aggr: *mut IUnknownVPtr,
+        riid: REFIID,
+        ppv: *mut *mut c_void,
+    ) -> HRESULT;
     fn lock_server(&mut self, increment: BOOL) -> HRESULT;
 }
 
-impl <T: IClassFactory + ComInterface + ?Sized> IClassFactory for ComPtr<T> {
-    fn create_instance(&mut self, aggr: *mut IUnknownVPtr, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT {
+impl<T: IClassFactory + ComInterface + ?Sized> IClassFactory for ComPtr<T> {
+    fn create_instance(
+        &mut self,
+        aggr: *mut IUnknownVPtr,
+        riid: REFIID,
+        ppv: *mut *mut c_void,
+    ) -> HRESULT {
         let itf_ptr = self.into_raw() as *mut IClassFactoryVPtr;
         unsafe { ((**itf_ptr).CreateInstance)(itf_ptr, aggr, riid, ppv) }
     }
@@ -79,9 +89,7 @@ impl ComPtr<IClassFactory> {
     pub fn get_instance<T: ComInterface + ?Sized>(&mut self) -> Option<ComPtr<T>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
         let mut aggr = std::ptr::null_mut();
-        let hr = unsafe {
-            self.create_instance(aggr, &T::IID as *const IID, &mut ppv)
-        };
+        let hr = unsafe { self.create_instance(aggr, &T::IID as *const IID, &mut ppv) };
         if failed(hr) {
             // TODO: decide what failures are possible
             return None;

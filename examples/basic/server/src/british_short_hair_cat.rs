@@ -1,9 +1,7 @@
 use com::{IUnknown, IID_IUNKNOWN};
 use interface::{
-    ianimal::{IAnimal, IAnimalVPtr, IAnimalVTable, IID_IANIMAL},
-    ianimal_gen_vtable,
+    ianimal::{IAnimal, IID_IANIMAL},
     icat::{ICat, ICatVPtr, ICatVTable, IID_ICAT},
-    icat_gen_vtable, idomestic_animal_gen_vtable,
     idomesticanimal::{
         IDomesticAnimal, IDomesticAnimalVPtr, IDomesticAnimalVTable, IID_IDOMESTIC_ANIMAL,
     },
@@ -12,7 +10,7 @@ use interface::{
 use winapi::{
     ctypes::c_void,
     shared::{
-        guiddef::{IsEqualGUID, IID, REFIID},
+        guiddef::{IsEqualGUID, IID},
         winerror::{E_NOINTERFACE, HRESULT, NOERROR},
     },
 };
@@ -102,9 +100,10 @@ impl IUnknown for BritishShortHairCat {
 impl BritishShortHairCat {
     pub(crate) fn new() -> BritishShortHairCat {
         println!("Allocating new vtable for Cat...");
-        let icat_vtable = icat_gen_vtable!(BritishShortHairCat, 0);
+        let icat_vtable = <dyn ICat as com::Foo<BritishShortHairCat>>::vtable::<com::Zero>();
         let icat_vptr = Box::into_raw(Box::new(icat_vtable));
-        let idomesticanimal_vtable = idomestic_animal_gen_vtable!(BritishShortHairCat, 1);
+        let idomesticanimal_vtable =
+            <dyn IDomesticAnimal as com::Foo<BritishShortHairCat>>::vtable::<com::One>();
         let idomesticanimal_vptr = Box::into_raw(Box::new(idomesticanimal_vtable));
 
         BritishShortHairCat {

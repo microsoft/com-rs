@@ -1,9 +1,8 @@
 use crate::british_short_hair_cat::BritishShortHairCat;
-use com::{IClassFactory, IUnknown, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN};
-use interface::{
-    icat_class::{ICatClassVPtr, ICatClassVTable, IID_ICAT_CLASS},
-    icat_class_gen_vtable,
+use com::{
+    IClassFactory, IClassFactoryVPtr, IUnknown, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
+use interface::icat_class::{ICatClassVTable, IID_ICAT_CLASS};
 
 use winapi::{
     ctypes::c_void,
@@ -16,7 +15,7 @@ use winapi::{
 
 #[repr(C)]
 pub struct BritishShortHairCatClass {
-    inner: ICatClassVPtr,
+    inner: IClassFactoryVPtr,
     ref_count: u32,
 }
 
@@ -92,7 +91,8 @@ impl Drop for BritishShortHairCatClass {
 impl BritishShortHairCatClass {
     pub(crate) fn new() -> BritishShortHairCatClass {
         println!("Allocating new vtable for CatClass...");
-        let icat_class_vtable = icat_class_gen_vtable!(BritishShortHairCatClass, 0);
+        let icat_class_vtable =
+            <dyn IClassFactory as com::Foo<BritishShortHairCatClass>>::vtable::<com::Zero>();
         let vptr = Box::into_raw(Box::new(icat_class_vtable));
 
         BritishShortHairCatClass {

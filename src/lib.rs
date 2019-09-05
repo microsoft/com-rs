@@ -27,6 +27,10 @@ pub unsafe trait ComInterface {
     const IID: IID;
 }
 
+pub trait Foo<T: IUnknown>: ComInterface {
+    fn vtable<O: crate::Offset>() -> Self::VTable;
+}
+
 // Export winapi for use by macros
 #[doc(hidden)]
 pub extern crate winapi as _winapi;
@@ -38,3 +42,18 @@ pub use com_interface_attribute::*;
 // whether they are used by some other crate or internally
 #[doc(hidden)]
 extern crate self as com;
+
+pub trait Offset {
+    const VALUE: usize;
+}
+
+pub struct Zero {}
+
+impl Offset for Zero {
+    const VALUE: usize = 0;
+}
+pub struct One {}
+
+impl Offset for One {
+    const VALUE: usize = 1;
+}

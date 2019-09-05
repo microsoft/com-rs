@@ -1,4 +1,4 @@
-pub fn snake_to_camel(input: String) -> String {
+pub fn snake_to_camel(input: &str) -> String {
     let mut new = String::new();
 
     let tokens: Vec<&str> = input.split('_').collect();
@@ -15,7 +15,7 @@ pub fn snake_to_camel(input: String) -> String {
     new
 }
 
-pub fn camel_to_snake(input: String) -> String {
+pub fn camel_to_snake(input: &str) -> String {
     let mut new = String::new();
     let mut seen_lowercase = false;
 
