@@ -7,12 +7,12 @@ use std::marker::PhantomData;
 use winapi::ctypes::c_void;
 use winapi::shared::winerror::E_NOINTERFACE;
 
-pub struct ComPtr<T: ComInterface + ?Sized> {
+pub struct ComPtr<T: ?Sized + ComInterface> {
     ptr: NonNull<c_void>,
     phantom: PhantomData<T>,
 }
 
-impl<T: ComInterface + ?Sized> ComPtr<T> {
+impl<T: ?Sized + ComInterface> ComPtr<T> {
     /// Creates a new ComPtr that comforms to the interface T
     ///
     /// # Safety

@@ -3,6 +3,7 @@ mod comptr;
 mod iclassfactory;
 mod inproc;
 mod iunknown;
+pub mod offset;
 mod runtime;
 
 pub use comoutptr::ComOutPtr;
@@ -25,6 +26,31 @@ pub fn failed(result: HRESULT) -> bool {
 pub unsafe trait ComInterface {
     type VTable;
     const IID: IID;
+}
+
+pub trait ProductionComInterface<T: IUnknown>: ComInterface {
+    fn vtable<O: offset::Offset>() -> Self::VTable;
+}
+
+#[macro_export]
+macro_rules! vtable {
+    ($class:ident: $interface:ident, $offset:ident) => {
+        <dyn $interface as $crate::ProductionComInterface<$class>>::vtable::<
+            $crate::offset::$offset,
+        >();
+    };
+    ($class:ident: $interface:ident, 2) => {
+        $crate::vtable!($class: $interface, Two)
+    };
+    ($class:ident: $interface:ident, 1) => {
+        $crate::vtable!($class: $interface, One)
+    };
+    ($class:ident: $interface:ident, 0) => {
+        $crate::vtable!($class: $interface, Zero)
+    };
+    ($class:ident: $interface:ident) => {
+        $crate::vtable!($class: $interface, Zero)
+    };
 }
 
 // Export winapi for use by macros

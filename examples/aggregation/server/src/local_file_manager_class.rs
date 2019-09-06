@@ -1,8 +1,8 @@
 use crate::local_file_manager::LocalFileManager;
 
 use com::{
-    iclass_factory_gen_vtable, ComPtr, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable,
-    IUnknown, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN,
+    ComPtr, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
+    IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 
 use winapi::{
@@ -122,8 +122,7 @@ impl IUnknown for LocalFileManagerClass {
 
 impl LocalFileManagerClass {
     pub(crate) fn new() -> LocalFileManagerClass {
-        println!("Allocating new Vtable for LocalFileManagerClass...");
-        let iclass_factory = iclass_factory_gen_vtable!(LocalFileManagerClass, 0);
+        let iclass_factory = com::vtable!(LocalFileManagerClass: IClassFactory);
         let vptr = Box::into_raw(Box::new(iclass_factory));
         LocalFileManagerClass {
             inner: vptr,
