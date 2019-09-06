@@ -91,8 +91,7 @@ impl Drop for BritishShortHairCatClass {
 impl BritishShortHairCatClass {
     pub(crate) fn new() -> BritishShortHairCatClass {
         println!("Allocating new vtable for CatClass...");
-        let icat_class_vtable =
-            <dyn IClassFactory as com::Foo<BritishShortHairCatClass>>::vtable::<com::Zero>();
+        let icat_class_vtable = com::vtable!(BritishShortHairCatClass: IClassFactory);
         let vptr = Box::into_raw(Box::new(icat_class_vtable));
 
         BritishShortHairCatClass {

@@ -125,8 +125,8 @@ fn gen_cominterface_impl(itf: &ItemTrait) -> HelperTokenStream {
             const IID: com::_winapi::shared::guiddef::IID = #iid_ident;
         }
 
-        impl <C: #trait_ident> com::Foo<C> for dyn #trait_ident {
-            fn vtable<O: com::Offset>() -> Self::VTable {
+        impl <C: #trait_ident> com::ProductionComInterface<C> for dyn #trait_ident {
+            fn vtable<O: com::offset::Offset>() -> Self::VTable {
                 #vtable_macro!(C, O)
             }
         }
@@ -171,7 +171,7 @@ fn gen_parent_vtable_binding(item: &ItemStruct) -> HelperTokenStream {
                 utils::snake_to_camel(parent.trim_end_matches("_base").trim_start_matches("i"))
             );
             return quote! {
-                let parent_vtable = <dyn #parent as com::Foo<$class>>::vtable::<$offset>();
+                let parent_vtable = <dyn #parent as com::ProductionComInterface<$class>>::vtable::<$offset>();
             };
         }
     }
@@ -226,7 +226,7 @@ fn gen_vtable_function(
     });
     let return_type = &fun.output;
     quote! {
-        unsafe extern "stdcall" fn #function_ident<C: #interface_ident, O: com::Offset>(#(#params)*) #return_type {
+        unsafe extern "stdcall" fn #function_ident<C: #interface_ident, O: com::offset::Offset>(#(#params)*) #return_type {
             let this = arg0.sub(O::VALUE) as *mut C;
             (*this).#method_name(#(#args)*)
         }

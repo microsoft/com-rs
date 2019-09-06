@@ -100,10 +100,9 @@ impl IUnknown for BritishShortHairCat {
 impl BritishShortHairCat {
     pub(crate) fn new() -> BritishShortHairCat {
         println!("Allocating new vtable for Cat...");
-        let icat_vtable = <dyn ICat as com::Foo<BritishShortHairCat>>::vtable::<com::Zero>();
+        let icat_vtable = com::vtable!(BritishShortHairCat: ICat);
         let icat_vptr = Box::into_raw(Box::new(icat_vtable));
-        let idomesticanimal_vtable =
-            <dyn IDomesticAnimal as com::Foo<BritishShortHairCat>>::vtable::<com::One>();
+        let idomesticanimal_vtable = com::vtable!(BritishShortHairCat: IDomesticAnimal, 1);
         let idomesticanimal_vptr = Box::into_raw(Box::new(idomesticanimal_vtable));
 
         BritishShortHairCat {
