@@ -1,7 +1,7 @@
 use crate::windows_file_manager::WindowsFileManager;
 use com::{
-    failed, iclass_factory_gen_vtable, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable,
-    IUnknown, IUnknownVPtr, IID_ICLASS_FACTORY, IID_IUNKNOWN,
+    failed, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
+    IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 use interface::CLSID_LOCAL_FILE_MANAGER_CLASS;
 
@@ -114,7 +114,7 @@ impl IUnknown for WindowsFileManagerClass {
 impl WindowsFileManagerClass {
     pub(crate) fn new() -> WindowsFileManagerClass {
         println!("Allocating new Vtable for WindowsFileManagerClass...");
-        let class_vtable = iclass_factory_gen_vtable!(WindowsFileManagerClass, 0);
+        let class_vtable = com::vtable!(WindowsFileManagerClass: IClassFactory);
         let vptr = Box::into_raw(Box::new(class_vtable));
         WindowsFileManagerClass {
             inner: vptr,

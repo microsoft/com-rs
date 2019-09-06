@@ -1,6 +1,6 @@
 use crate::clark_kent::ClarkKent;
 use com::{
-    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr, IUnknownVTable,
+    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
     IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 
@@ -85,57 +85,10 @@ impl Drop for ClarkKentClass {
     }
 }
 
-unsafe extern "stdcall" fn query_interface(
-    this: *mut IUnknownVPtr,
-    riid: *const IID,
-    ppv: *mut *mut c_void,
-) -> HRESULT {
-    println!("Querying interface on ClarkKentClass...");
-    let this = this as *mut ClarkKentClass;
-    (*this).query_interface(riid, ppv)
-}
-
-unsafe extern "stdcall" fn add_ref(this: *mut IUnknownVPtr) -> u32 {
-    println!("Adding ref...");
-    let this = this as *mut ClarkKentClass;
-    (*this).add_ref()
-}
-
-// TODO: This could potentially be null or pointing to some invalid memory
-unsafe extern "stdcall" fn release(this: *mut IUnknownVPtr) -> u32 {
-    println!("Releasing...");
-    let this = this as *mut ClarkKentClass;
-    (*this).release()
-}
-
-unsafe extern "stdcall" fn create_instance(
-    this: *mut IClassFactoryVPtr,
-    aggregate: *mut IUnknownVPtr,
-    riid: *const IID,
-    ppv: *mut *mut c_void,
-) -> HRESULT {
-    let this = this as *mut ClarkKentClass;
-    (*this).create_instance(aggregate, riid, ppv)
-}
-
-unsafe extern "stdcall" fn lock_server(this: *mut IClassFactoryVPtr, increment: BOOL) -> HRESULT {
-    let this = this as *mut ClarkKentClass;
-    (*this).lock_server(increment)
-}
-
 impl ClarkKentClass {
     pub(crate) fn new() -> ClarkKentClass {
         println!("Allocating new Vtable for ClarkKentClass...");
-        let iunknown = IUnknownVTable {
-            QueryInterface: query_interface,
-            Release: release,
-            AddRef: add_ref,
-        };
-        let iclassfactory = IClassFactoryVTable {
-            iunknown_base: iunknown,
-            CreateInstance: create_instance,
-            LockServer: lock_server,
-        };
+        let iclassfactory = com::vtable!(ClarkKentClass: IClassFactory);
         let vptr = Box::into_raw(Box::new(iclassfactory));
         ClarkKentClass {
             inner: vptr,
