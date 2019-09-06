@@ -2,13 +2,14 @@ use proc_macro::TokenStream;
 type HelperTokenStream = proc_macro2::TokenStream;
 use quote::{format_ident, quote,};
 use syn:: {
-    ItemStruct, Ident, Meta, NestedMeta,
+    ItemStruct, Ident, Meta, NestedMeta, Fields,
 };
 
 use std::iter::FromIterator;
+use std::collections::HashMap;
 use crate::utils::{camel_to_snake, get_vptr_ident, get_vtable_ident,};
 
-// Helper functions
+// Helper functions (CURRENTLY DUPLICATED TO MOVE DURING REBASE)
 
 fn get_vtable_macro_ident(trait_ident: &Ident) -> Ident {
     format_ident!(
@@ -58,6 +59,41 @@ fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
     base_itf_idents
 }
 
+fn get_aggr_map(struct_item: &ItemStruct) -> HashMap<Ident, Vec<Ident>> {
+    let mut aggr_map = HashMap::new();
+
+    let fields = match &struct_item.fields {
+        Fields::Named(f) => &f.named,
+        _ => panic!("Found field other than named fields in struct")
+    };
+
+    for field in fields {
+        for attr in &field.attrs {
+            if let Ok(Meta::List(ref attr)) = attr.parse_meta() {
+                if attr.path.segments.last().unwrap().ident != "aggr" {
+                    continue;
+                }
+
+                let mut aggr_interfaces_idents = Vec::new();
+
+
+                assert!(attr.nested.len() > 0, "Need to expose at least one interface from aggregated COM object.");
+
+                for item in &attr.nested {
+                    if let NestedMeta::Meta(Meta::Path(p)) = item {
+                        assert!(p.segments.len() == 1, "Incapable of handling multiple path segments yet.");
+                        aggr_interfaces_idents.push(p.segments.last().unwrap().ident.clone());
+                    }
+                }
+                let ident = field.ident.as_ref().unwrap().clone();
+                aggr_map.insert(ident, aggr_interfaces_idents);
+            }
+        }
+    }
+
+    aggr_map
+}
+
 // Macro expansion entry point.
 
 pub fn expand_com_class(item: TokenStream) -> TokenStream {
@@ -66,11 +102,12 @@ pub fn expand_com_class(item: TokenStream) -> TokenStream {
 
     // Parse attributes
     let base_itf_idents = get_base_interface_idents(&input);
+    let aggr_itf_idents = get_aggr_map(&input);
 
     let mut out: Vec<TokenStream> = Vec::new();
     out.push(gen_real_struct(&base_itf_idents, &input).into());
     out.push(gen_allocate_impl(&base_itf_idents, &input).into());
-    out.push(gen_iunknown_impl(&base_itf_idents, &input).into());
+    out.push(gen_iunknown_impl(&base_itf_idents, &aggr_itf_idents, &input).into());
     out.push(gen_drop_impl(&base_itf_idents, &input).into());
     out.push(gen_deref_impl(&input).into());
 
@@ -115,19 +152,50 @@ fn gen_deref_impl(struct_item: &ItemStruct) -> HelperTokenStream {
     )
 }
 
-fn gen_iunknown_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+fn gen_iunknown_impl(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident, Vec<Ident>>, struct_item: &ItemStruct) -> HelperTokenStream {
     let real_ident = get_real_ident(&struct_item.ident);
     let ref_count_ident = get_ref_count_ident();
 
     let first_vptr_field = get_vptr_field_ident(&base_itf_idents[0]);
 
-    let match_arms = base_itf_idents.iter().map(|base| {
+    // Generate match arms for implemented interfaces
+    let base_match_arms = base_itf_idents.iter().map(|base| {
         let match_condition = quote!(<dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid));
         let vptr_field_ident = get_vptr_field_ident(&base);
 
         quote!(
             else if #match_condition {
                 *ppv = &self.#vptr_field_ident as *const _ as *mut c_void;
+            }
+        )
+    });
+
+    // Generate match arms for aggregated interfaces
+    let aggr_match_arms = aggr_itf_idents.iter().map(|(aggr_field_ident, aggr_base_itf_idents)| {
+
+        // Construct the OR match conditions for a single aggregated object.
+        let first_base_itf_ident = &aggr_base_itf_idents[0];
+        let first_aggr_match_condition = quote!(
+            <dyn #first_base_itf_ident as com::ComInterface>::iid_in_inheritance_chain(riid)
+        );
+        let rem_aggr_match_conditions = aggr_base_itf_idents.iter().skip(1).map(|base| {
+            quote!(|| <dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid))
+        });
+
+        quote!(
+            else if #first_aggr_match_condition #(#rem_aggr_match_conditions)* {
+                let mut aggr_itf_ptr: ComPtr<dyn IUnknown> = ComPtr::new(self.#aggr_field_ident as *mut c_void);
+                let hr = aggr_itf_ptr.query_interface(riid, ppv);
+                if com::failed(hr) {
+                    return winapi::shared::winerror::E_NOINTERFACE;
+                }
+
+                // We release it as the previous call add_ref-ed the inner object.
+                // The intention is to transfer reference counting logic to the
+                // outer object.
+                aggr_itf_ptr.release();
+
+                forget(aggr_itf_ptr);
             }
         )
     });
@@ -142,12 +210,12 @@ fn gen_iunknown_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Hel
                 unsafe {
                     let riid = &*riid;
 
-                    if IsEqualGUID(riid, &com::IID_IUNKNOWN) {
+                    if winapi::shared::guiddef::IsEqualGUID(riid, &com::IID_IUNKNOWN) {
                         *ppv = &self.#first_vptr_field as *const _ as *mut c_void;
-                    } #(#match_arms)* else {
+                    } #(#base_match_arms)* #(#aggr_match_arms)* else {
                         *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
                         println!("Returning NO INTERFACE.");
-                        return E_NOINTERFACE;
+                        return winapi::shared::winerror::E_NOINTERFACE;
                     }
 
                     println!("Successful!.");
@@ -167,7 +235,7 @@ fn gen_iunknown_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Hel
                 println!("Count now {}", self.#ref_count_ident);
                 let count = self.#ref_count_ident;
                 if count == 0 {
-                    println!("Count is 0 for BritishShortHairCat. Freeing memory...");
+                    println!("Count is 0 for {}. Freeing memory...", stringify!(#real_ident));
                     // drop(self)
                     unsafe { Box::from_raw(self as *const _ as *mut #real_ident); }
                 }

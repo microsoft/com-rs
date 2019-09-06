@@ -23,12 +23,12 @@ use aggr_com_class::expand_aggregable_com_class;
 use utils::*;
 
 // Macro entry points.
-#[proc_macro_derive(CoClass, attributes(com_implements))]
+#[proc_macro_derive(CoClass, attributes(com_implements, aggr))]
 pub fn derive_com_class(item: TokenStream) -> TokenStream {
     expand_com_class(item)
 }
 
-#[proc_macro_derive(AggrCoClass, attributes(com_implements))]
+#[proc_macro_derive(AggrCoClass, attributes(com_implements, aggr))]
 pub fn derive_aggregable_com_class(item: TokenStream) -> TokenStream {
     expand_aggregable_com_class(item)
 }

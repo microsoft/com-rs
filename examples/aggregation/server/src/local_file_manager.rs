@@ -1,7 +1,7 @@
-use com::{ComPtr, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN, iunknown_gen_vtable,};
+use com::{IUnknown, IUnknownVPtr, IUnknownVTable, iunknown_gen_vtable,};
 use interface::{
     ilocal_file_manager::{
-        ILocalFileManager, ILocalFileManagerVPtr, ILocalFileManagerVTable, IID_ILOCAL_FILE_MANAGER,
+        ILocalFileManager, ILocalFileManagerVPtr, ILocalFileManagerVTable,
     },
     ilocal_file_manager_gen_vtable,
 };

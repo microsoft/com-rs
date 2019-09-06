@@ -2,13 +2,14 @@ use proc_macro::TokenStream;
 type HelperTokenStream = proc_macro2::TokenStream;
 use quote::{format_ident, quote,};
 use syn:: {
-    ItemStruct, Ident, Meta, NestedMeta,
+    ItemStruct, Ident, Meta, NestedMeta, Fields,
 };
 
 use std::iter::FromIterator;
+use std::collections::HashMap;
 use crate::utils::{camel_to_snake, get_vptr_ident, get_vtable_ident,};
 
-// Helper functions
+// Helper functions (CURRENTLY DUPLICATED TO MOVE DURING REBASE)
 
 fn get_non_del_unk_field_ident() -> Ident {
     format_ident!("__non_delegating_unk")
@@ -66,6 +67,41 @@ fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
     base_itf_idents
 }
 
+fn get_aggr_map(struct_item: &ItemStruct) -> HashMap<Ident, Vec<Ident>> {
+    let mut aggr_map = HashMap::new();
+
+    let fields = match &struct_item.fields {
+        Fields::Named(f) => &f.named,
+        _ => panic!("Found field other than named fields in struct")
+    };
+
+    for field in fields {
+        for attr in &field.attrs {
+            if let Ok(Meta::List(ref attr)) = attr.parse_meta() {
+                if attr.path.segments.last().unwrap().ident != "aggr" {
+                    continue;
+                }
+
+                let mut aggr_interfaces_idents = Vec::new();
+
+
+                assert!(attr.nested.len() > 0, "Need to expose at least one interface from aggregated COM object.");
+
+                for item in &attr.nested {
+                    if let NestedMeta::Meta(Meta::Path(p)) = item {
+                        assert!(p.segments.len() == 1, "Incapable of handling multiple path segments yet.");
+                        aggr_interfaces_idents.push(p.segments.last().unwrap().ident.clone());
+                    }
+                }
+                let ident = field.ident.as_ref().unwrap().clone();
+                aggr_map.insert(ident, aggr_interfaces_idents);
+            }
+        }
+    }
+
+    aggr_map
+}
+
 // Macro expansion entry point.
 
 pub fn expand_aggregable_com_class(item: TokenStream) -> TokenStream {
@@ -74,10 +110,11 @@ pub fn expand_aggregable_com_class(item: TokenStream) -> TokenStream {
 
     // Parse attributes
     let base_itf_idents = get_base_interface_idents(&input);
+    let aggr_itf_idents = get_aggr_map(&input);
 
     let mut out: Vec<TokenStream> = Vec::new();
     out.push(gen_real_struct(&base_itf_idents, &input).into());
-    out.push(gen_impl(&base_itf_idents, &input).into());
+    out.push(gen_impl(&base_itf_idents, &aggr_itf_idents, &input).into());
     out.push(gen_iunknown_impl(&input).into());
     out.push(gen_drop_impl(&base_itf_idents, &input).into());
     out.push(gen_deref_impl(&input).into());
@@ -87,18 +124,18 @@ pub fn expand_aggregable_com_class(item: TokenStream) -> TokenStream {
     out
 }
 
-fn gen_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+fn gen_impl(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident, Vec<Ident>>, struct_item: &ItemStruct) -> HelperTokenStream {
 
     let real_ident = get_real_ident(&struct_item.ident);
     let allocate_fn = gen_allocate_fn(base_itf_idents, struct_item);
     let set_iunknown_fn = gen_set_iunknown_fn();
-    let iunknown_fns = gen_iunknown_fns(base_itf_idents, struct_item);
+    let inner_iunknown_fns = gen_inner_iunknown_fns(base_itf_idents, aggr_itf_idents, struct_item);
 
     quote!(
         impl #real_ident {
             #allocate_fn
             #set_iunknown_fn
-            #iunknown_fns
+            #inner_iunknown_fns
         }
     )
 }
@@ -118,42 +155,13 @@ fn gen_set_iunknown_fn() -> HelperTokenStream {
     )
 }
 
-fn gen_iunknown_fns(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+fn gen_inner_iunknown_fns(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident, Vec<Ident>>, struct_item: &ItemStruct) -> HelperTokenStream {
     let real_ident = get_real_ident(&struct_item.ident);
     let ref_count_ident = get_ref_count_ident();
-    let non_del_unk_field_ident = get_non_del_unk_field_ident();
-    
-    let match_arms = base_itf_idents.iter().map(|base| {
-        let match_condition = quote!(<dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid));
-        let vptr_field_ident = get_vptr_field_ident(&base);
-
-        quote!(
-            else if #match_condition {
-                *ppv = &self.#vptr_field_ident as *const _ as *mut c_void;
-            }
-        )
-    });
+    let inner_query_interface = gen_inner_query_interface(base_itf_idents, aggr_itf_idents, struct_item);
 
     quote!(
-        pub(crate) fn inner_query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
-            println!("Non delegating QI");
-
-            unsafe {
-                let riid = &*riid;
-
-                if IsEqualGUID(riid, &com::IID_IUNKNOWN) {
-                    *ppv = &self.#non_del_unk_field_ident as *const _ as *mut c_void;
-                } #(#match_arms)* else {
-                    *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
-                    println!("Returning NO INTERFACE.");
-                    return E_NOINTERFACE;
-                }
-
-                println!("Successful!.");
-                self.inner_add_ref();
-                NOERROR
-            }
-        }
+        #inner_query_interface
 
         pub(crate) fn inner_add_ref(&mut self) -> u32 {
             self.#ref_count_ident += 1;
@@ -171,6 +179,74 @@ fn gen_iunknown_fns(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Help
                 unsafe { Box::from_raw(self as *const _ as *mut #real_ident); }
             }
             count
+        }
+    )
+}
+
+fn gen_inner_query_interface(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident, Vec<Ident>>, struct_item: &ItemStruct) -> HelperTokenStream {
+    let non_del_unk_field_ident = get_non_del_unk_field_ident();
+
+    // Generate match arms for implemented interfaces
+    let match_arms = base_itf_idents.iter().map(|base| {
+        let match_condition = quote!(<dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid));
+        let vptr_field_ident = get_vptr_field_ident(&base);
+
+        quote!(
+            else if #match_condition {
+                *ppv = &self.#vptr_field_ident as *const _ as *mut c_void;
+            }
+        )
+    });
+
+    // Generate match arms for aggregated interfaces
+    let aggr_match_arms = aggr_itf_idents.iter().map(|(aggr_field_ident, aggr_base_itf_idents)| {
+
+        // Construct the OR match conditions for a single aggregated object.
+        let first_base_itf_ident = &aggr_base_itf_idents[0];
+        let first_aggr_match_condition = quote!(
+            <dyn #first_base_itf_ident as com::ComInterface>::iid_in_inheritance_chain(riid)
+        );
+        let rem_aggr_match_conditions = aggr_base_itf_idents.iter().skip(1).map(|base| {
+            quote!(|| <dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid))
+        });
+
+        quote!(
+            else if #first_aggr_match_condition #(#rem_aggr_match_conditions)* {
+                let mut aggr_itf_ptr: ComPtr<dyn IUnknown> = ComPtr::new(self.#aggr_field_ident as *mut c_void);
+                let hr = aggr_itf_ptr.query_interface(riid, ppv);
+                if com::failed(hr) {
+                    return winapi::shared::winerror::E_NOINTERFACE;
+                }
+
+                // We release it as the previous call add_ref-ed the inner object.
+                // The intention is to transfer reference counting logic to the
+                // outer object.
+                aggr_itf_ptr.release();
+
+                forget(aggr_itf_ptr);
+            }
+        )
+    });
+
+    quote!(
+        pub(crate) fn inner_query_interface(&mut self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT {
+            println!("Non delegating QI");
+
+            unsafe {
+                let riid = &*riid;
+
+                if IsEqualGUID(riid, &com::IID_IUNKNOWN) {
+                    *ppv = &self.#non_del_unk_field_ident as *const _ as *mut c_void;
+                } #(#match_arms)* #(#aggr_match_arms)* else {
+                    *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
+                    println!("Returning NO INTERFACE.");
+                    return E_NOINTERFACE;
+                }
+
+                println!("Successful!.");
+                self.inner_add_ref();
+                NOERROR
+            }
         }
     )
 }
