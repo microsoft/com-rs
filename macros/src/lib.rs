@@ -1,6 +1,6 @@
-use com_interface_attribute::{expand_com_interface, expand_derive,};
-use co_class_derive::expand_derive_com_class;
 use aggr_co_class_derive::expand_derive_aggr_com_class;
+use co_class_derive::expand_derive_com_class;
+use com_interface_attribute::{expand_com_interface, expand_derive};
 
 extern crate proc_macro;
 use proc_macro::TokenStream;

@@ -1,19 +1,16 @@
 use crate::windows_file_manager::WindowsFileManager;
 use com::{
-    failed, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
+    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
     IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
-use interface::CLSID_LOCAL_FILE_MANAGER_CLASS;
 
 use winapi::{
     ctypes::c_void,
     shared::{
-        guiddef::{IsEqualGUID, IID, REFCLSID, REFIID},
-        minwindef::{BOOL, LPVOID},
+        guiddef::{IsEqualGUID, IID, REFIID},
+        minwindef::{BOOL,},
         winerror::{CLASS_E_NOAGGREGATION, E_NOINTERFACE, HRESULT, NOERROR, S_OK},
-        wtypesbase::CLSCTX_INPROC_SERVER,
     },
-    um::combaseapi::CoCreateInstance,
 };
 
 #[repr(C)]

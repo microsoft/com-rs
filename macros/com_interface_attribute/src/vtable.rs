@@ -74,7 +74,10 @@ fn gen_vtable_methods(interface: &ItemTrait) -> HelperTokenStream {
 }
 
 fn gen_vtable_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
-    let method_ident = format_ident!("{}", macro_utils::snake_to_camel(&method.sig.ident.to_string()));
+    let method_ident = format_ident!(
+        "{}",
+        macro_utils::snake_to_camel(&method.sig.ident.to_string())
+    );
     let vtable_function_signature = gen_vtable_function_signature(interface_ident, method);
 
     quote!(

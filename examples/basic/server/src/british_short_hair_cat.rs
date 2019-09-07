@@ -1,16 +1,12 @@
 use interface::{
-    ianimal::{IAnimal, IID_IANIMAL},
-    icat::{ICat, ICatVPtr, ICatVTable, IID_ICAT},
-    idomesticanimal::{
-        IDomesticAnimal, IDomesticAnimalVPtr, IDomesticAnimalVTable,
-    },
+    ianimal::IAnimal,
+    icat::ICat,
+    idomesticanimal::IDomesticAnimal,
 };
 
 use winapi::{
-    ctypes::c_void,
     shared::{
-        guiddef::{IsEqualGUID, IID},
-        winerror::{E_NOINTERFACE, HRESULT, NOERROR},
+        winerror::{HRESULT, NOERROR},
     },
 };
 

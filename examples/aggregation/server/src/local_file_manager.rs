@@ -1,20 +1,13 @@
-use com::{IUnknown, IUnknownVPtr, IUnknownVTable, iunknown_gen_vtable,};
 use interface::{
-    ilocal_file_manager::{
-        ILocalFileManager, ILocalFileManagerVPtr, ILocalFileManagerVTable,
-    },
-    ilocal_file_manager_gen_vtable,
+    ilocal_file_manager::ILocalFileManager,
 };
 
 use winapi::{
-    ctypes::c_void,
     shared::{
-        guiddef::{IsEqualGUID, IID, REFIID,},
-        winerror::{E_NOINTERFACE, HRESULT, NOERROR},
+        winerror::{HRESULT, NOERROR},
     },
 };
 
-use core::mem::forget;
 use com::AggrCoClass;
 
 /// The implementation class
@@ -100,7 +93,6 @@ impl LocalFileManager {
 //         let non_del_unknown_vptr = Box::into_raw(Box::new(non_del_iunknown));
 
 //         // Initialising VTable for ILocalFileManager
-//         let ilocalfilemanager = ilocal_file_manager_gen_vtable!(LocalFileManager, 0);
 //         let ilocalfilemanager_vptr = Box::into_raw(Box::new(ilocalfilemanager));
 
 //         let out = LocalFileManager {

@@ -1,7 +1,7 @@
 use crate::local_file_manager::LocalFileManager;
 
 use com::{
-    ComPtr, IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
+    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IUnknown, IUnknownVPtr,
     IID_ICLASS_FACTORY, IID_IUNKNOWN,
 };
 
@@ -13,8 +13,6 @@ use winapi::{
         winerror::{E_INVALIDARG, E_NOINTERFACE, HRESULT, NOERROR, S_OK},
     },
 };
-
-use core::mem::forget;
 
 #[repr(C)]
 pub struct LocalFileManagerClass {

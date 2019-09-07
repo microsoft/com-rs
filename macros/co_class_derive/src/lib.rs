@@ -1,19 +1,16 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 type HelperTokenStream = proc_macro2::TokenStream;
-use quote::{format_ident, quote,};
-use syn:: {
-    ItemStruct, Ident,
-};
+use quote::{format_ident, quote};
+use syn::{Ident, ItemStruct};
 
-use std::iter::FromIterator;
-use std::collections::HashMap;
 use macro_utils::*;
+use std::collections::HashMap;
+use std::iter::FromIterator;
 
 // Macro expansion entry point.
 
 pub fn expand_derive_com_class(item: TokenStream) -> TokenStream {
-
     let input = syn::parse_macro_input!(item as ItemStruct);
 
     // Parse attributes
@@ -27,18 +24,15 @@ pub fn expand_derive_com_class(item: TokenStream) -> TokenStream {
     out.push(gen_drop_impl(&base_itf_idents, &input).into());
     out.push(gen_deref_impl(&input).into());
 
-    let out = TokenStream::from_iter(out);
-    println!("Result:\n{}", out);
-    out
+    TokenStream::from_iter(out)
 }
 
 fn gen_drop_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let real_ident = get_real_ident(&struct_item.ident);
     let box_from_raws = base_itf_idents.iter().map(|base| {
         let vptr_field_ident = get_vptr_field_ident(&base);
-        let vtable_ident = get_vtable_ident(&base);
         quote!(
-            Box::from_raw(self.#vptr_field_ident as *mut #vtable_ident);
+            Box::from_raw(self.#vptr_field_ident as *mut <#base as com::ComInterface>::VTable);
         )
     });
 
@@ -68,7 +62,11 @@ fn gen_deref_impl(struct_item: &ItemStruct) -> HelperTokenStream {
     )
 }
 
-fn gen_iunknown_impl(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident, Vec<Ident>>, struct_item: &ItemStruct) -> HelperTokenStream {
+fn gen_iunknown_impl(
+    base_itf_idents: &[Ident],
+    aggr_itf_idents: &HashMap<Ident, Vec<Ident>>,
+    struct_item: &ItemStruct,
+) -> HelperTokenStream {
     let real_ident = get_real_ident(&struct_item.ident);
     let ref_count_ident = get_ref_count_ident();
 
@@ -76,12 +74,13 @@ fn gen_iunknown_impl(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident,
 
     // Generate match arms for implemented interfaces
     let base_match_arms = base_itf_idents.iter().map(|base| {
-        let match_condition = quote!(<dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid));
+        let match_condition =
+            quote!(<dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid));
         let vptr_field_ident = get_vptr_field_ident(&base);
 
         quote!(
             else if #match_condition {
-                *ppv = &self.#vptr_field_ident as *const _ as *mut c_void;
+                *ppv = &self.#vptr_field_ident as *const _ as *mut winapi::ctypes::c_void;
             }
         )
     });
@@ -100,7 +99,7 @@ fn gen_iunknown_impl(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident,
 
         quote!(
             else if #first_aggr_match_condition #(#rem_aggr_match_conditions)* {
-                let mut aggr_itf_ptr: ComPtr<dyn IUnknown> = ComPtr::new(self.#aggr_field_ident as *mut c_void);
+                let mut aggr_itf_ptr: ComPtr<dyn IUnknown> = ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
                 let hr = aggr_itf_ptr.query_interface(riid, ppv);
                 if com::failed(hr) {
                     return winapi::shared::winerror::E_NOINTERFACE;
@@ -127,7 +126,7 @@ fn gen_iunknown_impl(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident,
                     let riid = &*riid;
 
                     if winapi::shared::guiddef::IsEqualGUID(riid, &com::IID_IUNKNOWN) {
-                        *ppv = &self.#first_vptr_field as *const _ as *mut c_void;
+                        *ppv = &self.#first_vptr_field as *const _ as *mut winapi::ctypes::c_void;
                     } #(#base_match_arms)* #(#aggr_match_arms)* else {
                         *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
                         println!("Returning NO INTERFACE.");
@@ -209,8 +208,7 @@ fn gen_real_struct(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Helpe
 
     let bases_itf_idents = base_itf_idents.iter().map(|base| {
         let field_ident = get_vptr_field_ident(&base);
-        let vptr_ident = get_vptr_ident(&base);
-        quote!(#field_ident: #vptr_ident)
+        quote!(#field_ident: <#base as com::ComInterface>::VPtr)
     });
 
     let ref_count_ident = get_ref_count_ident();

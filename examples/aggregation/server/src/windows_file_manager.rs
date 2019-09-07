@@ -1,16 +1,15 @@
-use com::{failed, ComPtr, IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
+use com::{failed, ComPtr, IUnknown, IUnknownVPtr, IID_IUNKNOWN};
 use interface::{
-    ifile_manager::{IFileManager, IFileManagerVPtr, IFileManagerVTable, IID_IFILE_MANAGER},
-    ilocal_file_manager::{IID_ILOCAL_FILE_MANAGER, ILocalFileManager},
+    ifile_manager::{IFileManager},
+    ilocal_file_manager::{ILocalFileManager},
     CLSID_LOCAL_FILE_MANAGER_CLASS,
-    ifile_manager_gen_vtable,
 };
 
 use winapi::{
     ctypes::c_void,
     shared::{
-        guiddef::{IsEqualGUID, IID, REFCLSID, REFIID,},
-        winerror::{E_NOINTERFACE, HRESULT, NOERROR},
+        guiddef::{REFCLSID, REFIID,},
+        winerror::{HRESULT, NOERROR},
         minwindef::{LPVOID, },
         wtypesbase::CLSCTX_INPROC_SERVER,
     },
@@ -20,7 +19,7 @@ use winapi::{
 };
 
 use std::mem::forget;
-use std::ops::{Deref, DerefMut,};
+use std::ops::{DerefMut,};
 
 use com::CoClass;
 

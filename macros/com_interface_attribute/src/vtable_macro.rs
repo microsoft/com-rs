@@ -35,7 +35,9 @@ fn gen_parent_vtable_binding(item: &ItemStruct) -> HelperTokenStream {
         if parent.ends_with("_base") {
             let parent = format_ident!(
                 "I{}",
-                macro_utils::snake_to_camel(parent.trim_end_matches("_base").trim_start_matches("i"))
+                macro_utils::snake_to_camel(
+                    parent.trim_end_matches("_base").trim_start_matches("i")
+                )
             );
             return quote! {
                 let parent_vtable = <dyn #parent as com::ProductionComInterface<$class>>::vtable::<$offset>();
