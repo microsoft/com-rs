@@ -49,6 +49,11 @@ impl IClassFactory for WindowsFileManagerClass {
         Box::into_raw(wfm);
         hr
     }
+
+    fn lock_server(&mut self, _increment: BOOL) -> HRESULT {
+        println!("LockServer called");
+        S_OK
+    }
 }
 
 impl IUnknown for WindowsFileManagerClass {
