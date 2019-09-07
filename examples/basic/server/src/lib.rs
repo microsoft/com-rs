@@ -1,7 +1,6 @@
 mod british_short_hair_cat;
-mod british_short_hair_cat_class;
 
-use british_short_hair_cat_class::BritishShortHairCatClass;
+use british_short_hair_cat::BritishShortHairCat;
 use interface::CLSID_CAT_CLASS;
 
-com::com_inproc_dll_module![(CLSID_CAT_CLASS, BritishShortHairCatClass),];
+com::com_inproc_dll_module![(CLSID_CAT_CLASS, BritishShortHairCat),];

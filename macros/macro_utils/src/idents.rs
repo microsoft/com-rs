@@ -5,6 +5,10 @@ use syn::{
 
 use std::collections::HashMap;
 
+pub fn get_class_factory_ident(class_ident: &Ident) -> Ident {
+    format_ident!("{}ClassFactory", class_ident)
+}
+
 pub fn get_vtable_ident(trait_ident: &Ident) -> Ident {
     format_ident!("{}VTable", trait_ident)
 }
