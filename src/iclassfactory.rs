@@ -1,4 +1,4 @@
-use com_interface_attribute::com_interface;
+use crate::com_interface;
 use winapi::{
     ctypes::c_void,
     shared::{

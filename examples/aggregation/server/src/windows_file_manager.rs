@@ -22,7 +22,7 @@ use winapi::{
 use std::mem::forget;
 use std::ops::{Deref, DerefMut,};
 
-use com_interface_attribute::CoClass;
+use com::CoClass;
 
 /// The implementation class
 #[derive(CoClass)]

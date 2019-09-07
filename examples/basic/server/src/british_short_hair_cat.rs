@@ -14,7 +14,7 @@ use winapi::{
     },
 };
 
-use com_interface_attribute::CoClass;
+use com::CoClass;
 
 /// The implementation class
 /// https://en.wikipedia.org/wiki/British_Shorthair

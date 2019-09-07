@@ -1,0 +1,18 @@
+[package]
+name = "macros"
+version = "0.1.0"
+authors = ["adrianwithah <lim.weiheng.hadrian@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0.5", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0.1"
+com_interface_attribute = { path="com_interface_attribute" }
+co_class_derive = { path="co_class_derive" }
+aggr_co_class_derive = { path="aggr_co_class_derive" }

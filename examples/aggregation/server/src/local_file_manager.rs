@@ -15,7 +15,7 @@ use winapi::{
 };
 
 use core::mem::forget;
-use com_interface_attribute::AggrCoClass;
+use com::AggrCoClass;
 
 /// The implementation class
 #[repr(C)]

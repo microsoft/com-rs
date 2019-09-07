@@ -10,7 +10,6 @@ interface = { path = "../interface" }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser", "winreg", "winerror", "combaseapi"] }
-com_interface_attribute = { path = "../../../com_interface_attribute" }
 
 [lib]
 crate-type = ["rlib", "cdylib"]

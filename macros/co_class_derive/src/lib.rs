@@ -1,3 +1,4 @@
+extern crate proc_macro;
 use proc_macro::TokenStream;
 type HelperTokenStream = proc_macro2::TokenStream;
 use quote::{format_ident, quote,};
@@ -7,15 +8,16 @@ use syn:: {
 
 use std::iter::FromIterator;
 use std::collections::HashMap;
-use crate::utils::{camel_to_snake, get_vptr_ident, get_vtable_ident,};
+use macro_utils::camel_to_snake;
 
 // Helper functions (CURRENTLY DUPLICATED TO MOVE DURING REBASE)
 
-fn get_vtable_macro_ident(trait_ident: &Ident) -> Ident {
-    format_ident!(
-        "{}_gen_vtable",
-        camel_to_snake(trait_ident.to_string())
-    )
+pub fn get_vtable_ident(trait_ident: &Ident) -> Ident {
+    format_ident!("{}VTable", trait_ident)
+}
+
+pub fn get_vptr_ident(trait_ident: &Ident) -> Ident {
+    format_ident!("{}VPtr", trait_ident)
 }
 
 fn get_ref_count_ident() -> Ident {
@@ -96,7 +98,7 @@ fn get_aggr_map(struct_item: &ItemStruct) -> HashMap<Ident, Vec<Ident>> {
 
 // Macro expansion entry point.
 
-pub fn expand_com_class(item: TokenStream) -> TokenStream {
+pub fn expand_derive_com_class(item: TokenStream) -> TokenStream {
 
     let input = syn::parse_macro_input!(item as ItemStruct);
 
@@ -250,15 +252,13 @@ fn gen_allocate_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Hel
     let init_ident = &struct_item.ident;
     let real_ident = get_real_ident(&struct_item.ident);
 
-    let mut offset_count : usize = 0;
+    let mut offset_count: usize = 0;
     let base_inits = base_itf_idents.iter().map(|base| {
         let vtable_var_ident = format_ident!("{}_vtable", base.to_string().to_lowercase());
-        let vtable_macro_ident = get_vtable_macro_ident(&base);
         let vptr_field_ident = get_vptr_field_ident(&base);
-        
 
         let out = quote!(
-            let #vtable_var_ident = #vtable_macro_ident!(#real_ident, #offset_count);
+            let #vtable_var_ident = com::vtable!(#real_ident: #base, #offset_count);
             let #vptr_field_ident = Box::into_raw(Box::new(#vtable_var_ident));
         );
 
