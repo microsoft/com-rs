@@ -1,3 +1,6 @@
+mod idents;
+pub use idents::*;
+
 pub fn snake_to_camel(input: &str) -> String {
     let mut new = String::new();
 

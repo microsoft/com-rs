@@ -3,98 +3,12 @@ use proc_macro::TokenStream;
 type HelperTokenStream = proc_macro2::TokenStream;
 use quote::{format_ident, quote,};
 use syn:: {
-    ItemStruct, Ident, Meta, NestedMeta, Fields,
+    ItemStruct, Ident,
 };
 
 use std::iter::FromIterator;
 use std::collections::HashMap;
-use macro_utils::camel_to_snake;
-
-// Helper functions (CURRENTLY DUPLICATED TO MOVE DURING REBASE)
-
-pub fn get_vtable_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("{}VTable", trait_ident)
-}
-
-pub fn get_vptr_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("{}VPtr", trait_ident)
-}
-
-fn get_ref_count_ident() -> Ident {
-    format_ident!("__refcnt")
-}
-
-fn get_vptr_field_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("__{}vptr", trait_ident.to_string().to_lowercase())
-}
-
-fn get_real_ident(struct_ident: &Ident) -> Ident {
-    if !struct_ident.to_string().starts_with("Init") {
-        panic!("The target struct's name must begin with Init")
-    }
-
-    format_ident!("{}", &struct_ident.to_string()[4..])
-}
-
-fn get_inner_init_field_ident() -> Ident {
-    format_ident!("__init_struct")
-}
-
-fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
-    let mut base_itf_idents = Vec::new();
-
-    for attr in &struct_item.attrs {
-        if let Ok(Meta::List(ref attr)) = attr.parse_meta() {
-            if attr.path.segments.last().unwrap().ident != "com_implements" {
-                continue;
-            }
-
-            for item in &attr.nested {
-                if let NestedMeta::Meta(Meta::Path(p)) = item {
-                    assert!(p.segments.len() == 1, "Incapable of handling multiple path segments yet.");
-                    base_itf_idents.push(p.segments.last().unwrap().ident.clone());
-                }
-            }
-        }
-    }
-
-    base_itf_idents
-}
-
-fn get_aggr_map(struct_item: &ItemStruct) -> HashMap<Ident, Vec<Ident>> {
-    let mut aggr_map = HashMap::new();
-
-    let fields = match &struct_item.fields {
-        Fields::Named(f) => &f.named,
-        _ => panic!("Found field other than named fields in struct")
-    };
-
-    for field in fields {
-        for attr in &field.attrs {
-            if let Ok(Meta::List(ref attr)) = attr.parse_meta() {
-                if attr.path.segments.last().unwrap().ident != "aggr" {
-                    continue;
-                }
-
-                let mut aggr_interfaces_idents = Vec::new();
-
-
-                assert!(attr.nested.len() > 0, "Need to expose at least one interface from aggregated COM object.");
-
-                for item in &attr.nested {
-                    if let NestedMeta::Meta(Meta::Path(p)) = item {
-                        assert!(p.segments.len() == 1, "Incapable of handling multiple path segments yet.");
-                        aggr_interfaces_idents.push(p.segments.last().unwrap().ident.clone());
-                    }
-                }
-                let ident = field.ident.as_ref().unwrap().clone();
-                aggr_map.insert(ident, aggr_interfaces_idents);
-            }
-        }
-    }
-
-    aggr_map
-}
+use macro_utils::*;
 
 // Macro expansion entry point.
 
@@ -103,8 +17,8 @@ pub fn expand_derive_com_class(item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as ItemStruct);
 
     // Parse attributes
-    let base_itf_idents = get_base_interface_idents(&input);
-    let aggr_itf_idents = get_aggr_map(&input);
+    let base_itf_idents = macro_utils::get_base_interface_idents(&input);
+    let aggr_itf_idents = macro_utils::get_aggr_map(&input);
 
     let mut out: Vec<TokenStream> = Vec::new();
     out.push(gen_real_struct(&base_itf_idents, &input).into());

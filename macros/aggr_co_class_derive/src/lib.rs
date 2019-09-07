@@ -8,46 +8,9 @@ use syn:: {
 
 use std::iter::FromIterator;
 use std::collections::HashMap;
-use macro_utils::camel_to_snake;
+use macro_utils::*;
 
-// Helper functions (CURRENTLY DUPLICATED TO MOVE DURING REBASE)
-
-pub fn get_vtable_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("{}VTable", trait_ident)
-}
-
-pub fn get_vptr_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("{}VPtr", trait_ident)
-}
-
-fn get_non_del_unk_field_ident() -> Ident {
-    format_ident!("__non_delegating_unk")
-}
-
-fn get_iunk_to_use_field_ident() -> Ident {
-    format_ident!("__iunk_to_use")
-}
-
-fn get_ref_count_ident() -> Ident {
-    format_ident!("__refcnt")
-}
-
-fn get_vptr_field_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("__{}vptr", trait_ident.to_string().to_lowercase())
-}
-
-fn get_real_ident(struct_ident: &Ident) -> Ident {
-    if !struct_ident.to_string().starts_with("Init") {
-        panic!("The target struct's name must begin with Init")
-    }
-
-    format_ident!("{}", &struct_ident.to_string()[4..])
-}
-
-fn get_inner_init_field_ident() -> Ident {
-    format_ident!("__init_struct")
-}
-
+// Helper functions
 fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
     let mut base_itf_idents = Vec::new();
 
@@ -128,7 +91,7 @@ pub fn expand_derive_aggr_com_class(item: TokenStream) -> TokenStream {
 
 fn gen_impl(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident, Vec<Ident>>, struct_item: &ItemStruct) -> HelperTokenStream {
 
-    let real_ident = get_real_ident(&struct_item.ident);
+    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
     let allocate_fn = gen_allocate_fn(base_itf_idents, struct_item);
     let set_iunknown_fn = gen_set_iunknown_fn();
     let inner_iunknown_fns = gen_inner_iunknown_fns(base_itf_idents, aggr_itf_idents, struct_item);
@@ -143,8 +106,8 @@ fn gen_impl(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident, Vec<Iden
 }
 
 fn gen_set_iunknown_fn() -> HelperTokenStream {
-    let iunk_to_use_field_ident = get_iunk_to_use_field_ident();
-    let non_del_unk_field_ident = get_non_del_unk_field_ident();
+    let iunk_to_use_field_ident = macro_utils::get_iunk_to_use_field_ident();
+    let non_del_unk_field_ident = macro_utils::get_non_del_unk_field_ident();
 
     quote!(
         pub(crate) fn set_iunknown(&mut self, aggr: *mut IUnknownVPtr) {
@@ -158,8 +121,8 @@ fn gen_set_iunknown_fn() -> HelperTokenStream {
 }
 
 fn gen_inner_iunknown_fns(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident, Vec<Ident>>, struct_item: &ItemStruct) -> HelperTokenStream {
-    let real_ident = get_real_ident(&struct_item.ident);
-    let ref_count_ident = get_ref_count_ident();
+    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
+    let ref_count_ident = macro_utils::get_ref_count_ident();
     let inner_query_interface = gen_inner_query_interface(base_itf_idents, aggr_itf_idents, struct_item);
 
     quote!(
@@ -186,12 +149,12 @@ fn gen_inner_iunknown_fns(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<I
 }
 
 fn gen_inner_query_interface(base_itf_idents: &[Ident], aggr_itf_idents: &HashMap<Ident, Vec<Ident>>, struct_item: &ItemStruct) -> HelperTokenStream {
-    let non_del_unk_field_ident = get_non_del_unk_field_ident();
+    let non_del_unk_field_ident = macro_utils::get_non_del_unk_field_ident();
 
     // Generate match arms for implemented interfaces
     let match_arms = base_itf_idents.iter().map(|base| {
         let match_condition = quote!(<dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid));
-        let vptr_field_ident = get_vptr_field_ident(&base);
+        let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
 
         quote!(
             else if #match_condition {
@@ -254,11 +217,11 @@ fn gen_inner_query_interface(base_itf_idents: &[Ident], aggr_itf_idents: &HashMa
 }
 
 fn gen_drop_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
-    let real_ident = get_real_ident(&struct_item.ident);
-    let non_del_unk_field_ident = get_non_del_unk_field_ident();
+    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
+    let non_del_unk_field_ident = macro_utils::get_non_del_unk_field_ident();
     let box_from_raws = base_itf_idents.iter().map(|base| {
-        let vptr_field_ident = get_vptr_field_ident(&base);
-        let vtable_ident = get_vtable_ident(&base);
+        let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
+        let vtable_ident = macro_utils::get_vtable_ident(&base);
         quote!(
             Box::from_raw(self.#vptr_field_ident as *mut #vtable_ident);
         )
@@ -278,8 +241,8 @@ fn gen_drop_impl(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperT
 
 fn gen_deref_impl(struct_item: &ItemStruct) -> HelperTokenStream {
     let init_ident = &struct_item.ident;
-    let real_ident = get_real_ident(init_ident);
-    let inner_init_field_ident = get_inner_init_field_ident();
+    let real_ident = macro_utils::get_real_ident(init_ident);
+    let inner_init_field_ident = macro_utils::get_inner_init_field_ident();
 
     quote!(
         impl std::ops::Deref for #real_ident {
@@ -292,8 +255,8 @@ fn gen_deref_impl(struct_item: &ItemStruct) -> HelperTokenStream {
 }
 
 fn gen_iunknown_impl(struct_item: &ItemStruct) -> HelperTokenStream {
-    let real_ident = get_real_ident(&struct_item.ident);
-    let iunk_to_use_field_ident = get_iunk_to_use_field_ident();
+    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
+    let iunk_to_use_field_ident = macro_utils::get_iunk_to_use_field_ident();
 
     quote!(
         impl com::IUnknown for #real_ident {
@@ -331,12 +294,12 @@ fn gen_iunknown_impl(struct_item: &ItemStruct) -> HelperTokenStream {
 
 fn gen_allocate_fn(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let init_ident = &struct_item.ident;
-    let real_ident = get_real_ident(&struct_item.ident);
+    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
 
     let mut offset_count : usize = 0;
     let base_inits = base_itf_idents.iter().map(|base| {
         let vtable_var_ident = format_ident!("{}_vtable", base.to_string().to_lowercase());
-        let vptr_field_ident = get_vptr_field_ident(&base);
+        let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
         
 
         let out = quote!(
@@ -348,13 +311,13 @@ fn gen_allocate_fn(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Helpe
         out
     });
     let base_fields = base_itf_idents.iter().map(|base| {
-        let vptr_field_ident = get_vptr_field_ident(base);
+        let vptr_field_ident = macro_utils::get_vptr_field_ident(base);
         quote!(#vptr_field_ident)
     });
-    let ref_count_ident = get_ref_count_ident();
-    let inner_init_field_ident = get_inner_init_field_ident();
-    let iunk_to_use_field_ident = get_iunk_to_use_field_ident();
-    let non_del_unk_field_ident = get_non_del_unk_field_ident();
+    let ref_count_ident = macro_utils::get_ref_count_ident();
+    let inner_init_field_ident = macro_utils::get_inner_init_field_ident();
+    let iunk_to_use_field_ident = macro_utils::get_iunk_to_use_field_ident();
+    let non_del_unk_field_ident = macro_utils::get_non_del_unk_field_ident();
     let non_del_unk_offset = base_itf_idents.len();
 
     quote!(
@@ -407,19 +370,19 @@ fn gen_allocate_fn(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Helpe
 
 fn gen_real_struct(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let init_ident = &struct_item.ident;
-    let real_ident = get_real_ident(&struct_item.ident);
+    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
     let vis = &struct_item.vis;
 
     let bases_itf_idents = base_itf_idents.iter().map(|base| {
-        let field_ident = get_vptr_field_ident(&base);
-        let vptr_ident = get_vptr_ident(&base);
+        let field_ident = macro_utils::get_vptr_field_ident(&base);
+        let vptr_ident = macro_utils::get_vptr_ident(&base);
         quote!(#field_ident: #vptr_ident)
     });
 
-    let ref_count_ident = get_ref_count_ident();
-    let inner_init_field_ident = get_inner_init_field_ident();
-    let non_del_unk_field_ident = get_non_del_unk_field_ident();
-    let iunk_to_use_field_ident = get_iunk_to_use_field_ident();
+    let ref_count_ident = macro_utils::get_ref_count_ident();
+    let inner_init_field_ident = macro_utils::get_inner_init_field_ident();
+    let non_del_unk_field_ident = macro_utils::get_non_del_unk_field_ident();
+    let iunk_to_use_field_ident = macro_utils::get_iunk_to_use_field_ident();
 
     quote!(
         #[repr(C)]
