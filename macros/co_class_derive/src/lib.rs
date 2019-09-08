@@ -1,18 +1,17 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
-use syn::{ItemStruct};
+use syn::ItemStruct;
 
 use std::iter::FromIterator;
 
 mod class_factory;
-mod com_struct_impl;
 mod com_struct;
+mod com_struct_impl;
 mod deref_impl;
 mod drop_impl;
 mod iunknown_impl;
 
 // Macro expansion entry point.
-
 pub fn expand_derive_com_class(item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as ItemStruct);
 

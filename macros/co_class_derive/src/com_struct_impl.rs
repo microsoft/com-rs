@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as HelperTokenStream;
-use quote::{quote, format_ident,};
-use syn::{ItemStruct, Ident,};
+use quote::{format_ident, quote};
+use syn::{Ident, ItemStruct};
 
 // impl BritishShortHairCat {
 //     fn allocate(init_struct: InitBritishShortHairCat) -> Box<BritishShortHairCat> {
@@ -34,6 +34,9 @@ use syn::{ItemStruct, Ident,};
 //     }
 // }
 
+/// Generates the allocate and get_class_object function for the COM object.
+/// allocate: instantiates the COM fields, such as vpointers for the COM object.
+/// get_class_object: Instantiate an instance to the class object.
 pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let init_ident = &struct_item.ident;
     let real_ident = macro_utils::get_real_ident(&struct_item.ident);

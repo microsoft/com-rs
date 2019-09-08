@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{ItemStruct,};
+use syn::ItemStruct;
 
 // #[repr(C)]
 // pub struct BritishShortHairCatClassFactory {
@@ -132,6 +132,8 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let class_factory_ident = macro_utils::get_class_factory_ident(&real_ident);
 
     quote!(
+        // We are not going to bother with using an Init_ struct here,
+        // as we are not relying on the production macros.
         #[repr(C)]
         pub struct #class_factory_ident {
             inner: <dyn com::IClassFactory as com::ComInterface>::VPtr,
@@ -145,6 +147,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
             ) -> winapi::shared::winerror::HRESULT {
+                // Bringing trait into scope to access IUnknown methods.
                 use com::IUnknown;
 
                 println!("Creating instance for {}", stringify!(#real_ident));
@@ -161,6 +164,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                 hr
             }
 
+            // TODO: Implement correctly
             fn lock_server(&mut self, _increment: winapi::shared::minwindef::BOOL) -> winapi::shared::winerror::HRESULT {
                 println!("LockServer called");
                 winapi::shared::winerror::S_OK
@@ -205,6 +209,8 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
             }
         }
 
+        // Code here usually belongs to the allocate function, but for simplicity
+        // we just wrote it directly.
         impl #class_factory_ident {
             pub(crate) fn new() -> Box<#class_factory_ident> {
                 use com::IClassFactory;

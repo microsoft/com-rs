@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{ItemStruct, Ident,};
+use syn::{Ident, ItemStruct};
 
 //  impl std::ops::Drop for BritishShortHairCat {
 //     fn drop(&mut self) {

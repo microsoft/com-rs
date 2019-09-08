@@ -5,8 +5,8 @@ use syn::ItemStruct;
 use std::iter::FromIterator;
 
 mod class_factory;
-mod com_struct_impl;
 mod com_struct;
+mod com_struct_impl;
 mod deref_impl;
 mod drop_impl;
 mod iunknown_impl;

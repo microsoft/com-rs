@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{ItemStruct, Ident,};
 use std::collections::HashMap;
+use syn::{Ident, ItemStruct};
 
 // impl LocalFileManager {
 //     fn allocate(init_struct: InitLocalFileManager) -> Box<LocalFileManager> {
@@ -176,6 +176,8 @@ pub fn generate(
     )
 }
 
+/// Function used by in-process DLL macro to get an instance of the
+/// class object.
 fn gen_get_class_object_fn(struct_item: &ItemStruct) -> HelperTokenStream {
     let real_ident = macro_utils::get_real_ident(&struct_item.ident);
     let class_factory_ident = macro_utils::get_class_factory_ident(&real_ident);
@@ -187,6 +189,8 @@ fn gen_get_class_object_fn(struct_item: &ItemStruct) -> HelperTokenStream {
     )
 }
 
+/// Function that should only be used by Class Object, to set the
+/// object's iunk_to_use, if the object is going to get aggregated.
 fn gen_set_iunknown_fn() -> HelperTokenStream {
     let iunk_to_use_field_ident = macro_utils::get_iunk_to_use_field_ident();
     let non_del_unk_field_ident = macro_utils::get_non_del_unk_field_ident();
@@ -202,6 +206,8 @@ fn gen_set_iunknown_fn() -> HelperTokenStream {
     )
 }
 
+/// The non-delegating IUnknown implementation for an aggregable object. This will contain
+/// the actual IUnknown implementations for the object.
 fn gen_inner_iunknown_fns(
     base_itf_idents: &[Ident],
     aggr_itf_idents: &HashMap<Ident, Vec<Ident>>,
@@ -234,6 +240,7 @@ fn gen_inner_iunknown_fns(
     )
 }
 
+/// Non-delegating query interface
 fn gen_inner_query_interface(
     base_itf_idents: &[Ident],
     aggr_itf_idents: &HashMap<Ident, Vec<Ident>>,
@@ -306,6 +313,9 @@ fn gen_inner_query_interface(
     )
 }
 
+/// For an aggregable object, we have to do more work here. We need to
+/// instantiate the non-delegating IUnknown vtable. The unsafe extern "stdcall"
+/// methods belonging to the non-delegating IUnknown vtable are also defined here.
 fn gen_allocate_fn(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let init_ident = &struct_item.ident;
     let real_ident = macro_utils::get_real_ident(&struct_item.ident);

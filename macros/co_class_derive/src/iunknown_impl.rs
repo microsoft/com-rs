@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{ItemStruct, Ident,};
 use std::collections::HashMap;
+use syn::{Ident, ItemStruct};
 
 // impl com::IUnknown for BritishShortHairCat {
 //     fn query_interface(
@@ -84,6 +84,9 @@ use std::collections::HashMap;
 //     }
 // }
 
+/// Generates the IUnknown implementation for the COM Object.
+/// Takes into account the base interfaces exposed, as well as
+/// any interfaces exposed through an aggregated object.
 pub fn generate(
     base_itf_idents: &[Ident],
     aggr_itf_idents: &HashMap<Ident, Vec<Ident>>,
@@ -174,11 +177,12 @@ pub fn generate(
                 if count == 0 {
                     println!("Count is 0 for {}. Freeing memory...", stringify!(#real_ident));
                     // drop(self)
+                    // TODO: This doesn't free the original heap allocation, as &mut self results
+                    // in a copy from the raw pointer.
                     unsafe { Box::from_raw(self as *const _ as *mut #real_ident); }
                 }
                 count
             }
         }
     )
-    // unimplemented!()
 }

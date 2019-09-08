@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{ItemStruct,};
+use syn::ItemStruct;
 
 // impl com::IUnknown for LocalFileManager {
 //     fn query_interface(
@@ -38,6 +38,13 @@ use syn::{ItemStruct,};
 //     }
 // }
 
+/// For an aggregable COM object, the default IUnknown implementation is
+/// always the delegating IUnknown implementation. This will always
+/// delegate to the interface pointer at __iunk_to_use.
+///
+/// TODO: We are always leaking ComPtr, since we do not yet have a struct to
+/// represent a non-reference counted interface pointer. Or we could maybe store
+/// __iunk_to_use as a ComPtr?
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let real_ident = macro_utils::get_real_ident(&struct_item.ident);
     let iunk_to_use_field_ident = macro_utils::get_iunk_to_use_field_ident();

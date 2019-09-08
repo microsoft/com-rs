@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{ItemStruct, Ident,};
+use syn::{Ident, ItemStruct};
 
 // #[repr(C)]
 // pub struct LocalFileManager {
@@ -11,6 +11,9 @@ use syn::{ItemStruct, Ident,};
 //     __init_struct: InitLocalFileManager,
 // }
 
+/// As an aggregable COM object, you need to have an inner non-delegating IUnknown vtable.
+/// All IUnknown calls to this COM object will delegate to the IUnknown interface pointer
+/// __iunk_to_use.
 pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let init_ident = &struct_item.ident;
     let real_ident = macro_utils::get_real_ident(&struct_item.ident);

@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{ItemStruct, Ident,};
+use syn::{Ident, ItemStruct};
 
 // #[repr(C)]
 // pub struct BritishShortHairCat {
@@ -10,6 +10,13 @@ use syn::{ItemStruct, Ident,};
 //     __init_struct: InitBritishShortHairCat,
 // }
 
+/// The actual COM object that wraps around the Init struct.
+/// Structure of the object:
+/// pub struct _ {
+///     ..base interface vpointers..
+///     ..ref count..
+///     ..init struct..
+/// }
 pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let init_ident = &struct_item.ident;
     let real_ident = macro_utils::get_real_ident(&struct_item.ident);

@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{ItemStruct,};
+use syn::ItemStruct;
 
 // impl std::ops::Deref for BritishShortHairCat {
 //     type Target = InitBritishShortHairCat;
