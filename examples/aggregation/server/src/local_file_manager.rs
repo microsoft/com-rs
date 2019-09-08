@@ -1,12 +1,6 @@
-use interface::{
-    ilocal_file_manager::ILocalFileManager,
-};
+use interface::ilocal_file_manager::ILocalFileManager;
 
-use winapi::{
-    shared::{
-        winerror::{HRESULT, NOERROR},
-    },
-};
+use winapi::shared::winerror::{HRESULT, NOERROR};
 
 use com::AggrCoClass;
 
@@ -27,9 +21,7 @@ impl ILocalFileManager for LocalFileManager {
 
 impl LocalFileManager {
     pub(crate) fn new() -> Box<LocalFileManager> {
-        let init = InitLocalFileManager {
-            user_field: 2,
-        };
+        let init = InitLocalFileManager { user_field: 2 };
         LocalFileManager::allocate(init)
     }
 }

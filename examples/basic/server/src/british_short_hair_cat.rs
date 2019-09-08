@@ -1,14 +1,6 @@
-use interface::{
-    ianimal::IAnimal,
-    icat::ICat,
-    idomesticanimal::IDomesticAnimal,
-};
+use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal};
 
-use winapi::{
-    shared::{
-        winerror::{HRESULT, NOERROR},
-    },
-};
+use winapi::shared::winerror::{HRESULT, NOERROR};
 
 use com::CoClass;
 
@@ -44,9 +36,7 @@ impl IAnimal for BritishShortHairCat {
 
 impl BritishShortHairCat {
     pub(crate) fn new() -> Box<BritishShortHairCat> {
-        let init = InitBritishShortHairCat {
-            num_owners: 20
-        };
+        let init = InitBritishShortHairCat { num_owners: 20 };
         BritishShortHairCat::allocate(init)
     }
 }

@@ -1,21 +1,18 @@
 use com::{failed, ComPtr, IUnknown, IUnknownVPtr, IID_IUNKNOWN};
 use interface::{
-    ifile_manager::{IFileManager},
-    ilocal_file_manager::{ILocalFileManager},
+    ifile_manager::IFileManager, ilocal_file_manager::ILocalFileManager,
     CLSID_LOCAL_FILE_MANAGER_CLASS,
 };
 
 use winapi::{
     ctypes::c_void,
     shared::{
-        guiddef::{REFCLSID, REFIID,},
+        guiddef::{REFCLSID, REFIID},
+        minwindef::LPVOID,
         winerror::{HRESULT, NOERROR},
-        minwindef::{LPVOID, },
         wtypesbase::CLSCTX_INPROC_SERVER,
     },
-    um::{
-        combaseapi::CoCreateInstance
-    },
+    um::combaseapi::CoCreateInstance,
 };
 
 use std::mem::forget;
@@ -41,7 +38,6 @@ impl Drop for InitWindowsFileManager {
             forget(lfm_iunknown);
         };
     }
-    
 }
 
 impl IFileManager for WindowsFileManager {
@@ -54,7 +50,7 @@ impl IFileManager for WindowsFileManager {
 impl WindowsFileManager {
     pub(crate) fn new() -> Box<WindowsFileManager> {
         let init = InitWindowsFileManager {
-            lfm_iunknown: std::ptr::null_mut::<IUnknownVPtr>()
+            lfm_iunknown: std::ptr::null_mut::<IUnknownVPtr>(),
         };
 
         let mut wfm = WindowsFileManager::allocate(init);
