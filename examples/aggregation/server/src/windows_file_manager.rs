@@ -19,7 +19,6 @@ use winapi::{
 };
 
 use std::mem::forget;
-use std::ops::{DerefMut,};
 
 use com::CoClass;
 

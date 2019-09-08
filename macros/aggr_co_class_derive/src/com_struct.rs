@@ -2,6 +2,15 @@ use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
 use syn::{ItemStruct, Ident,};
 
+// #[repr(C)]
+// pub struct LocalFileManager {
+//     __ilocalfilemanagervptr: <dyn ILocalFileManager as com::ComInterface>::VPtr,
+//     __non_delegating_unk: <dyn com::IUnknown as com::ComInterface>::VPtr,
+//     __iunk_to_use: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+//     __refcnt: u32,
+//     __init_struct: InitLocalFileManager,
+// }
+
 pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let init_ident = &struct_item.ident;
     let real_ident = macro_utils::get_real_ident(&struct_item.ident);
@@ -9,7 +18,7 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
 
     let bases_itf_idents = base_itf_idents.iter().map(|base| {
         let field_ident = macro_utils::get_vptr_field_ident(&base);
-        quote!(#field_ident: <#base as com::ComInterface>::VPtr)
+        quote!(#field_ident: <dyn #base as com::ComInterface>::VPtr)
     });
 
     let ref_count_ident = macro_utils::get_ref_count_ident();
@@ -21,9 +30,9 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
         #[repr(C)]
         #vis struct #real_ident {
             #(#bases_itf_idents,)*
-            #non_del_unk_field_ident: <com::IUnknown as com::ComInterface>::VPtr,
+            #non_del_unk_field_ident: <dyn com::IUnknown as com::ComInterface>::VPtr,
             // Non-reference counted interface pointer to outer IUnknown.
-            #iunk_to_use_field_ident: *mut <com::IUnknown as com::ComInterface>::VPtr,
+            #iunk_to_use_field_ident: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
             #ref_count_ident: u32,
             #inner_init_field_ident: #init_ident
         }

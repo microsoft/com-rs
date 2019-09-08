@@ -2,6 +2,18 @@ use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
 use syn::{ItemStruct,};
 
+// impl std::ops::Deref for LocalFileManager {
+//     type Target = InitLocalFileManager;
+//     fn deref(&self) -> &Self::Target {
+//         &self.__init_struct
+//     }
+// }
+// impl std::ops::DerefMut for LocalFileManager {
+//     fn deref_mut(&mut self) -> &mut Self::Target {
+//         &mut self.__init_struct
+//     }
+// }
+
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let init_ident = &struct_item.ident;
     let real_ident = macro_utils::get_real_ident(init_ident);

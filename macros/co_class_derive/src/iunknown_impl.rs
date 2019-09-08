@@ -3,6 +3,87 @@ use quote::quote;
 use syn::{ItemStruct, Ident,};
 use std::collections::HashMap;
 
+// impl com::IUnknown for BritishShortHairCat {
+//     fn query_interface(
+//         &mut self,
+//         riid: *const winapi::shared::guiddef::IID,
+//         ppv: *mut *mut winapi::ctypes::c_void,
+//     ) -> winapi::shared::winerror::HRESULT {
+//         unsafe {
+//             let riid = &*riid;
+//             if winapi::shared::guiddef::IsEqualGUID(riid, &com::IID_IUNKNOWN) {
+//                 *ppv = &self.__icatvptr as *const _ as *mut winapi::ctypes::c_void;
+//             } else if <dyn ICat as com::ComInterface>::iid_in_inheritance_chain(riid) {
+//                 *ppv = &self.__icatvptr as *const _ as *mut winapi::ctypes::c_void;
+//             } else if <dyn IDomesticAnimal as com::ComInterface>::iid_in_inheritance_chain(riid)
+//             {
+//                 *ppv = &self.__idomesticanimalvptr as *const _ as *mut winapi::ctypes::c_void;
+//             } else {
+//                 *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
+//                 {
+//                     ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                         &["Returning NO INTERFACE.\n"],
+//                         &match () {
+//                             () => [],
+//                         },
+//                     ));
+//                 };
+//                 return winapi::shared::winerror::E_NOINTERFACE;
+//             }
+//             {
+//                 ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                     &["Successful!.\n"],
+//                     &match () {
+//                         () => [],
+//                     },
+//                 ));
+//             };
+//             self.add_ref();
+//             NOERROR
+//         }
+//     }
+//     fn add_ref(&mut self) -> u32 {
+//         self.__refcnt += 1;
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["Count now ", "\n"],
+//                 &match (&self.__refcnt,) {
+//                     (arg0,) => [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)],
+//                 },
+//             ));
+//         };
+//         self.__refcnt
+//     }
+//     fn release(&mut self) -> u32 {
+//         self.__refcnt -= 1;
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["Count now ", "\n"],
+//                 &match (&self.__refcnt,) {
+//                     (arg0,) => [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)],
+//                 },
+//             ));
+//         };
+//         let count = self.__refcnt;
+//         if count == 0 {
+//             {
+//                 ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                     &["Count is 0 for ", ". Freeing memory...\n"],
+//                     &match (&"BritishShortHairCat",) {
+//                         (arg0,) => {
+//                             [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)]
+//                         }
+//                     },
+//                 ));
+//             };
+//             unsafe {
+//                 Box::from_raw(self as *const _ as *mut BritishShortHairCat);
+//             }
+//         }
+//         count
+//     }
+// }
+
 pub fn generate(
     base_itf_idents: &[Ident],
     aggr_itf_idents: &HashMap<Ident, Vec<Ident>>,

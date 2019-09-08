@@ -3,6 +3,158 @@ use quote::quote;
 use syn::{ItemStruct, Ident,};
 use std::collections::HashMap;
 
+// impl LocalFileManager {
+//     fn allocate(init_struct: InitLocalFileManager) -> Box<LocalFileManager> {
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["Allocating new VTable for ", "\n"],
+//                 &match (&"LocalFileManager",) {
+//                     (arg0,) => [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)],
+//                 },
+//             ));
+//         };
+//         unsafe extern "stdcall" fn non_delegating_query_interface(
+//             this: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+//             riid: *const winapi::shared::guiddef::IID,
+//             ppv: *mut *mut winapi::ctypes::c_void,
+//         ) -> HRESULT {
+//             let this = this.sub(1usize) as *mut LocalFileManager;
+//             (*this).inner_query_interface(riid, ppv)
+//         }
+//         unsafe extern "stdcall" fn non_delegating_add_ref(
+//             this: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+//         ) -> u32 {
+//             let this = this.sub(1usize) as *mut LocalFileManager;
+//             (*this).inner_add_ref()
+//         }
+//         unsafe extern "stdcall" fn non_delegating_release(
+//             this: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+//         ) -> u32 {
+//             let this = this.sub(1usize) as *mut LocalFileManager;
+//             (*this).inner_release()
+//         }
+//         type __iunknown_vtable_type = <dyn com::IUnknown as com::ComInterface>::VTable;
+//         let __non_del_unk_vtable = __iunknown_vtable_type {
+//             QueryInterface: non_delegating_query_interface,
+//             Release: non_delegating_release,
+//             AddRef: non_delegating_add_ref,
+//         };
+//         let __non_delegating_unk = Box::into_raw(Box::new(__non_del_unk_vtable));
+//         let ilocalfilemanager_vtable =
+//             <dyn ILocalFileManager as ::com::ProductionComInterface<LocalFileManager>>::vtable::<
+//                 ::com::offset::Zero,
+//             >();
+//         let __ilocalfilemanagervptr = Box::into_raw(Box::new(ilocalfilemanager_vtable));
+//         let out = LocalFileManager {
+//             __ilocalfilemanagervptr,
+//             __non_delegating_unk,
+//             __iunk_to_use: std::ptr::null_mut::<<dyn com::IUnknown as com::ComInterface>::VPtr>(),
+//             __refcnt: 0,
+//             __init_struct: init_struct,
+//         };
+//         Box::new(out)
+//     }
+//     pub(crate) fn set_iunknown(
+//         &mut self,
+//         aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+//     ) {
+//         if aggr.is_null() {
+//             self.__iunk_to_use = &self.__non_delegating_unk as *const _
+//                 as *mut <dyn com::IUnknown as com::ComInterface>::VPtr;
+//         } else {
+//             self.__iunk_to_use = aggr;
+//         }
+//     }
+//     pub(crate) fn inner_query_interface(
+//         &mut self,
+//         riid: *const winapi::shared::guiddef::IID,
+//         ppv: *mut *mut winapi::ctypes::c_void,
+//     ) -> HRESULT {
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["Non delegating QI\n"],
+//                 &match () {
+//                     () => [],
+//                 },
+//             ));
+//         };
+//         unsafe {
+//             let riid = &*riid;
+//             if winapi::shared::guiddef::IsEqualGUID(riid, &com::IID_IUNKNOWN) {
+//                 *ppv = &self.__non_delegating_unk as *const _ as *mut winapi::ctypes::c_void;
+//             } else if <dyn ILocalFileManager as com::ComInterface>::iid_in_inheritance_chain(
+//                 riid,
+//             ) {
+//                 *ppv = &self.__ilocalfilemanagervptr as *const _ as *mut winapi::ctypes::c_void;
+//             } else {
+//                 *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
+//                 {
+//                     ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                         &["Returning NO INTERFACE.\n"],
+//                         &match () {
+//                             () => [],
+//                         },
+//                     ));
+//                 };
+//                 return winapi::shared::winerror::E_NOINTERFACE;
+//             }
+//             {
+//                 ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                     &["Successful!.\n"],
+//                     &match () {
+//                         () => [],
+//                     },
+//                 ));
+//             };
+//             self.inner_add_ref();
+//             NOERROR
+//         }
+//     }
+//     pub(crate) fn inner_add_ref(&mut self) -> u32 {
+//         self.__refcnt += 1;
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["Count now ", "\n"],
+//                 &match (&self.__refcnt,) {
+//                     (arg0,) => [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)],
+//                 },
+//             ));
+//         };
+//         self.__refcnt
+//     }
+//     pub(crate) fn inner_release(&mut self) -> u32 {
+//         self.__refcnt -= 1;
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["Count now ", "\n"],
+//                 &match (&self.__refcnt,) {
+//                     (arg0,) => [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)],
+//                 },
+//             ));
+//         };
+//         let count = self.__refcnt;
+//         if count == 0 {
+//             {
+//                 ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                     &["Count is 0 for ", ". Freeing memory...\n"],
+//                     &match (&"LocalFileManager",) {
+//                         (arg0,) => {
+//                             [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)]
+//                         }
+//                     },
+//                 ));
+//             };
+//             unsafe {
+//                 Box::from_raw(self as *const _ as *mut LocalFileManager);
+//             }
+//         }
+//         count
+//     }
+//     pub fn get_class_object() -> Box<LocalFileManagerClassFactory> {
+//         <LocalFileManagerClassFactory>::new()
+//     }
+// }
+
 pub fn generate(
     base_itf_idents: &[Ident],
     aggr_itf_idents: &HashMap<Ident, Vec<Ident>>,
@@ -40,9 +192,9 @@ fn gen_set_iunknown_fn() -> HelperTokenStream {
     let non_del_unk_field_ident = macro_utils::get_non_del_unk_field_ident();
 
     quote!(
-        pub(crate) fn set_iunknown(&mut self, aggr: *mut <com::IUnknown as com::ComInterface>::VPtr) {
+        pub(crate) fn set_iunknown(&mut self, aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr) {
             if aggr.is_null() {
-                self.#iunk_to_use_field_ident = &self.#non_del_unk_field_ident as *const _ as *mut <com::IUnknown as com::ComInterface>::VPtr;
+                self.#iunk_to_use_field_ident = &self.#non_del_unk_field_ident as *const _ as *mut <dyn com::IUnknown as com::ComInterface>::VPtr;
             } else {
                 self.#iunk_to_use_field_ident = aggr;
             }
@@ -187,7 +339,7 @@ fn gen_allocate_fn(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Helpe
 
             // Non-delegating methods.
             unsafe extern "stdcall" fn non_delegating_query_interface(
-                this: *mut <com::IUnknown as com::ComInterface>::VPtr,
+                this: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
                 riid: *const winapi::shared::guiddef::IID,
                 ppv: *mut *mut winapi::ctypes::c_void,
             ) -> HRESULT {
@@ -196,21 +348,21 @@ fn gen_allocate_fn(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Helpe
             }
 
             unsafe extern "stdcall" fn non_delegating_add_ref(
-                this: *mut <com::IUnknown as com::ComInterface>::VPtr,
+                this: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
             ) -> u32 {
                 let this = this.sub(#non_del_unk_offset) as *mut #real_ident;
                 (*this).inner_add_ref()
             }
 
             unsafe extern "stdcall" fn non_delegating_release(
-                this: *mut <com::IUnknown as com::ComInterface>::VPtr,
+                this: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
             ) -> u32 {
                 let this = this.sub(#non_del_unk_offset) as *mut #real_ident;
                 (*this).inner_release()
             }
 
             // Rust Parser limitation? Unable to construct associated type directly.
-            type __iunknown_vtable_type = <com::IUnknown as com::ComInterface>::VTable;
+            type __iunknown_vtable_type = <dyn com::IUnknown as com::ComInterface>::VTable;
             let __non_del_unk_vtable =  __iunknown_vtable_type {
                 QueryInterface: non_delegating_query_interface,
                 Release: non_delegating_release,
@@ -222,7 +374,7 @@ fn gen_allocate_fn(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> Helpe
             let out = #real_ident {
                 #(#base_fields,)*
                 #non_del_unk_field_ident,
-                #iunk_to_use_field_ident: std::ptr::null_mut::<<com::IUnknown as com::ComInterface>::VPtr>(),
+                #iunk_to_use_field_ident: std::ptr::null_mut::<<dyn com::IUnknown as com::ComInterface>::VPtr>(),
                 #ref_count_ident: 0,
                 #inner_init_field_ident: init_struct
             };

@@ -2,6 +2,129 @@ use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
 use syn::{ItemStruct,};
 
+// #[repr(C)]
+// pub struct BritishShortHairCatClassFactory {
+//     inner: <dyn com::IClassFactory as com::ComInterface>::VPtr,
+//     ref_count: u32,
+// }
+// impl com::IClassFactory for BritishShortHairCatClassFactory {
+//     fn create_instance(
+//         &mut self,
+//         aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+//         riid: winapi::shared::guiddef::REFIID,
+//         ppv: *mut *mut winapi::ctypes::c_void,
+//     ) -> winapi::shared::winerror::HRESULT {
+//         use com::IUnknown;
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["Creating instance for ", "\n"],
+//                 &match (&"BritishShortHairCat",) {
+//                     (arg0,) => [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)],
+//                 },
+//             ));
+//         };
+//         if aggr != std::ptr::null_mut() {
+//             return winapi::shared::winerror::CLASS_E_NOAGGREGATION;
+//         }
+//         let mut instance = BritishShortHairCat::new();
+//         instance.add_ref();
+//         let hr = instance.query_interface(riid, ppv);
+//         instance.release();
+//         Box::into_raw(instance);
+//         hr
+//     }
+//     fn lock_server(
+//         &mut self,
+//         _increment: winapi::shared::minwindef::BOOL,
+//     ) -> winapi::shared::winerror::HRESULT {
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["LockServer called\n"],
+//                 &match () {
+//                     () => [],
+//                 },
+//             ));
+//         };
+//         winapi::shared::winerror::S_OK
+//     }
+// }
+// impl com::IUnknown for BritishShortHairCatClassFactory {
+//     fn query_interface(
+//         &mut self,
+//         riid: *const winapi::shared::guiddef::IID,
+//         ppv: *mut *mut winapi::ctypes::c_void,
+//     ) -> winapi::shared::winerror::HRESULT {
+//         use com::IUnknown;
+//         unsafe {
+//             {
+//                 ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                     &["Querying interface on ", "...\n"],
+//                     &match (&"BritishShortHairCatClassFactory",) {
+//                         (arg0,) => {
+//                             [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)]
+//                         }
+//                     },
+//                 ));
+//             };
+//             let riid = &*riid;
+//             if winapi::shared::guiddef::IsEqualGUID(
+//                 riid,
+//                 &<dyn com::IUnknown as com::ComInterface>::IID,
+//             ) | winapi::shared::guiddef::IsEqualGUID(
+//                 riid,
+//                 &<dyn com::IClassFactory as com::ComInterface>::IID,
+//             ) {
+//                 *ppv = &self.inner as *const _ as *mut winapi::ctypes::c_void;
+//                 self.add_ref();
+//                 winapi::shared::winerror::NOERROR
+//             } else {
+//                 *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
+//                 winapi::shared::winerror::E_NOINTERFACE
+//             }
+//         }
+//     }
+//     fn add_ref(&mut self) -> u32 {
+//         self.ref_count += 1;
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["Count now ", "\n"],
+//                 &match (&self.ref_count,) {
+//                     (arg0,) => [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)],
+//                 },
+//             ));
+//         };
+//         self.ref_count
+//     }
+//     fn release(&mut self) -> u32 {
+//         self.ref_count -= 1;
+//         {
+//             ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                 &["Count now ", "\n"],
+//                 &match (&self.ref_count,) {
+//                     (arg0,) => [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)],
+//                 },
+//             ));
+//         };
+//         let count = self.ref_count;
+//         if count == 0 {
+//             {
+//                 ::std::io::_print(::std::fmt::Arguments::new_v1(
+//                     &["Count is 0 for ", ". Freeing memory...\n"],
+//                     &match (&"BritishShortHairCatClassFactory",) {
+//                         (arg0,) => {
+//                             [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)]
+//                         }
+//                     },
+//                 ));
+//             };
+//             unsafe {
+//                 Box::from_raw(self as *const _ as *mut BritishShortHairCatClassFactory);
+//             }
+//         }
+//         count
+//     }
+// }
+
 // We manually generate a ClassFactory without macros, otherwise
 // it leads to an infinite loop.
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
@@ -11,14 +134,14 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     quote!(
         #[repr(C)]
         pub struct #class_factory_ident {
-            inner: <com::IClassFactory as com::ComInterface>::VPtr,
+            inner: <dyn com::IClassFactory as com::ComInterface>::VPtr,
             ref_count: u32,
         }
 
         impl com::IClassFactory for #class_factory_ident {
             fn create_instance(
                 &mut self,
-                aggr: *mut <com::IUnknown as com::ComInterface>::VPtr,
+                aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
             ) -> winapi::shared::winerror::HRESULT {
@@ -53,7 +176,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                     println!("Querying interface on {}...", stringify!(#class_factory_ident));
 
                     let riid = &*riid;
-                    if winapi::shared::guiddef::IsEqualGUID(riid, &<com::IUnknown as com::ComInterface>::IID) | winapi::shared::guiddef::IsEqualGUID(riid, &<com::IClassFactory as com::ComInterface>::IID) {
+                    if winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::IUnknown as com::ComInterface>::IID) | winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::IClassFactory as com::ComInterface>::IID) {
                         *ppv = &self.inner as *const _ as *mut winapi::ctypes::c_void;
                         self.add_ref();
                         winapi::shared::winerror::NOERROR
