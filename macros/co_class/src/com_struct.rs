@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{Ident, ItemStruct};
+use syn::{Ident, ItemStruct, Fields};
 
 // #[repr(C)]
 // pub struct BritishShortHairCat {
@@ -18,8 +18,7 @@ use syn::{Ident, ItemStruct};
 ///     ..init struct..
 /// }
 pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
-    let init_ident = &struct_item.ident;
-    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
+    let struct_ident = &struct_item.ident;
     let vis = &struct_item.vis;
 
     let bases_itf_idents = base_itf_idents.iter().map(|base| {
@@ -28,14 +27,18 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
     });
 
     let ref_count_ident = macro_utils::get_ref_count_ident();
-    let inner_init_field_ident = macro_utils::get_inner_init_field_ident();
+
+    let fields = match &struct_item.fields {
+        Fields::Named(f) => &f.named,
+        _ => panic!("Found non Named fields in struct.")
+    };
 
     quote!(
         #[repr(C)]
-        #vis struct #real_ident {
+        #vis struct #struct_ident {
             #(#bases_itf_idents,)*
             #ref_count_ident: u32,
-            #inner_init_field_ident: #init_ident
+            #fields
         }
     )
 }

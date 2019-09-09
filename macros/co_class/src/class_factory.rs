@@ -128,8 +128,8 @@ use syn::ItemStruct;
 // We manually generate a ClassFactory without macros, otherwise
 // it leads to an infinite loop.
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
-    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
-    let class_factory_ident = macro_utils::get_class_factory_ident(&real_ident);
+    let struct_ident = &struct_item.ident;
+    let class_factory_ident = macro_utils::get_class_factory_ident(&struct_ident);
 
     quote!(
         // We are not going to bother with using an Init_ struct here,
@@ -150,12 +150,12 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                 // Bringing trait into scope to access IUnknown methods.
                 use com::IUnknown;
 
-                println!("Creating instance for {}", stringify!(#real_ident));
+                println!("Creating instance for {}", stringify!(#struct_ident));
                 if aggr != std::ptr::null_mut() {
                     return winapi::shared::winerror::CLASS_E_NOAGGREGATION;
                 }
 
-                let mut instance = #real_ident::new();
+                let mut instance = #struct_ident::new();
                 instance.add_ref();
                 let hr = instance.query_interface(riid, ppv);
                 instance.release();

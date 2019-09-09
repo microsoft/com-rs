@@ -2,14 +2,13 @@ use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal};
 
 use winapi::shared::winerror::{HRESULT, NOERROR};
 
-use com::CoClass;
+use com::{com_class, com_implements, aggr};
 
 /// The implementation class
 /// https://en.wikipedia.org/wiki/British_Shorthair
-#[repr(C)]
-#[derive(CoClass)]
+#[com_class]
 #[com_implements(ICat, IDomesticAnimal)]
-pub struct InitBritishShortHairCat {
+pub struct BritishShortHairCat {
     num_owners: u32,
 }
 
@@ -36,7 +35,6 @@ impl IAnimal for BritishShortHairCat {
 
 impl BritishShortHairCat {
     pub(crate) fn new() -> Box<BritishShortHairCat> {
-        let init = InitBritishShortHairCat { num_owners: 20 };
-        BritishShortHairCat::allocate(init)
+        BritishShortHairCat::allocate(20)
     }
 }

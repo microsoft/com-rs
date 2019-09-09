@@ -12,7 +12,7 @@ mod drop_impl;
 mod iunknown_impl;
 
 // Macro expansion entry point.
-pub fn expand_derive_com_class(item: TokenStream) -> TokenStream {
+pub fn expand_com_class(attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as ItemStruct);
 
     // Parse attributes

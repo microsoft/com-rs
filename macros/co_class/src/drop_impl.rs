@@ -15,7 +15,7 @@ use syn::{Ident, ItemStruct};
 // }
 
 pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
-    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
+    let struct_ident = &struct_item.ident;
     let box_from_raws = base_itf_idents.iter().map(|base| {
         let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
         quote!(
@@ -24,7 +24,7 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
     });
 
     quote!(
-        impl std::ops::Drop for #real_ident {
+        impl std::ops::Drop for #struct_ident {
             fn drop(&mut self) {
                 let _ = unsafe {
                     #(#box_from_raws)*

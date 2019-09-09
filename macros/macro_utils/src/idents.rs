@@ -33,18 +33,6 @@ pub fn get_vptr_field_ident(trait_ident: &Ident) -> Ident {
     format_ident!("__{}vptr", trait_ident.to_string().to_lowercase())
 }
 
-pub fn get_real_ident(struct_ident: &Ident) -> Ident {
-    if !struct_ident.to_string().starts_with("Init") {
-        panic!("The target struct's name must begin with Init")
-    }
-
-    format_ident!("{}", &struct_ident.to_string()[4..])
-}
-
-pub fn get_inner_init_field_ident() -> Ident {
-    format_ident!("__init_struct")
-}
-
 pub fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
     let mut base_itf_idents = Vec::new();
 

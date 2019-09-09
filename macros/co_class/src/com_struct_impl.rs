@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::{format_ident, quote};
-use syn::{Ident, ItemStruct};
+use syn::{Ident, ItemStruct, Fields,};
 
 // impl BritishShortHairCat {
 //     fn allocate(init_struct: InitBritishShortHairCat) -> Box<BritishShortHairCat> {
@@ -38,8 +38,7 @@ use syn::{Ident, ItemStruct};
 /// allocate: instantiates the COM fields, such as vpointers for the COM object.
 /// get_class_object: Instantiate an instance to the class object.
 pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
-    let init_ident = &struct_item.ident;
-    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
+    let struct_ident = &struct_item.ident;
 
     // Allocate stuff
     let mut offset_count: usize = 0;
@@ -48,7 +47,7 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
         let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
 
         let out = quote!(
-            let #vtable_var_ident = com::vtable!(#real_ident: #base, #offset_count);
+            let #vtable_var_ident = com::vtable!(#struct_ident: #base, #offset_count);
             let #vptr_field_ident = Box::into_raw(Box::new(#vtable_var_ident));
         );
 
@@ -60,20 +59,28 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
         quote!(#vptr_field_ident)
     });
     let ref_count_ident = macro_utils::get_ref_count_ident();
-    let inner_init_field_ident = macro_utils::get_inner_init_field_ident();
 
     // GetClassObject stuff
-    let class_factory_ident = macro_utils::get_class_factory_ident(&real_ident);
+    let class_factory_ident = macro_utils::get_class_factory_ident(&struct_ident);
+
+    let fields = match &struct_item.fields {
+        Fields::Named(f) => &f.named,
+        _ => panic!("Found non Named fields in struct.")
+    };
+    let field_idents = fields.iter().map(|field| {
+        let field_ident = field.ident.as_ref().unwrap().clone();
+        quote!(#field_ident)
+    });
 
     quote!(
-        impl #real_ident {
-            fn allocate(init_struct: #init_ident) -> Box<#real_ident> {
-                println!("Allocating new VTable for {}", stringify!(#real_ident));
+        impl #struct_ident {
+            fn allocate(#fields) -> Box<#struct_ident> {
+                println!("Allocating new VTable for {}", stringify!(#struct_ident));
                 #(#base_inits)*
-                let out = #real_ident {
+                let out = #struct_ident {
                     #(#base_fields,)*
                     #ref_count_ident: 0,
-                    #inner_init_field_ident: init_struct
+                    #(#field_idents),*
                 };
                 Box::new(out)
             }

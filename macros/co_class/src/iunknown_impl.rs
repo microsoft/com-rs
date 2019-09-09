@@ -92,7 +92,7 @@ pub fn generate(
     aggr_itf_idents: &HashMap<Ident, Vec<Ident>>,
     struct_item: &ItemStruct,
 ) -> HelperTokenStream {
-    let real_ident = macro_utils::get_real_ident(&struct_item.ident);
+    let struct_ident = &struct_item.ident;
     let ref_count_ident = macro_utils::get_ref_count_ident();
 
     let first_vptr_field = macro_utils::get_vptr_field_ident(&base_itf_idents[0]);
@@ -141,7 +141,7 @@ pub fn generate(
     });
 
     quote!(
-        impl com::IUnknown for #real_ident {
+        impl com::IUnknown for #struct_ident {
             fn query_interface(
                 &mut self,
                 riid: *const winapi::shared::guiddef::IID,
@@ -175,11 +175,11 @@ pub fn generate(
                 println!("Count now {}", self.#ref_count_ident);
                 let count = self.#ref_count_ident;
                 if count == 0 {
-                    println!("Count is 0 for {}. Freeing memory...", stringify!(#real_ident));
+                    println!("Count is 0 for {}. Freeing memory...", stringify!(#struct_ident));
                     // drop(self)
                     // TODO: This doesn't free the original heap allocation, as &mut self results
                     // in a copy from the raw pointer.
-                    unsafe { Box::from_raw(self as *const _ as *mut #real_ident); }
+                    unsafe { Box::from_raw(self as *const _ as *mut #struct_ident); }
                 }
                 count
             }

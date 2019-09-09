@@ -14,5 +14,5 @@ syn = { version = "1.0.5", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0.1"
 com_interface_attribute = { path="com_interface_attribute" }
-co_class_derive = { path="co_class_derive" }
-aggr_co_class_derive = { path="aggr_co_class_derive" }
+co_class = { path="co_class" }
+# aggr_co_class_derive = { path="aggr_co_class_derive" }

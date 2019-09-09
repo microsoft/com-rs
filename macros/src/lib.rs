@@ -1,5 +1,5 @@
-use aggr_co_class_derive::expand_derive_aggr_com_class;
-use co_class_derive::expand_derive_com_class;
+// use aggr_co_class_derive::expand_derive_aggr_com_class;
+use co_class::expand_com_class;
 use com_interface_attribute::{expand_com_interface, expand_derive};
 
 extern crate proc_macro;
@@ -17,12 +17,22 @@ pub fn derive(input: TokenStream) -> TokenStream {
 }
 
 // Macro entry points.
-#[proc_macro_derive(CoClass, attributes(com_implements, aggr))]
-pub fn derive_com_class(item: TokenStream) -> TokenStream {
-    expand_derive_com_class(item)
+#[proc_macro_attribute]
+pub fn com_class(attr: TokenStream, item: TokenStream) -> TokenStream {
+    expand_com_class(attr, item)
 }
 
-#[proc_macro_derive(AggrCoClass, attributes(com_implements, aggr))]
-pub fn derive_aggr_com_class(item: TokenStream) -> TokenStream {
-    expand_derive_aggr_com_class(item)
+// #[proc_macro_derive(AggrCoClass, attributes(com_implements, aggr))]
+// pub fn derive_aggr_com_class(item: TokenStream) -> TokenStream {
+//     expand_derive_aggr_com_class(item)
+// }
+
+#[proc_macro_attribute]
+pub fn com_implements(attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+#[proc_macro_attribute]
+pub fn aggr(attr: TokenStream, item: TokenStream) -> TokenStream {
+    item
 }
