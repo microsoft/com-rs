@@ -2,13 +2,12 @@ use interface::ilocal_file_manager::ILocalFileManager;
 
 use winapi::shared::winerror::{HRESULT, NOERROR};
 
-use com::AggrCoClass;
-
+use com::{aggr_co_class, com_implements,};
 /// The implementation class
 #[repr(C)]
-#[derive(AggrCoClass)]
+#[aggr_co_class]
 #[com_implements(ILocalFileManager)]
-pub struct InitLocalFileManager {
+pub struct LocalFileManager {
     user_field: u32,
 }
 
@@ -21,7 +20,6 @@ impl ILocalFileManager for LocalFileManager {
 
 impl LocalFileManager {
     pub(crate) fn new() -> Box<LocalFileManager> {
-        let init = InitLocalFileManager { user_field: 2 };
-        LocalFileManager::allocate(init)
+        LocalFileManager::allocate(2)
     }
 }

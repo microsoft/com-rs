@@ -17,27 +17,13 @@ use winapi::{
 
 use std::mem::forget;
 
-use com::CoClass;
-
+use com::{co_class, com_implements, aggr,};
 /// The implementation class
-#[derive(CoClass)]
+#[co_class]
 #[com_implements(IFileManager)]
-#[repr(C)]
-pub struct InitWindowsFileManager {
-    #[aggr(ILocalFileManager)]
-    lfm_iunknown: *mut IUnknownVPtr,
-}
-
-impl Drop for InitWindowsFileManager {
-    fn drop(&mut self) {
-        unsafe {
-            println!("Dropping init struct..");
-            let mut lfm_iunknown: ComPtr<dyn IUnknown> =
-                ComPtr::new(self.lfm_iunknown as *mut c_void);
-            lfm_iunknown.release();
-            forget(lfm_iunknown);
-        };
-    }
+#[aggr(ILocalFileManager)]
+pub struct WindowsFileManager {
+    user_field: u32,
 }
 
 impl IFileManager for WindowsFileManager {
@@ -49,11 +35,7 @@ impl IFileManager for WindowsFileManager {
 
 impl WindowsFileManager {
     pub(crate) fn new() -> Box<WindowsFileManager> {
-        let init = InitWindowsFileManager {
-            lfm_iunknown: std::ptr::null_mut::<IUnknownVPtr>(),
-        };
-
-        let mut wfm = WindowsFileManager::allocate(init);
+        let mut wfm = WindowsFileManager::allocate(20);
 
         // Instantiate object to aggregate
         // TODO: Should change to use safe ComPtr methods instead.
@@ -72,7 +54,7 @@ impl WindowsFileManager {
             panic!();
         }
 
-        wfm.lfm_iunknown = unknown_file_manager as *mut IUnknownVPtr;
+        wfm.set_aggregate_ilocal_file_manager(unknown_file_manager as *mut IUnknownVPtr);
 
         wfm
     }

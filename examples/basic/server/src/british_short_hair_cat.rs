@@ -2,11 +2,11 @@ use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal};
 
 use winapi::shared::winerror::{HRESULT, NOERROR};
 
-use com::{com_class, com_implements, aggr};
+use com::{co_class, com_implements, aggr};
 
 /// The implementation class
 /// https://en.wikipedia.org/wiki/British_Shorthair
-#[com_class]
+#[co_class]
 #[com_implements(ICat, IDomesticAnimal)]
 pub struct BritishShortHairCat {
     num_owners: u32,

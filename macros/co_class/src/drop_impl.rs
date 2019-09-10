@@ -3,18 +3,6 @@ use quote::quote;
 use syn::{Ident, ItemStruct};
 use std::collections::HashMap;
 
-//  impl std::ops::Drop for BritishShortHairCat {
-//     fn drop(&mut self) {
-//         let _ = unsafe {
-//             Box::from_raw(self.__icatvptr as *mut <ICat as com::ComInterface>::VTable);
-//             Box::from_raw(
-//                 self.__idomesticanimalvptr
-//                     as *mut <IDomesticAnimal as com::ComInterface>::VTable,
-//             );
-//         };
-//     }
-// }
-
 pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let box_from_raws = base_itf_idents.iter().map(|base| {

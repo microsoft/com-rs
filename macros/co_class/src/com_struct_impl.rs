@@ -3,38 +3,6 @@ use quote::{format_ident, quote};
 use syn::{Ident, ItemStruct, Fields,};
 use std::collections::HashMap;
 
-// impl BritishShortHairCat {
-//     fn allocate(init_struct: InitBritishShortHairCat) -> Box<BritishShortHairCat> {
-//         {
-//             ::std::io::_print(::std::fmt::Arguments::new_v1(
-//                 &["Allocating new VTable for ", "\n"],
-//                 &match (&"BritishShortHairCat",) {
-//                     (arg0,) => [::std::fmt::ArgumentV1::new(arg0, ::std::fmt::Display::fmt)],
-//                 },
-//             ));
-//         };
-//         let icat_vtable =
-//             <dyn ICat as ::com::ProductionComInterface<BritishShortHairCat>>::vtable::<
-//                 ::com::offset::Zero,
-//             >();
-//         let __icatvptr = Box::into_raw(Box::new(icat_vtable));
-//         let idomesticanimal_vtable = <dyn IDomesticAnimal as ::com::ProductionComInterface<
-//             BritishShortHairCat,
-//         >>::vtable::<::com::offset::One>();
-//         let __idomesticanimalvptr = Box::into_raw(Box::new(idomesticanimal_vtable));
-//         let out = BritishShortHairCat {
-//             __icatvptr,
-//             __idomesticanimalvptr,
-//             __refcnt: 0,
-//             __init_struct: init_struct,
-//         };
-//         Box::new(out)
-//     }
-//     pub fn get_class_object() -> Box<BritishShortHairCatClassFactory> {
-//         <BritishShortHairCatClassFactory>::new()
-//     }
-// }
-
 /// Generates the allocate and get_class_object function for the COM object.
 /// allocate: instantiates the COM fields, such as vpointers for the COM object.
 /// get_class_object: Instantiate an instance to the class object.

@@ -3,14 +3,6 @@ use quote::quote;
 use syn::{Ident, ItemStruct, Fields};
 use std::collections::HashMap;
 
-// #[repr(C)]
-// pub struct BritishShortHairCat {
-//     __icatvptr: <dyn ICat as com::ComInterface>::VPtr,
-//     __idomesticanimalvptr: <dyn IDomesticAnimal as com::ComInterface>::VPtr,
-//     __refcnt: u32,
-//     __init_struct: InitBritishShortHairCat,
-// }
-
 /// The actual COM object that wraps around the Init struct.
 /// Structure of the object:
 /// pub struct _ {

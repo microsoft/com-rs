@@ -7,12 +7,11 @@ use std::iter::FromIterator;
 mod class_factory;
 mod com_struct;
 mod com_struct_impl;
-mod deref_impl;
 mod drop_impl;
 mod iunknown_impl;
 
 // Macro expansion entry point.
-pub fn expand_com_class(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn expand_co_class(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as ItemStruct);
 
     // Parse attributes
@@ -24,7 +23,6 @@ pub fn expand_com_class(attr: TokenStream, item: TokenStream) -> TokenStream {
     out.push(com_struct_impl::generate(&aggr_itf_idents, &base_itf_idents, &input).into());
     out.push(iunknown_impl::generate(&base_itf_idents, &aggr_itf_idents, &input).into());
     out.push(drop_impl::generate(&aggr_itf_idents, &base_itf_idents, &input).into());
-    out.push(deref_impl::generate(&input).into());
     out.push(class_factory::generate(&input).into());
 
     // TokenStream::from_iter(out)

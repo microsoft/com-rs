@@ -27,15 +27,28 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                 // Bringing trait into scope to access IUnknown methods.
                 use com::IUnknown;
 
+                let riid = unsafe { &*riid };
+
                 println!("Creating instance for {}", stringify!(#struct_ident));
-                if aggr != std::ptr::null_mut() {
-                    return winapi::shared::winerror::CLASS_E_NOAGGREGATION;
+                if !aggr.is_null() && !winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::IUnknown as com::ComInterface>::IID) {
+                    unsafe {
+                        *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
+                    }
+                    return winapi::shared::winerror::E_INVALIDARG;
                 }
 
                 let mut instance = #struct_ident::new();
-                instance.add_ref();
-                let hr = instance.query_interface(riid, ppv);
-                instance.release();
+
+                // This check has to be here because it can only be done after object
+                // is allocated on the heap (address of nonDelegatingUnknown fixed)
+                instance.set_iunknown(aggr);
+
+                // As an aggregable object, we have to add_ref through the
+                // non-delegating IUnknown on creation. Otherwise, we might
+                // add_ref the outer object if aggregated.
+                instance.inner_add_ref();
+                let hr = instance.inner_query_interface(riid, ppv);
+                instance.inner_release();
 
                 Box::into_raw(instance);
                 hr

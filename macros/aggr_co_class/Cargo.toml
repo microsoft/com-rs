@@ -1,5 +1,5 @@
 [package]
-name = "aggr_co_class_derive"
+name = "aggr_co_class"
 version = "0.1.0"
 authors = ["adrianwithah <lim.weiheng.hadrian@gmail.com>"]
 edition = "2018"

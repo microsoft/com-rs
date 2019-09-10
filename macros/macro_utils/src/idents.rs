@@ -33,6 +33,10 @@ pub fn get_vptr_field_ident(trait_ident: &Ident) -> Ident {
     format_ident!("__{}vptr", trait_ident.to_string().to_lowercase())
 }
 
+pub fn get_set_aggregate_fn_ident(base: &Ident) -> Ident {
+    format_ident!("set_aggregate_{}", crate::camel_to_snake(&base.to_string()))
+}
+
 pub fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
     let mut base_itf_idents = Vec::new();
 
