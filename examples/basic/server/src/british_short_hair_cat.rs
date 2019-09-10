@@ -2,7 +2,7 @@ use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal};
 
 use winapi::shared::winerror::{HRESULT, NOERROR};
 
-use com::{co_class, com_implements, aggr};
+use com::co_class;
 
 /// The implementation class
 /// https://en.wikipedia.org/wiki/British_Shorthair

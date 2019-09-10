@@ -2,7 +2,7 @@ use interface::ilocal_file_manager::ILocalFileManager;
 
 use winapi::shared::winerror::{HRESULT, NOERROR};
 
-use com::{aggr_co_class, com_implements,};
+use com::aggr_co_class;
 /// The implementation class
 #[repr(C)]
 #[aggr_co_class]

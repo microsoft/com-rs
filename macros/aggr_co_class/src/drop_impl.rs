@@ -1,9 +1,13 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{Ident, ItemStruct};
 use std::collections::HashMap;
+use syn::{Ident, ItemStruct};
 
-pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+pub fn generate(
+    aggr_map: &HashMap<Ident, Vec<Ident>>,
+    base_interface_idents: &[Ident],
+    struct_item: &ItemStruct,
+) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
     let box_from_raws = base_interface_idents.iter().map(|base| {

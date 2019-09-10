@@ -13,12 +13,12 @@ pub fn generate(
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let ref_count_ident = macro_utils::ref_count_ident();
-    
-    let query_interface = gen_query_interface(base_interface_idents, aggr_interface_idents, struct_item);
-    
+
+    let query_interface = gen_query_interface(base_interface_idents, aggr_interface_idents);
+
     quote!(
         impl com::IUnknown for #struct_ident {
-            
+
             #query_interface
 
             fn add_ref(&mut self) -> u32 {
@@ -44,9 +44,7 @@ pub fn generate(
     )
 }
 
-fn gen_base_match_arms(
-    base_interface_idents: &[Ident],
-) -> HelperTokenStream {
+fn gen_base_match_arms(base_interface_idents: &[Ident]) -> HelperTokenStream {
     // Generate match arms for implemented interfaces
     let base_match_arms = base_interface_idents.iter().map(|base| {
         let match_condition =
@@ -107,10 +105,7 @@ fn gen_aggregate_match_arms(
 fn gen_query_interface(
     base_interface_idents: &[Ident],
     aggr_interface_idents: &HashMap<Ident, Vec<Ident>>,
-    struct_item: &ItemStruct,
 ) -> HelperTokenStream {
-    let struct_ident = &struct_item.ident;
-
     let first_vptr_field = macro_utils::vptr_field_ident(&base_interface_idents[0]);
 
     // Generate match arms for implemented interfaces

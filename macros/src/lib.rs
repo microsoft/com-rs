@@ -28,11 +28,11 @@ pub fn aggr_co_class(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn com_implements(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn com_implements(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }
 
 #[proc_macro_attribute]
-pub fn aggr(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn aggr(_attr: TokenStream, item: TokenStream) -> TokenStream {
     item
 }

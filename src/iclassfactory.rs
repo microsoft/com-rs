@@ -29,9 +29,7 @@ impl ComPtr<dyn IClassFactory> {
     pub fn get_instance<T: ComInterface + ?Sized>(&mut self) -> Option<ComPtr<T>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
         let aggr = std::ptr::null_mut();
-        let hr = unsafe {
-            self.create_instance(aggr, &T::IID as *const IID, &mut ppv)
-        };
+        let hr = unsafe { self.create_instance(aggr, &T::IID as *const IID, &mut ppv) };
         if failed(hr) {
             // TODO: decide what failures are possible
             return None;

@@ -1,12 +1,16 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::{format_ident, quote};
-use syn::{Ident, ItemStruct, Fields,};
 use std::collections::HashMap;
+use syn::{Fields, Ident, ItemStruct};
 
 /// Generates the allocate and get_class_object function for the COM object.
 /// allocate: instantiates the COM fields, such as vpointers for the COM object.
 /// get_class_object: Instantiate an instance to the class object.
-pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+pub fn generate(
+    aggr_map: &HashMap<Ident, Vec<Ident>>,
+    base_interface_idents: &[Ident],
+    struct_item: &ItemStruct,
+) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
 
     // Allocate stuff
@@ -34,14 +38,14 @@ pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents: &[
 
     let fields = match &struct_item.fields {
         Fields::Named(f) => &f.named,
-        _ => panic!("Found non Named fields in struct.")
+        _ => panic!("Found non Named fields in struct."),
     };
     let field_idents = fields.iter().map(|field| {
         let field_ident = field.ident.as_ref().unwrap().clone();
         quote!(#field_ident)
     });
 
-    let aggregate_inits = aggr_map.iter().map(|(aggr_field_ident, aggr_base_interface_idents)| {
+    let aggregate_inits = aggr_map.iter().map(|(aggr_field_ident, _)| {
         quote!(
             #aggr_field_ident: std::ptr::null_mut()
         )
@@ -76,7 +80,10 @@ fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenSt
     let mut fns = Vec::new();
     for (aggr_field_ident, aggr_base_interface_idents) in aggr_map.iter() {
         for base in aggr_base_interface_idents {
-            let set_aggregate_fn_ident = format_ident!("set_aggregate_{}", macro_utils::camel_to_snake(&base.to_string()));
+            let set_aggregate_fn_ident = format_ident!(
+                "set_aggregate_{}",
+                macro_utils::camel_to_snake(&base.to_string())
+            );
             fns.push(quote!(
                 fn #set_aggregate_fn_ident(&mut self, aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr) {
                     // TODO: What happens if we are overwriting an existing aggregate?

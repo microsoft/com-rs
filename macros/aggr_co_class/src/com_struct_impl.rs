@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
 use std::collections::HashMap;
-use syn::{Ident, ItemStruct, Fields,};
+use syn::{Fields, Ident, ItemStruct};
 
 /// Generates the methods that the com struct needs to have. These include:
 /// allocate: To initialise the vtables, including the non_delegatingegating_iunknown one.
@@ -172,7 +172,11 @@ fn gen_inner_query_interface(
 /// For an aggregable object, we have to do more work here. We need to
 /// instantiate the non-delegating IUnknown vtable. The unsafe extern "stdcall"
 /// methods belonging to the non-delegating IUnknown vtable are also defined here.
-fn gen_allocate_fn(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+fn gen_allocate_fn(
+    aggr_map: &HashMap<Ident, Vec<Ident>>,
+    base_interface_idents: &[Ident],
+    struct_item: &ItemStruct,
+) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
 
     let mut offset_count: usize = 0;
@@ -199,14 +203,14 @@ fn gen_allocate_fn(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents:
 
     let fields = match &struct_item.fields {
         Fields::Named(f) => &f.named,
-        _ => panic!("Found non Named fields in struct.")
+        _ => panic!("Found non Named fields in struct."),
     };
     let field_idents = fields.iter().map(|field| {
         let field_ident = field.ident.as_ref().unwrap().clone();
         quote!(#field_ident)
     });
 
-    let aggregate_inits = aggr_map.iter().map(|(aggr_field_ident, aggr_base_interface_idents)| {
+    let aggregate_inits = aggr_map.iter().map(|(aggr_field_ident, _)| {
         quote!(
             #aggr_field_ident: std::ptr::null_mut()
         )

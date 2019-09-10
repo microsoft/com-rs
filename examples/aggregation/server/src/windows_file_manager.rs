@@ -1,4 +1,4 @@
-use com::{failed, ComPtr, IUnknown, IUnknownVPtr, IID_IUNKNOWN};
+use com::{failed, IUnknownVPtr, IID_IUNKNOWN};
 use interface::{
     ifile_manager::IFileManager, ilocal_file_manager::ILocalFileManager,
     CLSID_LOCAL_FILE_MANAGER_CLASS,
@@ -15,9 +15,7 @@ use winapi::{
     um::combaseapi::CoCreateInstance,
 };
 
-use std::mem::forget;
-
-use com::{co_class, com_implements, aggr,};
+use com::co_class;
 /// The implementation class
 #[co_class]
 #[com_implements(IFileManager)]
@@ -38,7 +36,7 @@ impl WindowsFileManager {
         let mut wfm = WindowsFileManager::allocate(20);
 
         // Instantiate object to aggregate
-        // TODO: Should change to use safe ComPtr methods instead.
+        // TODO: Create safe wrapper for instantiating as aggregate.
         let mut unknown_file_manager = std::ptr::null_mut::<c_void>();
         let hr = unsafe {
             CoCreateInstance(

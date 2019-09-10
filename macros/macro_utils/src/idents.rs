@@ -1,6 +1,6 @@
 use quote::{format_ident,};
 use syn::{
-    Ident, Meta, NestedMeta, Fields, ItemStruct
+    Ident, Meta, NestedMeta, ItemStruct,
 };
 
 use std::collections::HashMap;
@@ -90,10 +90,6 @@ pub fn get_aggr_map(struct_item: &ItemStruct) -> HashMap<Ident, Vec<Ident>> {
             });
             aggr_map.insert(format_ident!("{}", ident), aggr_interfaces_idents);
         }
-    }
-
-    for (ident, _) in aggr_map.iter() {
-        println!("Ident found: {}", ident);
     }
 
     aggr_map

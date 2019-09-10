@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
-use syn::{Ident, ItemStruct, Fields};
 use std::collections::HashMap;
+use syn::{Fields, Ident, ItemStruct};
 
 /// The actual COM object that wraps around the Init struct.
 /// Structure of the object:
@@ -10,7 +10,11 @@ use std::collections::HashMap;
 ///     ..ref count..
 ///     ..init struct..
 /// }
-pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+pub fn generate(
+    aggr_map: &HashMap<Ident, Vec<Ident>>,
+    base_interface_idents: &[Ident],
+    struct_item: &ItemStruct,
+) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let vis = &struct_item.vis;
 
@@ -23,10 +27,10 @@ pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents: &[
 
     let fields = match &struct_item.fields {
         Fields::Named(f) => &f.named,
-        _ => panic!("Found non Named fields in struct.")
+        _ => panic!("Found non Named fields in struct."),
     };
 
-    let aggregates = aggr_map.iter().map(|(aggr_field_ident, aggr_base_interface_idents)| {
+    let aggregates = aggr_map.iter().map(|(aggr_field_ident, _)| {
         quote!(
             #aggr_field_ident: *mut <dyn com::IUnknown as com::ComInterface>::VPtr
         )
