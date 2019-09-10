@@ -17,12 +17,12 @@ pub fn get_vptr_ident(trait_ident: &Ident) -> Ident {
     format_ident!("{}VPtr", trait_ident)
 }
 
-pub fn get_non_del_unk_field_ident() -> Ident {
-    format_ident!("__non_delegating_unk")
+pub fn get_non_delegating_iunknown_field_ident() -> Ident {
+    format_ident!("__non_delegatingegating_iunknown")
 }
 
-pub fn get_iunk_to_use_field_ident() -> Ident {
-    format_ident!("__iunk_to_use")
+pub fn get_iunknown_to_use_field_ident() -> Ident {
+    format_ident!("__iunknown_to_use")
 }
 
 pub fn get_ref_count_ident() -> Ident {
@@ -38,7 +38,7 @@ pub fn get_set_aggregate_fn_ident(base: &Ident) -> Ident {
 }
 
 pub fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
-    let mut base_itf_idents = Vec::new();
+    let mut base_interface_idents = Vec::new();
 
     for attr in &struct_item.attrs {
         if let Ok(Meta::List(ref attr)) = attr.parse_meta() {
@@ -49,13 +49,13 @@ pub fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
             for item in &attr.nested {
                 if let NestedMeta::Meta(Meta::Path(p)) = item {
                     assert!(p.segments.len() == 1, "Incapable of handling multiple path segments yet.");
-                    base_itf_idents.push(p.segments.last().unwrap().ident.clone());
+                    base_interface_idents.push(p.segments.last().unwrap().ident.clone());
                 }
             }
         }
     }
 
-    base_itf_idents
+    base_interface_idents
 }
 
 /// Parse the arguments in helper attribute aggr. E.g. #[aggr(ICat, IAnimal)]

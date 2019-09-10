@@ -18,7 +18,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
         }
 
         impl com::IClassFactory for #class_factory_ident {
-            fn create_instance(
+            unsafe fn create_instance(
                 &mut self,
                 aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
                 riid: winapi::shared::guiddef::REFIID,
@@ -50,7 +50,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                 let hr = instance.inner_query_interface(riid, ppv);
                 instance.inner_release();
 
-                Box::into_raw(instance);
+                core::mem::forget(instance);
                 hr
             }
 
@@ -99,8 +99,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
             }
         }
 
-        // Code here usually belongs to the allocate function, but for simplicity
-        // we just wrote it directly.
+        // Not using allocate function here, since we are not using macros.
         impl #class_factory_ident {
             pub(crate) fn new() -> Box<#class_factory_ident> {
                 use com::IClassFactory;

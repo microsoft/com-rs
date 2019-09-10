@@ -7,17 +7,17 @@ use syn::{Ident, ItemStruct};
 /// Takes into account the base interfaces exposed, as well as
 /// any interfaces exposed through an aggregated object.
 pub fn generate(
-    base_itf_idents: &[Ident],
-    aggr_itf_idents: &HashMap<Ident, Vec<Ident>>,
+    base_interface_idents: &[Ident],
+    aggr_interface_idents: &HashMap<Ident, Vec<Ident>>,
     struct_item: &ItemStruct,
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let ref_count_ident = macro_utils::get_ref_count_ident();
 
-    let first_vptr_field = macro_utils::get_vptr_field_ident(&base_itf_idents[0]);
+    let first_vptr_field = macro_utils::get_vptr_field_ident(&base_interface_idents[0]);
 
     // Generate match arms for implemented interfaces
-    let base_match_arms = base_itf_idents.iter().map(|base| {
+    let base_match_arms = base_interface_idents.iter().map(|base| {
         let match_condition =
             quote!(<dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid));
         let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
@@ -30,14 +30,14 @@ pub fn generate(
     });
 
     // Generate match arms for aggregated interfaces
-    let aggr_match_arms = aggr_itf_idents.iter().map(|(aggr_field_ident, aggr_base_itf_idents)| {
+    let aggr_match_arms = aggr_interface_idents.iter().map(|(aggr_field_ident, aggr_base_interface_idents)| {
 
         // Construct the OR match conditions for a single aggregated object.
-        let first_base_itf_ident = &aggr_base_itf_idents[0];
+        let first_base_interface_ident = &aggr_base_interface_idents[0];
         let first_aggr_match_condition = quote!(
-            <dyn #first_base_itf_ident as com::ComInterface>::iid_in_inheritance_chain(riid)
+            <dyn #first_base_interface_ident as com::ComInterface>::iid_in_inheritance_chain(riid)
         );
-        let rem_aggr_match_conditions = aggr_base_itf_idents.iter().skip(1).map(|base| {
+        let rem_aggr_match_conditions = aggr_base_interface_idents.iter().skip(1).map(|base| {
             quote!(|| <dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid))
         });
 
@@ -48,8 +48,8 @@ pub fn generate(
                     return winapi::shared::winerror::E_NOINTERFACE;
                 }
 
-                let mut aggr_itf_ptr: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
-                let hr = aggr_itf_ptr.query_interface(riid, ppv);
+                let mut aggr_interface_ptr: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
+                let hr = aggr_interface_ptr.query_interface(riid, ppv);
                 if com::failed(hr) {
                     *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
                     return winapi::shared::winerror::E_NOINTERFACE;
@@ -58,9 +58,9 @@ pub fn generate(
                 // We release it as the previous call add_ref-ed the inner object.
                 // The intention is to transfer reference counting logic to the
                 // outer object.
-                aggr_itf_ptr.release();
+                aggr_interface_ptr.release();
 
-                core::mem::forget(aggr_itf_ptr);
+                core::mem::forget(aggr_interface_ptr);
             }
         )
     });

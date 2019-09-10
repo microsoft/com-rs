@@ -32,12 +32,12 @@ fn gen_impl_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperT
         "{}",
         macro_utils::snake_to_camel(&method.sig.ident.to_string())
     );
-    let itf_ptr_ident = format_ident!("itf_ptr");
+    let interface_ptr_ident = format_ident!("interface_ptr");
 
     let mut params = Vec::new();
     for param in method.sig.inputs.iter() {
         match param {
-            FnArg::Receiver(_n) => params.push(quote!(#itf_ptr_ident)),
+            FnArg::Receiver(_n) => params.push(quote!(#interface_ptr_ident)),
             // TODO: This may go wrong, I am using everything on the LHS.
             FnArg::Typed(n) => params.push(n.pat.to_token_stream()),
         }
@@ -45,8 +45,8 @@ fn gen_impl_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperT
 
     quote!(
         #method_sig {
-            let #itf_ptr_ident = self.into_raw() as *mut #vptr_ident;
-            unsafe { ((**#itf_ptr_ident).#method_ident)(#(#params),*) }
+            let #interface_ptr_ident = self.into_raw() as *mut #vptr_ident;
+            unsafe { ((**#interface_ptr_ident).#method_ident)(#(#params),*) }
         }
     )
 }

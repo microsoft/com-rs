@@ -6,12 +6,12 @@ use std::collections::HashMap;
 /// Generates the allocate and get_class_object function for the COM object.
 /// allocate: instantiates the COM fields, such as vpointers for the COM object.
 /// get_class_object: Instantiate an instance to the class object.
-pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
 
     // Allocate stuff
     let mut offset_count: usize = 0;
-    let base_inits = base_itf_idents.iter().map(|base| {
+    let base_inits = base_interface_idents.iter().map(|base| {
         let vtable_var_ident = format_ident!("{}_vtable", base.to_string().to_lowercase());
         let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
 
@@ -23,7 +23,7 @@ pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_itf_idents: &[Ident]
         offset_count += 1;
         out
     });
-    let base_fields = base_itf_idents.iter().map(|base| {
+    let base_fields = base_interface_idents.iter().map(|base| {
         let vptr_field_ident = macro_utils::get_vptr_field_ident(base);
         quote!(#vptr_field_ident)
     });
@@ -41,7 +41,7 @@ pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_itf_idents: &[Ident]
         quote!(#field_ident)
     });
 
-    let aggregate_inits = aggr_map.iter().map(|(aggr_field_ident, aggr_base_itf_idents)| {
+    let aggregate_inits = aggr_map.iter().map(|(aggr_field_ident, aggr_base_interface_idents)| {
         quote!(
             #aggr_field_ident: std::ptr::null_mut()
         )
@@ -74,8 +74,8 @@ pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_itf_idents: &[Ident]
 
 fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStream {
     let mut fns = Vec::new();
-    for (aggr_field_ident, aggr_base_itf_idents) in aggr_map.iter() {
-        for base in aggr_base_itf_idents {
+    for (aggr_field_ident, aggr_base_interface_idents) in aggr_map.iter() {
+        for base in aggr_base_interface_idents {
             let set_aggregate_fn_ident = format_ident!("set_aggregate_{}", macro_utils::camel_to_snake(&base.to_string()));
             fns.push(quote!(
                 fn #set_aggregate_fn_ident(&mut self, aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr) {
