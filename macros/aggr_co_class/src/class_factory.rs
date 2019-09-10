@@ -6,7 +6,7 @@ use syn::ItemStruct;
 // it leads to an infinite loop.
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
-    let class_factory_ident = macro_utils::get_class_factory_ident(&struct_ident);
+    let class_factory_ident = macro_utils::class_factory_ident(&struct_ident);
 
     quote!(
         // We are not going to bother with using an Init_ struct here,

@@ -11,7 +11,7 @@ use syn::ItemStruct;
 /// __iunknown_to_use as a ComPtr?
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
-    let iunknown_to_use_field_ident = macro_utils::get_iunknown_to_use_field_ident();
+    let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
 
     quote!(
         impl com::IUnknown for #struct_ident {

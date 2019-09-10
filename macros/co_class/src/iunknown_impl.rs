@@ -12,7 +12,7 @@ pub fn generate(
     struct_item: &ItemStruct,
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
-    let ref_count_ident = macro_utils::get_ref_count_ident();
+    let ref_count_ident = macro_utils::ref_count_ident();
     
     let query_interface = gen_query_interface(base_interface_idents, aggr_interface_idents, struct_item);
     
@@ -51,7 +51,7 @@ fn gen_base_match_arms(
     let base_match_arms = base_interface_idents.iter().map(|base| {
         let match_condition =
             quote!(<dyn #base as com::ComInterface>::is_iid_in_inheritance_chain(riid));
-        let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
+        let vptr_field_ident = macro_utils::vptr_field_ident(&base);
 
         quote!(
             else if #match_condition {
@@ -111,7 +111,7 @@ fn gen_query_interface(
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
 
-    let first_vptr_field = macro_utils::get_vptr_field_ident(&base_interface_idents[0]);
+    let first_vptr_field = macro_utils::vptr_field_ident(&base_interface_idents[0]);
 
     // Generate match arms for implemented interfaces
     let base_match_arms = gen_base_match_arms(base_interface_idents);

@@ -5,39 +5,39 @@ use syn::{
 
 use std::collections::HashMap;
 
-pub fn get_class_factory_ident(class_ident: &Ident) -> Ident {
+pub fn class_factory_ident(class_ident: &Ident) -> Ident {
     format_ident!("{}ClassFactory", class_ident)
 }
 
-pub fn get_vtable_ident(interface_ident: &Ident) -> Ident {
+pub fn vtable_ident(interface_ident: &Ident) -> Ident {
     format_ident!("{}VTable", interface_ident)
 }
 
-pub fn get_vptr_ident(interface_ident: &Ident) -> Ident {
+pub fn vptr_ident(interface_ident: &Ident) -> Ident {
     format_ident!("{}VPtr", interface_ident)
 }
 
-pub fn get_non_delegating_iunknown_field_ident() -> Ident {
+pub fn non_delegating_iunknown_field_ident() -> Ident {
     format_ident!("__non_delegatingegating_iunknown")
 }
 
-pub fn get_iunknown_to_use_field_ident() -> Ident {
+pub fn iunknown_to_use_field_ident() -> Ident {
     format_ident!("__iunknown_to_use")
 }
 
-pub fn get_ref_count_ident() -> Ident {
+pub fn ref_count_ident() -> Ident {
     format_ident!("__refcnt")
 }
 
-pub fn get_vptr_field_ident(interface_ident: &Ident) -> Ident {
+pub fn vptr_field_ident(interface_ident: &Ident) -> Ident {
     format_ident!("__{}vptr", interface_ident.to_string().to_lowercase())
 }
 
-pub fn get_set_aggregate_fn_ident(base: &Ident) -> Ident {
+pub fn set_aggregate_fn_ident(base: &Ident) -> Ident {
     format_ident!("set_aggregate_{}", crate::camel_to_snake(&base.to_string()))
 }
 
-pub fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
+pub fn base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
     let mut base_interface_idents = Vec::new();
 
     for attr in &struct_item.attrs {

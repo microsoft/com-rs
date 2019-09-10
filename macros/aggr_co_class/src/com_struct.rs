@@ -11,13 +11,13 @@ pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents: &[
     let vis = &struct_item.vis;
 
     let bases_interface_idents = base_interface_idents.iter().map(|base| {
-        let field_ident = macro_utils::get_vptr_field_ident(&base);
+        let field_ident = macro_utils::vptr_field_ident(&base);
         quote!(#field_ident: <dyn #base as com::ComInterface>::VPtr)
     });
 
-    let ref_count_ident = macro_utils::get_ref_count_ident();
-    let non_delegating_iunknown_field_ident = macro_utils::get_non_delegating_iunknown_field_ident();
-    let iunknown_to_use_field_ident = macro_utils::get_iunknown_to_use_field_ident();
+    let ref_count_ident = macro_utils::ref_count_ident();
+    let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
+    let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
 
     let fields = match &struct_item.fields {
         Fields::Named(f) => &f.named,

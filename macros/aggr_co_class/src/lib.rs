@@ -16,7 +16,7 @@ pub fn expand_aggr_co_class(_attr: TokenStream, item: TokenStream) -> TokenStrea
     let input = syn::parse_macro_input!(item as ItemStruct);
 
     // Parse attributes
-    let base_interface_idents = macro_utils::get_base_interface_idents(&input);
+    let base_interface_idents = macro_utils::base_interface_idents(&input);
     let aggr_interface_idents = macro_utils::get_aggr_map(&input);
 
     let mut out: Vec<TokenStream> = Vec::new();

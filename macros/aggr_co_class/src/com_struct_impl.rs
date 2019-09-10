@@ -36,7 +36,7 @@ pub fn generate(
 /// class object.
 fn gen_get_class_object_fn(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
-    let class_factory_ident = macro_utils::get_class_factory_ident(&struct_ident);
+    let class_factory_ident = macro_utils::class_factory_ident(&struct_ident);
 
     quote!(
         pub fn get_class_object() -> Box<#class_factory_ident> {
@@ -48,8 +48,8 @@ fn gen_get_class_object_fn(struct_item: &ItemStruct) -> HelperTokenStream {
 /// Function that should only be used by Class Object, to set the
 /// object's iunknown_to_use, if the object is going to get aggregated.
 fn gen_set_iunknown_fn() -> HelperTokenStream {
-    let iunknown_to_use_field_ident = macro_utils::get_iunknown_to_use_field_ident();
-    let non_delegating_iunknown_field_ident = macro_utils::get_non_delegating_iunknown_field_ident();
+    let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
+    let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
 
     quote!(
         pub(crate) fn set_iunknown(&mut self, aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr) {
@@ -70,7 +70,7 @@ fn gen_inner_iunknown_fns(
     struct_item: &ItemStruct,
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
-    let ref_count_ident = macro_utils::get_ref_count_ident();
+    let ref_count_ident = macro_utils::ref_count_ident();
     let inner_query_interface = gen_inner_query_interface(base_interface_idents, aggr_map);
 
     quote!(
@@ -101,13 +101,13 @@ fn gen_inner_query_interface(
     base_interface_idents: &[Ident],
     aggr_map: &HashMap<Ident, Vec<Ident>>,
 ) -> HelperTokenStream {
-    let non_delegating_iunknown_field_ident = macro_utils::get_non_delegating_iunknown_field_ident();
+    let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
 
     // Generate match arms for implemented interfaces
     let match_arms = base_interface_idents.iter().map(|base| {
         let match_condition =
             quote!(<dyn #base as com::ComInterface>::is_iid_in_inheritance_chain(riid));
-        let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
+        let vptr_field_ident = macro_utils::vptr_field_ident(&base);
 
         quote!(
             else if #match_condition {
@@ -178,7 +178,7 @@ fn gen_allocate_fn(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents:
     let mut offset_count: usize = 0;
     let base_inits = base_interface_idents.iter().map(|base| {
         let vtable_var_ident = quote::format_ident!("{}_vtable", base.to_string().to_lowercase());
-        let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
+        let vptr_field_ident = macro_utils::vptr_field_ident(&base);
 
         let out = quote!(
             let #vtable_var_ident = com::vtable!(#struct_ident: #base, #offset_count);
@@ -189,12 +189,12 @@ fn gen_allocate_fn(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents:
         out
     });
     let base_fields = base_interface_idents.iter().map(|base| {
-        let vptr_field_ident = macro_utils::get_vptr_field_ident(base);
+        let vptr_field_ident = macro_utils::vptr_field_ident(base);
         quote!(#vptr_field_ident)
     });
-    let ref_count_ident = macro_utils::get_ref_count_ident();
-    let iunknown_to_use_field_ident = macro_utils::get_iunknown_to_use_field_ident();
-    let non_delegating_iunknown_field_ident = macro_utils::get_non_delegating_iunknown_field_ident();
+    let ref_count_ident = macro_utils::ref_count_ident();
+    let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
+    let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
     let non_delegating_iunknown_offset = base_interface_idents.len();
 
     let fields = match &struct_item.fields {
@@ -267,7 +267,7 @@ fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenSt
     let mut fns = Vec::new();
     for (aggr_field_ident, aggr_base_interface_idents) in aggr_map.iter() {
         for base in aggr_base_interface_idents {
-            let set_aggregate_fn_ident = macro_utils::get_set_aggregate_fn_ident(&base);
+            let set_aggregate_fn_ident = macro_utils::set_aggregate_fn_ident(&base);
             fns.push(quote!(
                 fn #set_aggregate_fn_ident(&mut self, aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr) {
                     // TODO: What happens if we are overwriting an existing aggregate?

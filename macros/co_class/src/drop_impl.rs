@@ -6,7 +6,7 @@ use std::collections::HashMap;
 pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_interface_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let box_from_raws = base_interface_idents.iter().map(|base| {
-        let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
+        let vptr_field_ident = macro_utils::vptr_field_ident(&base);
         quote!(
             Box::from_raw(self.#vptr_field_ident as *mut <dyn #base as com::ComInterface>::VTable);
         )
