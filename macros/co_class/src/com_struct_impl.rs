@@ -1,6 +1,7 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::{format_ident, quote};
 use syn::{Ident, ItemStruct, Fields,};
+use std::collections::HashMap;
 
 // impl BritishShortHairCat {
 //     fn allocate(init_struct: InitBritishShortHairCat) -> Box<BritishShortHairCat> {
@@ -37,7 +38,7 @@ use syn::{Ident, ItemStruct, Fields,};
 /// Generates the allocate and get_class_object function for the COM object.
 /// allocate: instantiates the COM fields, such as vpointers for the COM object.
 /// get_class_object: Instantiate an instance to the class object.
-pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
 
     // Allocate stuff
@@ -72,6 +73,14 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
         quote!(#field_ident)
     });
 
+    let aggregate_inits = aggr_map.iter().map(|(aggr_field_ident, aggr_base_itf_idents)| {
+        quote!(
+            #aggr_field_ident: std::ptr::null_mut()
+        )
+    });
+
+    let set_aggregate_fns = gen_set_aggregate_fns(aggr_map);
+
     quote!(
         impl #struct_ident {
             fn allocate(#fields) -> Box<#struct_ident> {
@@ -80,7 +89,8 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
                 let out = #struct_ident {
                     #(#base_fields,)*
                     #ref_count_ident: 0,
-                    #(#field_idents),*
+                    #(#aggregate_inits,)*
+                    #(#field_idents)*
                 };
                 Box::new(out)
             }
@@ -88,6 +98,25 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
             pub fn get_class_object() -> Box<#class_factory_ident> {
                 <#class_factory_ident>::new()
             }
+
+            #set_aggregate_fns
         }
     )
+}
+
+fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStream {
+    let mut fns = Vec::new();
+    for (aggr_field_ident, aggr_base_itf_idents) in aggr_map.iter() {
+        for base in aggr_base_itf_idents {
+            let set_aggregate_fn_ident = format_ident!("set_aggregate_{}", macro_utils::camel_to_snake(&base.to_string()));
+            fns.push(quote!(
+                fn #set_aggregate_fn_ident(&mut self, aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr) {
+                    // TODO: What happens if we are overwriting an existing aggregate?
+                    self.#aggr_field_ident = aggr
+                }
+            ));
+        }
+    }
+
+    quote!(#(#fns)*)
 }

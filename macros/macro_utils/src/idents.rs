@@ -60,33 +60,36 @@ pub fn get_base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
 pub fn get_aggr_map(struct_item: &ItemStruct) -> HashMap<Ident, Vec<Ident>> {
     let mut aggr_map = HashMap::new();
 
-    let fields = match &struct_item.fields {
-        Fields::Named(f) => &f.named,
-        _ => panic!("Found field other than named fields in struct")
-    };
-
-    for field in fields {
-        for attr in &field.attrs {
-            if let Ok(Meta::List(ref attr)) = attr.parse_meta() {
-                if attr.path.segments.last().unwrap().ident != "aggr" {
-                    continue;
-                }
-
-                let mut aggr_interfaces_idents = Vec::new();
-
-
-                assert!(attr.nested.len() > 0, "Need to expose at least one interface from aggregated COM object.");
-
-                for item in &attr.nested {
-                    if let NestedMeta::Meta(Meta::Path(p)) = item {
-                        assert!(p.segments.len() == 1, "Incapable of handling multiple path segments yet.");
-                        aggr_interfaces_idents.push(p.segments.last().unwrap().ident.clone());
-                    }
-                }
-                let ident = field.ident.as_ref().unwrap().clone();
-                aggr_map.insert(ident, aggr_interfaces_idents);
+    for attr in &struct_item.attrs {
+        if let Ok(Meta::List(ref attr)) = attr.parse_meta() {
+            if attr.path.segments.last().unwrap().ident != "aggr" {
+                continue;
             }
+
+            let mut aggr_interfaces_idents = Vec::new();
+
+
+            assert!(attr.nested.len() > 0, "Need to expose at least one interface from aggregated COM object.");
+
+            for item in &attr.nested {
+                if let NestedMeta::Meta(Meta::Path(p)) = item {
+                    assert!(p.segments.len() == 1, "Incapable of handling multiple path segments yet.");
+                    aggr_interfaces_idents.push(p.segments.last().unwrap().ident.clone());
+                }
+            }
+            let ident = aggr_interfaces_idents.iter()
+            .map(|base| {
+                crate::camel_to_snake(&base.to_string())
+            })
+            .fold("aggr".to_owned(), |acc, base| {
+                format!("{}_{}", acc, base)
+            });
+            aggr_map.insert(format_ident!("{}", ident), aggr_interfaces_idents);
         }
+    }
+
+    for (ident, _) in aggr_map.iter() {
+        println!("Ident found: {}", ident);
     }
 
     aggr_map

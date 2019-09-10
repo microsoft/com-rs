@@ -1,6 +1,7 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
 use syn::{Ident, ItemStruct, Fields};
+use std::collections::HashMap;
 
 // #[repr(C)]
 // pub struct BritishShortHairCat {
@@ -17,7 +18,7 @@ use syn::{Ident, ItemStruct, Fields};
 ///     ..ref count..
 ///     ..init struct..
 /// }
-pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+pub fn generate(aggr_map: &HashMap<Ident, Vec<Ident>>, base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let vis = &struct_item.vis;
 
@@ -33,11 +34,18 @@ pub fn generate(base_itf_idents: &[Ident], struct_item: &ItemStruct) -> HelperTo
         _ => panic!("Found non Named fields in struct.")
     };
 
+    let aggregates = aggr_map.iter().map(|(aggr_field_ident, aggr_base_itf_idents)| {
+        quote!(
+            #aggr_field_ident: *mut <dyn com::IUnknown as com::ComInterface>::VPtr
+        )
+    });
+
     quote!(
         #[repr(C)]
         #vis struct #struct_ident {
             #(#bases_itf_idents,)*
             #ref_count_ident: u32,
+            #(#aggregates,)*
             #fields
         }
     )

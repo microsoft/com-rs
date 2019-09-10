@@ -20,12 +20,15 @@ pub fn expand_com_class(attr: TokenStream, item: TokenStream) -> TokenStream {
     let aggr_itf_idents = macro_utils::get_aggr_map(&input);
 
     let mut out: Vec<TokenStream> = Vec::new();
-    out.push(com_struct::generate(&base_itf_idents, &input).into());
-    out.push(com_struct_impl::generate(&base_itf_idents, &input).into());
+    out.push(com_struct::generate(&aggr_itf_idents, &base_itf_idents, &input).into());
+    out.push(com_struct_impl::generate(&aggr_itf_idents, &base_itf_idents, &input).into());
     out.push(iunknown_impl::generate(&base_itf_idents, &aggr_itf_idents, &input).into());
-    out.push(drop_impl::generate(&base_itf_idents, &input).into());
+    out.push(drop_impl::generate(&aggr_itf_idents, &base_itf_idents, &input).into());
     out.push(deref_impl::generate(&input).into());
     out.push(class_factory::generate(&input).into());
 
-    TokenStream::from_iter(out)
+    // TokenStream::from_iter(out)
+    let result = TokenStream::from_iter(out);
+    println!("Result:\n{}", result.to_string());
+    result
 }

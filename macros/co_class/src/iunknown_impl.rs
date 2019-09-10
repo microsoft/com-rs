@@ -124,9 +124,15 @@ pub fn generate(
 
         quote!(
             else if #first_aggr_match_condition #(#rem_aggr_match_conditions)* {
-                let mut aggr_itf_ptr: ComPtr<dyn IUnknown> = ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
+                if self.#aggr_field_ident.is_null() {
+                    *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
+                    return winapi::shared::winerror::E_NOINTERFACE;
+                }
+
+                let mut aggr_itf_ptr: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
                 let hr = aggr_itf_ptr.query_interface(riid, ppv);
                 if com::failed(hr) {
+                    *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
                     return winapi::shared::winerror::E_NOINTERFACE;
                 }
 
@@ -135,7 +141,7 @@ pub fn generate(
                 // outer object.
                 aggr_itf_ptr.release();
 
-                forget(aggr_itf_ptr);
+                core::mem::forget(aggr_itf_ptr);
             }
         )
     });
