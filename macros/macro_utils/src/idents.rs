@@ -9,12 +9,12 @@ pub fn get_class_factory_ident(class_ident: &Ident) -> Ident {
     format_ident!("{}ClassFactory", class_ident)
 }
 
-pub fn get_vtable_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("{}VTable", trait_ident)
+pub fn get_vtable_ident(interface_ident: &Ident) -> Ident {
+    format_ident!("{}VTable", interface_ident)
 }
 
-pub fn get_vptr_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("{}VPtr", trait_ident)
+pub fn get_vptr_ident(interface_ident: &Ident) -> Ident {
+    format_ident!("{}VPtr", interface_ident)
 }
 
 pub fn get_non_delegating_iunknown_field_ident() -> Ident {
@@ -29,8 +29,8 @@ pub fn get_ref_count_ident() -> Ident {
     format_ident!("__refcnt")
 }
 
-pub fn get_vptr_field_ident(trait_ident: &Ident) -> Ident {
-    format_ident!("__{}vptr", trait_ident.to_string().to_lowercase())
+pub fn get_vptr_field_ident(interface_ident: &Ident) -> Ident {
+    format_ident!("__{}vptr", interface_ident.to_string().to_lowercase())
 }
 
 pub fn get_set_aggregate_fn_ident(base: &Ident) -> Ident {

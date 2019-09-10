@@ -13,7 +13,7 @@ pub fn generate(trait_item: &ItemTrait) -> HelperTokenStream {
     let recursive_iid_check = if let Some(TypeParamBound::Trait(t)) = trait_item.supertraits.first()
     {
         let supertrait_ident = t.path.get_ident().unwrap();
-        quote!(com::_winapi::shared::guiddef::IsEqualGUID(riid, &Self::IID) | #supertrait_ident::iid_in_inheritance_chain(riid))
+        quote!(com::_winapi::shared::guiddef::IsEqualGUID(riid, &Self::IID) | #supertrait_ident::is_iid_in_inheritance_chain(riid))
     } else {
         quote!(com::_winapi::shared::guiddef::IsEqualGUID(riid, &Self::IID))
     };
@@ -24,7 +24,7 @@ pub fn generate(trait_item: &ItemTrait) -> HelperTokenStream {
             type VPtr = #vptr_ident;
             const IID: com::_winapi::shared::guiddef::IID = #iid_ident;
 
-            fn iid_in_inheritance_chain(riid: &com::_winapi::shared::guiddef::IID) -> bool {
+            fn is_iid_in_inheritance_chain(riid: &com::_winapi::shared::guiddef::IID) -> bool {
                 #recursive_iid_check
             }
         }

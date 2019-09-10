@@ -106,7 +106,7 @@ fn gen_inner_query_interface(
     // Generate match arms for implemented interfaces
     let match_arms = base_interface_idents.iter().map(|base| {
         let match_condition =
-            quote!(<dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid));
+            quote!(<dyn #base as com::ComInterface>::is_iid_in_inheritance_chain(riid));
         let vptr_field_ident = macro_utils::get_vptr_field_ident(&base);
 
         quote!(
@@ -122,10 +122,10 @@ fn gen_inner_query_interface(
         // Construct the OR match conditions for a single aggregated object.
         let first_base_interface_ident = &aggr_base_interface_idents[0];
         let first_aggr_match_condition = quote!(
-            <dyn #first_base_interface_ident as com::ComInterface>::iid_in_inheritance_chain(riid)
+            <dyn #first_base_interface_ident as com::ComInterface>::is_iid_in_inheritance_chain(riid)
         );
         let rem_aggr_match_conditions = aggr_base_interface_idents.iter().skip(1).map(|base| {
-            quote!(|| <dyn #base as com::ComInterface>::iid_in_inheritance_chain(riid))
+            quote!(|| <dyn #base as com::ComInterface>::is_iid_in_inheritance_chain(riid))
         });
 
         quote!(

@@ -28,14 +28,14 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
             "All interfaces must inherit from another COM interface"
         );
 
-        let base_trait_ident = match interface.supertraits.first().unwrap() {
+        let base_interface_ident = match interface.supertraits.first().unwrap() {
             TypeParamBound::Trait(t) => t.path.get_ident().unwrap(),
             _ => panic!("Unhandled super trait typeparambound"),
         };
 
-        let base_field_ident = base_field_ident(&base_trait_ident.to_string());
+        let base_field_ident = base_field_ident(&base_interface_ident.to_string());
         quote! {
-            pub #base_field_ident: <dyn #base_trait_ident as com::ComInterface>::VTable,
+            pub #base_field_ident: <dyn #base_interface_ident as com::ComInterface>::VTable,
         }
     };
     let methods = gen_vtable_methods(&interface);
@@ -86,10 +86,10 @@ fn gen_vtable_method(interface_ident: &Ident, method: &TraitItemMethod) -> Helpe
 }
 
 fn gen_vtable_function_signature(
-    trait_ident: &Ident,
+    interface_ident: &Ident,
     method: &TraitItemMethod,
 ) -> HelperTokenStream {
-    let params = gen_raw_params(trait_ident, method);
+    let params = gen_raw_params(interface_ident, method);
     let return_type = &method.sig.output;
 
     quote!(
@@ -97,9 +97,9 @@ fn gen_vtable_function_signature(
     )
 }
 
-fn gen_raw_params(trait_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
+fn gen_raw_params(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
     let mut params = Vec::new();
-    let vptr_ident = vptr::ident(&trait_ident.to_string());
+    let vptr_ident = vptr::ident(&interface_ident.to_string());
     for param in method.sig.inputs.iter() {
         match param {
             FnArg::Receiver(_n) => {

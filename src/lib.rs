@@ -28,7 +28,7 @@ pub unsafe trait ComInterface {
     type VPtr;
     const IID: IID;
 
-    fn iid_in_inheritance_chain(riid: &IID) -> bool;
+    fn is_iid_in_inheritance_chain(riid: &IID) -> bool;
 }
 
 pub trait ProductionComInterface<T: IUnknown>: ComInterface {
