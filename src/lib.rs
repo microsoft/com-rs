@@ -25,7 +25,10 @@ pub fn failed(result: HRESULT) -> bool {
 /// For example, we assume safe conversion and usage of the struct as a `RawIUnknown`.
 pub unsafe trait ComInterface {
     type VTable;
+    type VPtr;
     const IID: IID;
+
+    fn is_iid_in_inheritance_chain(riid: &IID) -> bool;
 }
 
 pub trait ProductionComInterface<T: IUnknown>: ComInterface {
@@ -39,13 +42,13 @@ macro_rules! vtable {
             $crate::offset::$offset,
         >();
     };
-    ($class:ident: $interface:ident, 2) => {
+    ($class:ident: $interface:ident, 2usize) => {
         $crate::vtable!($class: $interface, Two)
     };
-    ($class:ident: $interface:ident, 1) => {
+    ($class:ident: $interface:ident, 1usize) => {
         $crate::vtable!($class: $interface, One)
     };
-    ($class:ident: $interface:ident, 0) => {
+    ($class:ident: $interface:ident, 0usize) => {
         $crate::vtable!($class: $interface, Zero)
     };
     ($class:ident: $interface:ident) => {
@@ -58,7 +61,7 @@ macro_rules! vtable {
 pub extern crate winapi as _winapi;
 
 #[doc(hidden)]
-pub use com_interface_attribute::*;
+pub use macros::*;
 
 // this allows for the crate to refer to itself as `com` to keep macros consistent
 // whether they are used by some other crate or internally

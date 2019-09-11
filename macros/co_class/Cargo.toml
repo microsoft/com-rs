@@ -1,0 +1,11 @@
+[package]
+name = "co_class"
+version = "0.1.0"
+authors = ["adrianwithah <lim.weiheng.hadrian@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+syn = { version = "1.0.5", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0.1"
+macro_utils = { path = "../macro_utils" }

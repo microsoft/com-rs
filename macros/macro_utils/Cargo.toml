@@ -1,0 +1,9 @@
+[package]
+name = "macro_utils"
+version = "0.1.0"
+authors = ["adrianwithah <lim.weiheng.hadrian@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+syn = { version = "1.0.5", features = ["full"] }
+quote = "1.0"
