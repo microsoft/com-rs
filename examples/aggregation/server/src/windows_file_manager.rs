@@ -17,9 +17,7 @@ use winapi::{
 
 use com::co_class;
 /// The implementation class
-#[co_class]
-#[com_implements(IFileManager)]
-#[aggr(ILocalFileManager)]
+#[co_class(com_implements(IFileManager), aggr(ILocalFileManager))]
 pub struct WindowsFileManager {
     user_field: u32,
 }
