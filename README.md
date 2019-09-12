@@ -14,7 +14,7 @@ As a foundation, we are attempting to create a library that doesn't necessarily 
 
 **Which threading models do this library support?**
 
-As of v0.1, this library is only confident of producing COM components that live in Single-Threaded Apartments (STA).
+As of v0.1, this library is only confident of consuming/producing COM components that live in Single-Threaded Apartments (STA). This Threading Model assumption is used in several places, so producing/consuming these COM components in a Multi-Threaded environment will not work.
 
 **Is there out-of-process COM support?**
 
