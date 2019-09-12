@@ -5,9 +5,9 @@ use syn::{AttributeArgs, ItemStruct};
 use std::iter::FromIterator;
 
 pub mod class_factory;
-mod com_struct;
+pub mod com_struct;
 pub mod com_struct_impl;
-mod drop_impl;
+pub mod drop_impl;
 pub mod iunknown_impl;
 
 // Macro expansion entry point.

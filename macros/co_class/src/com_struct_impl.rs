@@ -46,7 +46,9 @@ pub fn gen_allocate_fn(
     quote!(
         fn allocate(#allocate_parameters) -> Box<#struct_ident> {
             println!("Allocating new VTable for {}", stringify!(#struct_ident));
+
             #base_inits
+            
             let out = #struct_ident {
                 #base_fields
                 #ref_count_field
