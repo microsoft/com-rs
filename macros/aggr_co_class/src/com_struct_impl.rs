@@ -18,8 +18,8 @@ pub fn generate(
     let allocate_fn = gen_allocate_fn(aggr_map, base_interface_idents, struct_item);
     let set_iunknown_fn = gen_set_iunknown_fn();
     let inner_iunknown_fns = gen_inner_iunknown_fns(base_interface_idents, aggr_map, struct_item);
-    let get_class_object_fn = gen_get_class_object_fn(struct_item);
-    let set_aggregate_fns = gen_set_aggregate_fns(aggr_map);
+    let get_class_object_fn = co_class::com_struct_impl::gen_get_class_object_fn(struct_item);
+    let set_aggregate_fns = co_class::com_struct_impl::gen_set_aggregate_fns(aggr_map);
 
     quote!(
         impl #struct_ident {
@@ -28,19 +28,6 @@ pub fn generate(
             #inner_iunknown_fns
             #get_class_object_fn
             #set_aggregate_fns
-        }
-    )
-}
-
-/// Function used by in-process DLL macro to get an instance of the
-/// class object.
-fn gen_get_class_object_fn(struct_item: &ItemStruct) -> HelperTokenStream {
-    let struct_ident = &struct_item.ident;
-    let class_factory_ident = macro_utils::class_factory_ident(&struct_ident);
-
-    quote!(
-        pub fn get_class_object() -> Box<#class_factory_ident> {
-            <#class_factory_ident>::new()
         }
     )
 }
@@ -70,30 +57,42 @@ fn gen_inner_iunknown_fns(
     struct_item: &ItemStruct,
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
-    let ref_count_ident = macro_utils::ref_count_ident();
     let inner_query_interface = gen_inner_query_interface(base_interface_idents, aggr_map);
+    let inner_add_ref = gen_inner_add_ref();
+    let inner_release = gen_inner_release(struct_ident);
 
     quote!(
         #inner_query_interface
+        #inner_add_ref
+        #inner_release
+    )
+}
 
+pub fn gen_inner_add_ref() -> HelperTokenStream {
+    let ref_count_ident = macro_utils::ref_count_ident();
+    quote! {
         pub(crate) fn inner_add_ref(&mut self) -> u32 {
-            self.#ref_count_ident += 1;
+            self.#ref_count_ident = self.#ref_count_ident.checked_add(1).expect("Overflow of reference count");
             println!("Count now {}", self.#ref_count_ident);
             self.#ref_count_ident
         }
+    }
+}
 
-        pub(crate) fn inner_release(&mut self) -> u32 {
-            self.#ref_count_ident -= 1;
+pub fn gen_inner_release(struct_ident: &Ident) -> HelperTokenStream {
+    let ref_count_ident = macro_utils::ref_count_ident();
+    quote! {
+        pub(crate) unsafe fn inner_release(&mut self) -> u32 {
+            self.#ref_count_ident = self.#ref_count_ident.checked_sub(1).expect("Underflow of reference count");
             println!("Count now {}", self.#ref_count_ident);
             let count = self.#ref_count_ident;
             if count == 0 {
                 println!("Count is 0 for {}. Freeing memory...", stringify!(#struct_ident));
-                // drop(self)
-                unsafe { Box::from_raw(self as *const _ as *mut #struct_ident); }
+                Box::from_raw(self as *const _ as *mut #struct_ident);
             }
             count
         }
-    )
+    }
 }
 
 /// Non-delegating query interface
@@ -104,47 +103,10 @@ fn gen_inner_query_interface(
     let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
 
     // Generate match arms for implemented interfaces
-    let match_arms = base_interface_idents.iter().map(|base| {
-        let match_condition =
-            quote!(<dyn #base as com::ComInterface>::is_iid_in_inheritance_chain(riid));
-        let vptr_field_ident = macro_utils::vptr_field_ident(&base);
-
-        quote!(
-            else if #match_condition {
-                *ppv = &self.#vptr_field_ident as *const _ as *mut winapi::ctypes::c_void;
-            }
-        )
-    });
+    let base_match_arms = co_class::iunknown_impl::gen_base_match_arms(base_interface_idents);
 
     // Generate match arms for aggregated interfaces
-    let aggr_match_arms = aggr_map.iter().map(|(aggr_field_ident, aggr_base_interface_idents)| {
-
-        // Construct the OR match conditions for a single aggregated object.
-        let first_base_interface_ident = &aggr_base_interface_idents[0];
-        let first_aggr_match_condition = quote!(
-            <dyn #first_base_interface_ident as com::ComInterface>::is_iid_in_inheritance_chain(riid)
-        );
-        let rem_aggr_match_conditions = aggr_base_interface_idents.iter().skip(1).map(|base| {
-            quote!(|| <dyn #base as com::ComInterface>::is_iid_in_inheritance_chain(riid))
-        });
-
-        quote!(
-            else if #first_aggr_match_condition #(#rem_aggr_match_conditions)* {
-                let mut aggr_interface_ptr: ComPtr<dyn com::IUnknown> = ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
-                let hr = aggr_interface_ptr.query_interface(riid, ppv);
-                if com::failed(hr) {
-                    return winapi::shared::winerror::E_NOINTERFACE;
-                }
-
-                // We release it as the previous call add_ref-ed the inner object.
-                // The intention is to transfer reference counting logic to the
-                // outer object.
-                aggr_interface_ptr.release();
-
-                core::mem::forget(aggr_interface_ptr);
-            }
-        )
-    });
+    let aggr_match_arms = co_class::iunknown_impl::gen_aggregate_match_arms(aggr_map);
 
     quote!(
         pub(crate) fn inner_query_interface(&mut self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> HRESULT {
@@ -155,7 +117,7 @@ fn gen_inner_query_interface(
 
                 if winapi::shared::guiddef::IsEqualGUID(riid, &com::IID_IUNKNOWN) {
                     *ppv = &self.#non_delegating_iunknown_field_ident as *const _ as *mut winapi::ctypes::c_void;
-                } #(#match_arms)* #(#aggr_match_arms)* else {
+                } #base_match_arms #aggr_match_arms else {
                     *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
                     println!("Returning NO INTERFACE.");
                     return winapi::shared::winerror::E_NOINTERFACE;
@@ -179,45 +141,24 @@ fn gen_allocate_fn(
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
 
-    let mut offset_count: usize = 0;
-    let base_inits = base_interface_idents.iter().map(|base| {
-        let vtable_var_ident = quote::format_ident!("{}_vtable", base.to_string().to_lowercase());
-        let vptr_field_ident = macro_utils::vptr_field_ident(&base);
+    let base_inits = co_class::com_struct_impl::gen_allocate_base_inits(struct_ident, base_interface_idents);
 
-        let out = quote!(
-            let #vtable_var_ident = com::vtable!(#struct_ident: #base, #offset_count);
-            let #vptr_field_ident = Box::into_raw(Box::new(#vtable_var_ident));
-        );
+    // Allocate function signature
+    let allocate_parameters = co_class::com_struct_impl::gen_allocate_function_parameters_signature(struct_item);
 
-        offset_count += 1;
-        out
-    });
-    let base_fields = base_interface_idents.iter().map(|base| {
-        let vptr_field_ident = macro_utils::vptr_field_ident(base);
-        quote!(#vptr_field_ident)
-    });
-    let ref_count_ident = macro_utils::ref_count_ident();
+    // Syntax for instantiating the fields of the struct.
+    let base_fields = co_class::com_struct_impl::gen_allocate_base_fields(base_interface_idents);
+    let ref_count_field = co_class::com_struct_impl::gen_allocate_ref_count_field();
+    let user_fields = co_class::com_struct_impl::gen_allocate_user_fields(struct_item);
+    let aggregate_fields = co_class::com_struct_impl::gen_allocate_aggregate_fields(aggr_map);
+
+    // Aggregable COM struct specific fields  
     let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
     let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
     let non_delegating_iunknown_offset = base_interface_idents.len();
 
-    let fields = match &struct_item.fields {
-        Fields::Named(f) => &f.named,
-        _ => panic!("Found non Named fields in struct."),
-    };
-    let field_idents = fields.iter().map(|field| {
-        let field_ident = field.ident.as_ref().unwrap().clone();
-        quote!(#field_ident)
-    });
-
-    let aggregate_inits = aggr_map.iter().map(|(aggr_field_ident, _)| {
-        quote!(
-            #aggr_field_ident: std::ptr::null_mut()
-        )
-    });
-
     quote!(
-        fn allocate(#fields) -> Box<#struct_ident> {
+        fn allocate(#allocate_parameters) -> Box<#struct_ident> {
             println!("Allocating new VTable for {}", stringify!(#struct_ident));
 
             // Non-delegating methods.
@@ -253,33 +194,17 @@ fn gen_allocate_fn(
             };
             let #non_delegating_iunknown_field_ident = Box::into_raw(Box::new(__non_delegating_iunknown_vtable));
 
-            #(#base_inits)*
+            #base_inits
+
             let out = #struct_ident {
-                #(#base_fields,)*
+                #base_fields
                 #non_delegating_iunknown_field_ident,
                 #iunknown_to_use_field_ident: std::ptr::null_mut::<<dyn com::IUnknown as com::ComInterface>::VPtr>(),
-                #ref_count_ident: 0,
-                #(#aggregate_inits,)*
-                #(#field_idents)*
+                #ref_count_field
+                #aggregate_fields
+                #user_fields
             };
             Box::new(out)
         }
     )
-}
-
-fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStream {
-    let mut fns = Vec::new();
-    for (aggr_field_ident, aggr_base_interface_idents) in aggr_map.iter() {
-        for base in aggr_base_interface_idents {
-            let set_aggregate_fn_ident = macro_utils::set_aggregate_fn_ident(&base);
-            fns.push(quote!(
-                fn #set_aggregate_fn_ident(&mut self, aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr) {
-                    // TODO: What happens if we are overwriting an existing aggregate?
-                    self.#aggr_field_ident = aggr
-                }
-            ));
-        }
-    }
-
-    quote!(#(#fns)*)
 }

@@ -88,7 +88,7 @@ fn gen_query_interface(
     )
 }
 
-fn gen_base_match_arms(base_interface_idents: &[Ident]) -> HelperTokenStream {
+pub fn gen_base_match_arms(base_interface_idents: &[Ident]) -> HelperTokenStream {
     // Generate match arms for implemented interfaces
     let base_match_arms = base_interface_idents.iter().map(|base| {
         let match_condition =
@@ -105,7 +105,7 @@ fn gen_base_match_arms(base_interface_idents: &[Ident]) -> HelperTokenStream {
     quote!(#(#base_match_arms)*)
 }
 
-fn gen_aggregate_match_arms(
+pub fn gen_aggregate_match_arms(
     aggr_interface_idents: &HashMap<Ident, Vec<Ident>>,
 ) -> HelperTokenStream {
     let aggr_match_arms = aggr_interface_idents.iter().map(|(aggr_field_ident, aggr_base_interface_idents)| {

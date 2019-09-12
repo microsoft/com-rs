@@ -6,7 +6,7 @@ use std::iter::FromIterator;
 
 pub mod class_factory;
 mod com_struct;
-mod com_struct_impl;
+pub mod com_struct_impl;
 mod drop_impl;
 pub mod iunknown_impl;
 
