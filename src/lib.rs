@@ -13,7 +13,7 @@ pub use iclassfactory::{
 };
 pub use inproc::*;
 pub use iunknown::{IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
-pub use runtime::Runtime;
+pub use runtime::ApartmentThreadedRuntime;
 
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 

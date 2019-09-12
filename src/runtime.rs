@@ -18,12 +18,12 @@ use crate::{
     ComInterface, ComPtr,
 };
 
-// TODO: is it safe to send this across threads?
-pub struct Runtime;
+pub struct ApartmentThreadedRuntime {
+    _not_send: *const (),
+}
 
-impl Runtime {
-    pub fn new() -> Result<Runtime, HRESULT> {
-        let runtime = Runtime;
+impl ApartmentThreadedRuntime {
+    pub fn new() -> Result<ApartmentThreadedRuntime, HRESULT> {
         let hr =
             unsafe { CoInitializeEx(std::ptr::null_mut::<c_void>(), COINIT_APARTMENTTHREADED) };
         if failed(hr) {
@@ -32,7 +32,9 @@ impl Runtime {
             // https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
             return Err(hr);
         }
-        Ok(runtime)
+        Ok(ApartmentThreadedRuntime {
+            _not_send: std::ptr::null(),
+        })
     }
 
     // TODO: accept server options
@@ -77,7 +79,7 @@ impl Runtime {
     }
 }
 
-impl std::ops::Drop for Runtime {
+impl std::ops::Drop for ApartmentThreadedRuntime {
     fn drop(&mut self) {
         unsafe { CoUninitialize() }
     }

@@ -1,4 +1,4 @@
-use com::{IUnknown, Runtime};
+use com::{IUnknown, ApartmentThreadedRuntime as Runtime};
 use interface::{IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS};
 
 fn main() {
