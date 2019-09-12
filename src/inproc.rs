@@ -181,16 +181,16 @@ macro_rules! com_inproc_dll_module {
             if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid_one) {
                 let mut instance = <$classtype_one>::get_class_object();
                 instance.add_ref();
-                let hr = instance.query_interface(riid, ppv);
-                instance.release();
+                let hr = unsafe { instance.query_interface(riid, ppv) };
+                unsafe { instance.release() };
                 Box::into_raw(instance);
 
                 hr
             } $(else if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid) {
                 let mut instance = <$classtype>::get_class_object();
                 instance.add_ref();
-                let hr = instance.query_interface(riid, ppv);
-                instance.release();
+                let hr = unsafe { instance.query_interface(riid, ppv) };
+                unsafe { instance.release() };
                 Box::into_raw(instance);
 
                 hr
