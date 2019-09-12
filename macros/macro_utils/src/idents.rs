@@ -1,6 +1,6 @@
 use quote::{format_ident,};
 use syn::{
-    Ident, Meta, NestedMeta, ItemStruct,
+    Ident, Meta, NestedMeta, AttributeArgs,
 };
 
 use std::collections::HashMap;
@@ -37,11 +37,11 @@ pub fn set_aggregate_fn_ident(base: &Ident) -> Ident {
     format_ident!("set_aggregate_{}", crate::camel_to_snake(&base.to_string()))
 }
 
-pub fn base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
+pub fn base_interface_idents(attr_args: &AttributeArgs) -> Vec<Ident> {
     let mut base_interface_idents = Vec::new();
 
-    for attr in &struct_item.attrs {
-        if let Ok(Meta::List(ref attr)) = attr.parse_meta() {
+    for attr_arg in attr_args {
+        if let NestedMeta::Meta(Meta::List(ref attr)) = attr_arg {
             if attr.path.segments.last().unwrap().ident != "com_implements" {
                 continue;
             }
@@ -61,11 +61,11 @@ pub fn base_interface_idents(struct_item: &ItemStruct) -> Vec<Ident> {
 /// Parse the arguments in helper attribute aggr. E.g. #[aggr(ICat, IAnimal)]
 /// Returns a HashMap mapping each struct field ident to idents of the base
 /// interfaces exposed by aggregate.
-pub fn get_aggr_map(struct_item: &ItemStruct) -> HashMap<Ident, Vec<Ident>> {
+pub fn get_aggr_map(attr_args: &AttributeArgs) -> HashMap<Ident, Vec<Ident>> {
     let mut aggr_map = HashMap::new();
 
-    for attr in &struct_item.attrs {
-        if let Ok(Meta::List(ref attr)) = attr.parse_meta() {
+    for attr_arg in attr_args {
+        if let NestedMeta::Meta(Meta::List(ref attr)) = attr_arg {
             if attr.path.segments.last().unwrap().ident != "aggr" {
                 continue;
             }
