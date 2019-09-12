@@ -27,7 +27,6 @@ pub fn generate(
     )
 }
 
-
 fn gen_non_delegating_iunknown_drop() -> HelperTokenStream {
     let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
     quote!(

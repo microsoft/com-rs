@@ -21,7 +21,7 @@ pub fn generate(
     let base_fields = gen_base_fields(base_interface_idents);
     let ref_count_field = gen_ref_count_field();
     let user_fields = gen_user_fields(struct_item);
-    let aggregate_fields = gen_aggregate_fields(aggr_map);    
+    let aggregate_fields = gen_aggregate_fields(aggr_map);
 
     quote!(
         #[repr(C)]

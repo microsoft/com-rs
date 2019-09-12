@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
 use std::collections::HashMap;
-use syn::{Fields, Ident, ItemStruct};
+use syn::{Ident, ItemStruct};
 
 /// Generates the methods that the com struct needs to have. These include:
 /// allocate: To initialise the vtables, including the non_delegatingegating_iunknown one.
@@ -141,10 +141,12 @@ fn gen_allocate_fn(
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
 
-    let base_inits = co_class::com_struct_impl::gen_allocate_base_inits(struct_ident, base_interface_idents);
+    let base_inits =
+        co_class::com_struct_impl::gen_allocate_base_inits(struct_ident, base_interface_idents);
 
     // Allocate function signature
-    let allocate_parameters = co_class::com_struct_impl::gen_allocate_function_parameters_signature(struct_item);
+    let allocate_parameters =
+        co_class::com_struct_impl::gen_allocate_function_parameters_signature(struct_item);
 
     // Syntax for instantiating the fields of the struct.
     let base_fields = co_class::com_struct_impl::gen_allocate_base_fields(base_interface_idents);
@@ -152,7 +154,7 @@ fn gen_allocate_fn(
     let user_fields = co_class::com_struct_impl::gen_allocate_user_fields(struct_item);
     let aggregate_fields = co_class::com_struct_impl::gen_allocate_aggregate_fields(aggr_map);
 
-    // Aggregable COM struct specific fields  
+    // Aggregable COM struct specific fields
     let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
     let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
     let non_delegating_iunknown_offset = base_interface_idents.len();

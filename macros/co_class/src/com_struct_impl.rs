@@ -48,7 +48,7 @@ pub fn gen_allocate_fn(
             println!("Allocating new VTable for {}", stringify!(#struct_ident));
 
             #base_inits
-            
+
             let out = #struct_ident {
                 #base_fields
                 #ref_count_field
@@ -77,7 +77,6 @@ pub fn gen_allocate_aggregate_fields(aggr_map: &HashMap<Ident, Vec<Ident>>) -> H
     });
 
     quote!(#(#aggregate_inits,)*)
-
 }
 
 // User field input as parameters to the allocate function.
@@ -113,7 +112,10 @@ pub fn gen_allocate_base_fields(base_interface_idents: &[Ident]) -> HelperTokenS
 }
 
 // Initialise VTables with the correct adjustor thunks, through the vtable! macro.
-pub fn gen_allocate_base_inits(struct_ident: &Ident, base_interface_idents: &[Ident]) -> HelperTokenStream {
+pub fn gen_allocate_base_inits(
+    struct_ident: &Ident,
+    base_interface_idents: &[Ident],
+) -> HelperTokenStream {
     let mut offset_count: usize = 0;
     let base_inits = base_interface_idents.iter().map(|base| {
         let vtable_var_ident = format_ident!("{}_vtable", base.to_string().to_lowercase());
