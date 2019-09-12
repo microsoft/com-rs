@@ -15,13 +15,13 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
 
     quote!(
         impl com::IUnknown for #struct_ident {
-            fn query_interface(
+            unsafe fn query_interface(
                 &mut self,
                 riid: *const winapi::shared::guiddef::IID,
                 ppv: *mut *mut winapi::ctypes::c_void
             ) -> winapi::shared::winerror::HRESULT {
                 println!("Delegating QI");
-                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = unsafe { com::ComPtr::new(self.#iunknown_to_use_field_ident as *mut winapi::ctypes::c_void) };
+                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident as *mut winapi::ctypes::c_void);
                 let hr = iunknown_to_use.query_interface(riid, ppv);
                 core::mem::forget(iunknown_to_use);
 
@@ -36,8 +36,8 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                 res
             }
 
-            fn release(&mut self) -> u32 {
-                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = unsafe { com::ComPtr::new(self.#iunknown_to_use_field_ident as *mut winapi::ctypes::c_void) };
+            unsafe fn release(&mut self) -> u32 {
+                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident as *mut winapi::ctypes::c_void);
                 let res = iunknown_to_use.release();
                 core::mem::forget(iunknown_to_use);
 

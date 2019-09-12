@@ -4,11 +4,11 @@ use syn::{AttributeArgs, ItemStruct};
 
 use std::iter::FromIterator;
 
-mod class_factory;
+pub mod class_factory;
 mod com_struct;
 mod com_struct_impl;
 mod drop_impl;
-mod iunknown_impl;
+pub mod iunknown_impl;
 
 // Macro expansion entry point.
 pub fn expand_co_class(attr: TokenStream, item: TokenStream) -> TokenStream {
