@@ -17,7 +17,7 @@ pub fn generate(
     let struct_ident = &struct_item.ident;
     let allocate_fn = gen_allocate_fn(aggr_map, base_interface_idents, struct_item);
     let set_iunknown_fn = gen_set_iunknown_fn();
-    let inner_iunknown_fns = gen_inner_iunknown_fns(base_interface_idents, aggr_map, struct_item);
+    let inner_iunknown_fns = gen_inner_iunknown_fns(base_interface_idents, aggr_map, struct_ident);
     let get_class_object_fn = co_class::com_struct_impl::gen_get_class_object_fn(struct_item);
     let set_aggregate_fns = co_class::com_struct_impl::gen_set_aggregate_fns(aggr_map);
 
@@ -54,12 +54,11 @@ fn gen_set_iunknown_fn() -> HelperTokenStream {
 fn gen_inner_iunknown_fns(
     base_interface_idents: &[Ident],
     aggr_map: &HashMap<Ident, Vec<Ident>>,
-    struct_item: &ItemStruct,
+    struct_ident: &Ident,
 ) -> HelperTokenStream {
-    let struct_ident = &struct_item.ident;
     let inner_query_interface = gen_inner_query_interface(base_interface_idents, aggr_map);
     let inner_add_ref = gen_inner_add_ref();
-    let inner_release = gen_inner_release(struct_ident);
+    let inner_release = gen_inner_release(base_interface_idents, aggr_map, struct_ident);
 
     quote!(
         #inner_query_interface
@@ -69,30 +68,47 @@ fn gen_inner_iunknown_fns(
 }
 
 pub fn gen_inner_add_ref() -> HelperTokenStream {
-    let ref_count_ident = macro_utils::ref_count_ident();
+    let add_ref_implementation = co_class::iunknown_impl::gen_add_ref_implementation();
+
     quote! {
         pub(crate) fn inner_add_ref(&mut self) -> u32 {
-            self.#ref_count_ident = self.#ref_count_ident.checked_add(1).expect("Overflow of reference count");
-            println!("Count now {}", self.#ref_count_ident);
-            self.#ref_count_ident
+            #add_ref_implementation            
         }
     }
 }
 
-pub fn gen_inner_release(struct_ident: &Ident) -> HelperTokenStream {
+pub fn gen_inner_release(
+    base_interface_idents: &[Ident],
+    aggr_map: &HashMap<Ident, Vec<Ident>>,
+    struct_ident: &Ident,
+) -> HelperTokenStream {
     let ref_count_ident = macro_utils::ref_count_ident();
+    
+    let release_decrement = co_class::iunknown_impl::gen_release_decrement(&ref_count_ident);
+    let release_assign_new_count_to_var = co_class::iunknown_impl::gen_release_assign_new_count_to_var(&ref_count_ident, &ref_count_ident);
+    let release_new_count_var_zero_check = co_class::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
+    let release_drops = co_class::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
+    let non_delegating_iunknown_drop = gen_non_delegating_iunknown_drop();
+
     quote! {
-        pub(crate) unsafe fn inner_release(&mut self) -> u32 {
-            self.#ref_count_ident = self.#ref_count_ident.checked_sub(1).expect("Underflow of reference count");
-            println!("Count now {}", self.#ref_count_ident);
-            let count = self.#ref_count_ident;
-            if count == 0 {
-                println!("Count is 0 for {}. Freeing memory...", stringify!(#struct_ident));
-                Box::from_raw(self as *const _ as *mut #struct_ident);
+        unsafe fn inner_release(&mut self) -> u32 {
+            #release_decrement
+            #release_assign_new_count_to_var
+            if #release_new_count_var_zero_check {
+                #non_delegating_iunknown_drop
+                #release_drops
             }
-            count
+
+            #ref_count_ident
         }
     }
+}
+
+fn gen_non_delegating_iunknown_drop() -> HelperTokenStream {
+    let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
+    quote!(
+        Box::from_raw(self.#non_delegating_iunknown_field_ident as *mut <dyn com::IUnknown as com::ComInterface>::VTable);
+    )
 }
 
 /// Non-delegating query interface
