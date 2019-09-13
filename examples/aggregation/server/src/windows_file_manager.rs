@@ -23,7 +23,7 @@ pub struct WindowsFileManager {
 }
 
 impl IFileManager for WindowsFileManager {
-    fn delete_all(&mut self) -> HRESULT {
+    fn delete_all(&self) -> HRESULT {
         println!("Deleting all by delegating to Local and Remote File Managers...");
         NOERROR
     }

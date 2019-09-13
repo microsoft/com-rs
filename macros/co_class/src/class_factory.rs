@@ -1,7 +1,7 @@
 use proc_macro2::{Ident, TokenStream as HelperTokenStream};
-use quote::{quote, format_ident,};
-use syn::ItemStruct;
+use quote::{format_ident, quote};
 use std::collections::HashMap;
+use syn::ItemStruct;
 
 fn get_iclass_factory_interface_ident() -> Ident {
     format_ident!("IClassFactory")
@@ -19,8 +19,8 @@ pub fn get_class_factory_aggr_map() -> HashMap<Ident, Vec<Ident>> {
 // it leads to an infinite loop.
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     // Manually define base_interface_idents and aggr_map usually obtained by
-    // parsing attributes.    
-    
+    // parsing attributes.
+
     let base_interface_idents = get_class_factory_base_interface_idents();
     let aggr_map = get_class_factory_aggr_map();
 
@@ -37,7 +37,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
 
         impl com::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
-                &mut self,
+                &self,
                 aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
@@ -85,7 +85,7 @@ pub fn gen_class_factory_struct_definition(class_factory_ident: &Ident) -> Helpe
 pub fn gen_lock_server() -> HelperTokenStream {
     quote! {
         // TODO: Implement correctly
-        fn lock_server(&mut self, _increment: winapi::shared::minwindef::BOOL) -> winapi::shared::winerror::HRESULT {
+        fn lock_server(&self, _increment: winapi::shared::minwindef::BOOL) -> winapi::shared::winerror::HRESULT {
             println!("LockServer called");
             winapi::shared::winerror::S_OK
         }
@@ -115,14 +115,19 @@ pub fn gen_release(
     struct_ident: &Ident,
 ) -> HelperTokenStream {
     let ref_count_ident = macro_utils::ref_count_ident();
-    
+
     let release_decrement = crate::iunknown_impl::gen_release_decrement(&ref_count_ident);
-    let release_assign_new_count_to_var = crate::iunknown_impl::gen_release_assign_new_count_to_var(&ref_count_ident, &ref_count_ident);
-    let release_new_count_var_zero_check = crate::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
-    let release_drops = crate::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
+    let release_assign_new_count_to_var = crate::iunknown_impl::gen_release_assign_new_count_to_var(
+        &ref_count_ident,
+        &ref_count_ident,
+    );
+    let release_new_count_var_zero_check =
+        crate::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
+    let release_drops =
+        crate::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
 
     quote! {
-        unsafe fn release(&mut self) -> u32 {
+        unsafe fn release(&self) -> u32 {
             use com::IClassFactory;
 
             #release_decrement
@@ -140,7 +145,7 @@ fn gen_query_interface(class_factory_ident: &Ident) -> HelperTokenStream {
     let vptr_field_ident = macro_utils::vptr_field_ident(&get_iclass_factory_interface_ident());
 
     quote! {
-        unsafe fn query_interface(&mut self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> winapi::shared::winerror::HRESULT {
+        unsafe fn query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> winapi::shared::winerror::HRESULT {
             // Bringing trait into scope to access add_ref method.
             use com::IUnknown;
 
@@ -165,7 +170,8 @@ pub fn gen_class_factory_impl(
 ) -> HelperTokenStream {
     let ref_count_field = crate::com_struct_impl::gen_allocate_ref_count_field();
     let base_fields = crate::com_struct_impl::gen_allocate_base_fields(base_interface_idents);
-    let base_inits = crate::com_struct_impl::gen_allocate_base_inits(class_factory_ident, base_interface_idents);
+    let base_inits =
+        crate::com_struct_impl::gen_allocate_base_inits(class_factory_ident, base_interface_idents);
 
     quote! {
         impl #class_factory_ident {

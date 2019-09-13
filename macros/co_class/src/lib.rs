@@ -20,12 +20,8 @@ pub fn expand_co_class(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let mut out: Vec<TokenStream> = Vec::new();
     out.push(com_struct::generate(&aggr_map, &base_interface_idents, &input).into());
-    out.push(
-        com_struct_impl::generate(&aggr_map, &base_interface_idents, &input).into(),
-    );
-    out.push(
-        iunknown_impl::generate(&base_interface_idents, &aggr_map, &input).into(),
-    );
+    out.push(com_struct_impl::generate(&aggr_map, &base_interface_idents, &input).into());
+    out.push(iunknown_impl::generate(&base_interface_idents, &aggr_map, &input).into());
     out.push(class_factory::generate(&input).into());
 
     TokenStream::from_iter(out)

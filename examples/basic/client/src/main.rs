@@ -10,7 +10,7 @@ fn main() {
         }
     };
 
-    let mut factory = match runtime.get_class_object(&CLSID_CAT_CLASS) {
+    let factory = match runtime.get_class_object(&CLSID_CAT_CLASS) {
         Ok(factory) => {
             println!("Got cat class object");
             factory
@@ -21,7 +21,7 @@ fn main() {
         }
     };
 
-    let mut unknown = match factory.get_instance::<dyn IUnknown>() {
+    let unknown = match factory.get_instance::<dyn IUnknown>() {
         Some(unknown) => {
             println!("Got IUnknown");
             unknown
@@ -32,7 +32,7 @@ fn main() {
         }
     };
 
-    let mut animal = match unknown.get_interface::<dyn IAnimal>() {
+    let animal = match unknown.get_interface::<dyn IAnimal>() {
         Some(animal) => {
             println!("Got IAnimal");
             animal
@@ -46,7 +46,7 @@ fn main() {
     animal.eat();
 
     // Test cross-vtable interface queries for both directions.
-    let mut domestic_animal = match animal.get_interface::<dyn IDomesticAnimal>() {
+    let domestic_animal = match animal.get_interface::<dyn IDomesticAnimal>() {
         Some(domestic_animal) => {
             println!("Got IDomesticAnimal");
             domestic_animal
@@ -59,7 +59,7 @@ fn main() {
 
     domestic_animal.train();
 
-    let mut new_cat = match domestic_animal.get_interface::<dyn ICat>() {
+    let new_cat = match domestic_animal.get_interface::<dyn ICat>() {
         Some(new_cat) => {
             println!("Got ICat");
             new_cat
@@ -72,7 +72,7 @@ fn main() {
     new_cat.ignore_humans();
 
     // Test querying within second vtable.
-    let mut domestic_animal_two = match domestic_animal.get_interface::<dyn IDomesticAnimal>() {
+    let domestic_animal_two = match domestic_animal.get_interface::<dyn IDomesticAnimal>() {
         Some(domestic_animal_two) => {
             println!("Got IDomesticAnimal");
             domestic_animal_two
@@ -84,12 +84,7 @@ fn main() {
     };
     domestic_animal_two.train();
 
-    // These doesn't compile
-    // animal.ignore_humans();
-    // animal.raw_add_ref();
-    // animal.add_ref();
-
-    let mut cat = match runtime.create_instance::<dyn ICat>(&CLSID_CAT_CLASS) {
+    let cat = match runtime.create_instance::<dyn ICat>(&CLSID_CAT_CLASS) {
         Ok(cat) => {
             println!("Got another cat");
             cat

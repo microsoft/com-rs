@@ -97,7 +97,7 @@ pub fn gen_allocate_user_fields(struct_item: &ItemStruct) -> HelperTokenStream {
 pub fn gen_allocate_ref_count_field() -> HelperTokenStream {
     let ref_count_ident = macro_utils::ref_count_ident();
     quote!(
-        #ref_count_ident: 0,
+        #ref_count_ident: std::cell::Cell::new(0),
     )
 }
 

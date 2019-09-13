@@ -30,7 +30,7 @@ pub fn gen_add_ref() -> HelperTokenStream {
     let add_ref_implementation = gen_add_ref_implementation();
 
     quote! {
-        fn add_ref(&mut self) -> u32 {
+        fn add_ref(&self) -> u32 {
             #add_ref_implementation
         }
     }
@@ -39,9 +39,10 @@ pub fn gen_add_ref() -> HelperTokenStream {
 pub fn gen_add_ref_implementation() -> HelperTokenStream {
     let ref_count_ident = macro_utils::ref_count_ident();
     quote!(
-        self.#ref_count_ident = self.#ref_count_ident.checked_add(1).expect("Overflow of reference count");
-        println!("Count now {}", self.#ref_count_ident);
-        self.#ref_count_ident
+        let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
+        self.#ref_count_ident.set(value);
+        println!("Count now {}", value);
+        value
     )
 }
 
@@ -51,14 +52,15 @@ pub fn gen_release(
     struct_ident: &Ident,
 ) -> HelperTokenStream {
     let ref_count_ident = macro_utils::ref_count_ident();
-    
+
     let release_decrement = gen_release_decrement(&ref_count_ident);
-    let release_assign_new_count_to_var = gen_release_assign_new_count_to_var(&ref_count_ident, &ref_count_ident);
+    let release_assign_new_count_to_var =
+        gen_release_assign_new_count_to_var(&ref_count_ident, &ref_count_ident);
     let release_new_count_var_zero_check = gen_new_count_var_zero_check(&ref_count_ident);
     let release_drops = gen_release_drops(base_interface_idents, aggr_map, struct_ident);
-    
+
     quote! {
-        unsafe fn release(&mut self) -> u32 {
+        unsafe fn release(&self) -> u32 {
             #release_decrement
             #release_assign_new_count_to_var
             if #release_new_count_var_zero_check {
@@ -120,14 +122,18 @@ fn gen_com_object_drop(struct_ident: &Ident) -> HelperTokenStream {
 
 pub fn gen_release_decrement(ref_count_ident: &Ident) -> HelperTokenStream {
     quote!(
-        self.#ref_count_ident = self.#ref_count_ident.checked_sub(1).expect("Underflow of reference count");
-        println!("Count now {}", self.#ref_count_ident);
+        let value = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
+        self.#ref_count_ident.set(value);
     )
 }
 
-pub fn gen_release_assign_new_count_to_var(ref_count_ident: &Ident, new_count_ident: &Ident) -> HelperTokenStream {
+pub fn gen_release_assign_new_count_to_var(
+    ref_count_ident: &Ident,
+    new_count_ident: &Ident,
+) -> HelperTokenStream {
     quote!(
-        let #new_count_ident = self.#ref_count_ident;
+        let #new_count_ident = self.#ref_count_ident.get();
+        println!("Count now {}", #new_count_ident);
     )
 }
 
@@ -151,7 +157,7 @@ pub fn gen_query_interface(
 
     quote!(
         unsafe fn query_interface(
-            &mut self,
+            &self,
             riid: *const winapi::shared::guiddef::IID,
             ppv: *mut *mut winapi::ctypes::c_void
         ) -> winapi::shared::winerror::HRESULT {
@@ -189,9 +195,7 @@ pub fn gen_base_match_arms(base_interface_idents: &[Ident]) -> HelperTokenStream
     quote!(#(#base_match_arms)*)
 }
 
-pub fn gen_aggregate_match_arms(
-    aggr_map: &HashMap<Ident, Vec<Ident>>,
-) -> HelperTokenStream {
+pub fn gen_aggregate_match_arms(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStream {
     let aggr_match_arms = aggr_map.iter().map(|(aggr_field_ident, aggr_base_interface_idents)| {
 
         // Construct the OR match conditions for a single aggregated object.

@@ -44,7 +44,7 @@ pub fn gen_base_fields(base_interface_idents: &[Ident]) -> HelperTokenStream {
 
 pub fn gen_ref_count_field() -> HelperTokenStream {
     let ref_count_ident = macro_utils::ref_count_ident();
-    quote!(#ref_count_ident: u32,)
+    quote!(#ref_count_ident: std::cell::Cell<u32>,)
 }
 
 pub fn gen_aggregate_fields(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStream {

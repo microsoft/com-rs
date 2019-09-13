@@ -71,8 +71,8 @@ pub fn gen_inner_add_ref() -> HelperTokenStream {
     let add_ref_implementation = co_class::iunknown_impl::gen_add_ref_implementation();
 
     quote! {
-        pub(crate) fn inner_add_ref(&mut self) -> u32 {
-            #add_ref_implementation            
+        pub(crate) fn inner_add_ref(&self) -> u32 {
+            #add_ref_implementation
         }
     }
 }
@@ -83,15 +83,21 @@ pub fn gen_inner_release(
     struct_ident: &Ident,
 ) -> HelperTokenStream {
     let ref_count_ident = macro_utils::ref_count_ident();
-    
+
     let release_decrement = co_class::iunknown_impl::gen_release_decrement(&ref_count_ident);
-    let release_assign_new_count_to_var = co_class::iunknown_impl::gen_release_assign_new_count_to_var(&ref_count_ident, &ref_count_ident);
-    let release_new_count_var_zero_check = co_class::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
-    let release_drops = co_class::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
+    let release_assign_new_count_to_var =
+        co_class::iunknown_impl::gen_release_assign_new_count_to_var(
+            &ref_count_ident,
+            &ref_count_ident,
+        );
+    let release_new_count_var_zero_check =
+        co_class::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
+    let release_drops =
+        co_class::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
     let non_delegating_iunknown_drop = gen_non_delegating_iunknown_drop();
 
     quote! {
-        unsafe fn inner_release(&mut self) -> u32 {
+        unsafe fn inner_release(&self) -> u32 {
             #release_decrement
             #release_assign_new_count_to_var
             if #release_new_count_var_zero_check {
@@ -125,7 +131,7 @@ fn gen_inner_query_interface(
     let aggr_match_arms = co_class::iunknown_impl::gen_aggregate_match_arms(aggr_map);
 
     quote!(
-        pub(crate) fn inner_query_interface(&mut self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> HRESULT {
+        pub(crate) fn inner_query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> HRESULT {
             println!("Non delegating QI");
 
             unsafe {

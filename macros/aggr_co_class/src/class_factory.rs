@@ -5,7 +5,6 @@ use syn::ItemStruct;
 // We manually generate a ClassFactory without macros, otherwise
 // it leads to an infinite loop.
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
-
     let base_interface_idents = co_class::class_factory::get_class_factory_base_interface_idents();
     let aggr_map = co_class::class_factory::get_class_factory_aggr_map();
 
@@ -15,15 +14,22 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_definition =
         co_class::class_factory::gen_class_factory_struct_definition(&class_factory_ident);
     let lock_server = co_class::class_factory::gen_lock_server();
-    let iunknown_impl = co_class::class_factory::gen_iunknown_impl(&base_interface_idents, &aggr_map, &class_factory_ident);
-    let class_factory_impl = co_class::class_factory::gen_class_factory_impl(&base_interface_idents, &class_factory_ident);
+    let iunknown_impl = co_class::class_factory::gen_iunknown_impl(
+        &base_interface_idents,
+        &aggr_map,
+        &class_factory_ident,
+    );
+    let class_factory_impl = co_class::class_factory::gen_class_factory_impl(
+        &base_interface_idents,
+        &class_factory_ident,
+    );
 
     quote! {
         #struct_definition
 
         impl com::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
-                &mut self,
+                &self,
                 aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
