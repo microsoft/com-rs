@@ -40,7 +40,7 @@ pub fn generate(
         #[repr(C)]
         #vis struct #struct_ident {
             #(#bases_interface_idents,)*
-            #ref_count_ident: u32,
+            #ref_count_ident: std::cell::Cell<u32>,
             #(#aggregates,)*
             #fields
         }

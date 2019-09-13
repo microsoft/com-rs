@@ -41,7 +41,7 @@ pub fn generate(
             #non_delegating_iunknown_field_ident: <dyn com::IUnknown as com::ComInterface>::VPtr,
             // Non-reference counted interface pointer to outer IUnknown.
             #iunknown_to_use_field_ident: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
-            #ref_count_ident: u32,
+            #ref_count_ident: std::cell::Cell<u32>,
             #(#aggregates,)*
             #fields
         }

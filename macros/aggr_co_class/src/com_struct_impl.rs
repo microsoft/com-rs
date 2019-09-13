@@ -76,22 +76,22 @@ fn gen_inner_iunknown_fns(
     quote!(
         #inner_query_interface
 
-        pub(crate) fn inner_add_ref(&mut self) -> u32 {
-            self.#ref_count_ident += 1;
-            println!("Count now {}", self.#ref_count_ident);
-            self.#ref_count_ident
+        pub(crate) fn inner_add_ref(&self) -> u32 {
+            let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
+            self.#ref_count_ident.set(value);
+            println!("Count now {}", value);
+            value
         }
 
-        pub(crate) fn inner_release(&mut self) -> u32 {
-            self.#ref_count_ident -= 1;
-            println!("Count now {}", self.#ref_count_ident);
-            let count = self.#ref_count_ident;
-            if count == 0 {
+        pub(crate) fn inner_release(&self) -> u32 {
+            let value = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
+            println!("Count now {}", value);
+            self.#ref_count_ident.set(value);
+            if value == 0 {
                 println!("Count is 0 for {}. Freeing memory...", stringify!(#struct_ident));
-                // drop(self)
                 unsafe { Box::from_raw(self as *const _ as *mut #struct_ident); }
             }
-            count
+            value
         }
     )
 }
@@ -147,7 +147,7 @@ fn gen_inner_query_interface(
     });
 
     quote!(
-        pub(crate) fn inner_query_interface(&mut self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> HRESULT {
+        pub(crate) fn inner_query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> HRESULT {
             println!("Non delegating QI");
 
             unsafe {
@@ -258,7 +258,7 @@ fn gen_allocate_fn(
                 #(#base_fields,)*
                 #non_delegating_iunknown_field_ident,
                 #iunknown_to_use_field_ident: std::ptr::null_mut::<<dyn com::IUnknown as com::ComInterface>::VPtr>(),
-                #ref_count_ident: 0,
+                #ref_count_ident: std::cell::Cell::new(0),
                 #(#aggregate_inits,)*
                 #(#field_idents)*
             };

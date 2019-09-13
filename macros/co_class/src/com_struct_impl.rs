@@ -60,7 +60,7 @@ pub fn generate(
                 #(#base_inits)*
                 let out = #struct_ident {
                     #(#base_fields,)*
-                    #ref_count_ident: 0,
+                    #ref_count_ident: std::cell::Cell::new(0),
                     #(#aggregate_inits,)*
                     #(#field_idents)*
                 };

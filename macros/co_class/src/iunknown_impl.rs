@@ -29,10 +29,11 @@ pub fn generate(
 pub fn gen_add_ref() -> HelperTokenStream {
     let ref_count_ident = macro_utils::ref_count_ident();
     quote! {
-        fn add_ref(&mut self) -> u32 {
-            self.#ref_count_ident = self.#ref_count_ident.checked_add(1).expect("Overflow of reference count");
-            println!("Count now {}", self.#ref_count_ident);
-            self.#ref_count_ident
+        fn add_ref(&self) -> u32 {
+            let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
+            self.#ref_count_ident.set(value);
+            println!("Count now {}", value);
+            value
         }
     }
 }
@@ -40,10 +41,11 @@ pub fn gen_add_ref() -> HelperTokenStream {
 pub fn gen_release(struct_ident: &Ident) -> HelperTokenStream {
     let ref_count_ident = macro_utils::ref_count_ident();
     quote! {
-        unsafe fn release(&mut self) -> u32 {
-            self.#ref_count_ident = self.#ref_count_ident.checked_sub(1).expect("Underflow of reference count");
-            println!("Count now {}", self.#ref_count_ident);
-            let count = self.#ref_count_ident;
+        unsafe fn release(&self) -> u32 {
+            let value = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
+            self.#ref_count_ident.set(value);
+            let count = self.#ref_count_ident.get();
+            println!("Count now {}", count);
             if count == 0 {
                 println!("Count is 0 for {}. Freeing memory...", stringify!(#struct_ident));
                 Box::from_raw(self as *const _ as *mut #struct_ident);
@@ -67,7 +69,7 @@ fn gen_query_interface(
 
     quote!(
         unsafe fn query_interface(
-            &mut self,
+            &self,
             riid: *const winapi::shared::guiddef::IID,
             ppv: *mut *mut winapi::ctypes::c_void
         ) -> winapi::shared::winerror::HRESULT {
