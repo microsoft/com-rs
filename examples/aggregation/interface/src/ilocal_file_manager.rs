@@ -1,8 +1,8 @@
-use com::{com_interface, IUnknown};
+use com::{interface, IUnknown};
 
 use winapi::shared::winerror::HRESULT;
 
-#[com_interface(4FC333E3-C389-4C48-B108-7895B0AF21AD)]
+#[interface(4FC333E3-C389-4C48-B108-7895B0AF21AD)]
 pub trait ILocalFileManager: IUnknown {
     fn delete_local(&mut self) -> HRESULT;
 }
