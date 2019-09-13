@@ -6,20 +6,6 @@ A one stop shop for all things related to [COM](https://docs.microsoft.com/en-us
 
 This library exposes various macros, structs and functions to the user for both producing and consuming COM components in an idiomatic manner.
 
-## FAQ
-
-**Is there IDL support?**
-
-As a foundation, we are attempting to create a library that doesn't necessarily rely on having an IDL file. However, it is in the pipeline for future improvements. We will have a command-line tool that will parse the IDL into the required macros.
-
-**Which threading models do this library support?**
-
-As of v0.1, this library is only confident of consuming/producing COM components that live in Single-Threaded Apartments (STA). This Threading Model assumption is used in several places, so producing/consuming these COM components in a Multi-Threaded environment will not work.
-
-**Is there out-of-process COM support?**
-
-Currently, we only support production of in-process COM components. Also, production of a COM component can only be in the DLL format. There will be plans to enable out-of-process COM production as well as producing in the .EXE format.
-
 ## Usage
 
 ### Defining a COM interface
@@ -134,3 +120,17 @@ impl BritishShortHairCat {
 There are many advanced concepts in COM that our library aim to support. Relevant documentation on these advanced features can be found within the [docs] folder.
 
 [docs]: https://github.com/microsoft/com-rs/tree/master/docs
+
+## FAQ
+
+**Is there IDL support?**
+
+As a foundation, we are attempting to create a library that doesn't necessarily rely on having an IDL file. However, it is in the pipeline for future improvements. We will have a command-line tool that will parse the IDL into the required macros.
+
+**Which threading models do this library support?**
+
+As of v0.1, this library is only confident of consuming/producing COM components that live in Single-Threaded Apartments (STA). This Threading Model assumption is used in several places, so producing/consuming these COM components in a Multi-Threaded environment will not work.
+
+**Is there out-of-process COM support?**
+
+Currently, we only support production of in-process COM components. Also, production of a COM component can only be in the DLL format. There will be plans to enable out-of-process COM production as well as producing in the .EXE format.
