@@ -12,32 +12,33 @@ use syn::ItemStruct;
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
+    let ptr_casting = quote! { as *const winapi::ctypes::c_void as *mut winapi::ctypes::c_void };
 
     quote!(
         impl com::IUnknown for #struct_ident {
             unsafe fn query_interface(
-                &mut self,
+                &self,
                 riid: *const winapi::shared::guiddef::IID,
                 ppv: *mut *mut winapi::ctypes::c_void
             ) -> winapi::shared::winerror::HRESULT {
                 println!("Delegating QI");
-                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident as *mut winapi::ctypes::c_void);
+                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident #ptr_casting);
                 let hr = iunknown_to_use.query_interface(riid, ppv);
                 core::mem::forget(iunknown_to_use);
 
                 hr
             }
 
-            fn add_ref(&mut self) -> u32 {
-                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = unsafe { com::ComPtr::new(self.#iunknown_to_use_field_ident as *mut winapi::ctypes::c_void) };
+            fn add_ref(&self) -> u32 {
+                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = unsafe { com::ComPtr::new(self.#iunknown_to_use_field_ident #ptr_casting) };
                 let res = iunknown_to_use.add_ref();
                 core::mem::forget(iunknown_to_use);
 
                 res
             }
 
-            unsafe fn release(&mut self) -> u32 {
-                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident as *mut winapi::ctypes::c_void);
+            unsafe fn release(&self) -> u32 {
+                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident #ptr_casting);
                 let res = iunknown_to_use.release();
                 core::mem::forget(iunknown_to_use);
 

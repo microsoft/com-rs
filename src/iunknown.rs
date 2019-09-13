@@ -14,7 +14,7 @@ pub trait IUnknown {
     ///
     /// [`QueryInterface` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
     /// [`IUnknown::get_interface`]: trait.IUnknown.html#method.get_interface
-    unsafe fn query_interface(&mut self, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT;
+    unsafe fn query_interface(&self, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT;
 
     /// The COM [`AddRef` Method]
     ///
@@ -23,7 +23,7 @@ pub trait IUnknown {
     ///
     /// [`AddRef` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
     /// [`ComPtr`]: struct.ComPtr.html
-    fn add_ref(&mut self) -> u32;
+    fn add_ref(&self) -> u32;
 
     /// The COM [`Release` Method]
     ///
@@ -32,5 +32,5 @@ pub trait IUnknown {
     ///
     /// [`Release` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
     /// [`ComPtr`]: struct.ComPtr.html
-    unsafe fn release(&mut self) -> u32;
+    unsafe fn release(&self) -> u32;
 }

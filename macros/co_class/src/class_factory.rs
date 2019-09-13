@@ -18,7 +18,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
 
         impl com::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
-                &mut self,
+                &self,
                 aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
@@ -55,7 +55,7 @@ pub fn gen_class_factory_struct_definition(class_factory_ident: &Ident) -> Helpe
         #[repr(C)]
         pub struct #class_factory_ident {
             inner: <dyn com::IClassFactory as com::ComInterface>::VPtr,
-            #ref_count_ident: u32,
+            #ref_count_ident: std::cell::Cell<u32>,
         }
     }
 }
@@ -63,7 +63,7 @@ pub fn gen_class_factory_struct_definition(class_factory_ident: &Ident) -> Helpe
 pub fn gen_lock_server() -> HelperTokenStream {
     quote! {
         // TODO: Implement correctly
-        fn lock_server(&mut self, _increment: winapi::shared::minwindef::BOOL) -> winapi::shared::winerror::HRESULT {
+        fn lock_server(&self, _increment: winapi::shared::minwindef::BOOL) -> winapi::shared::winerror::HRESULT {
             println!("LockServer called");
             winapi::shared::winerror::S_OK
         }
@@ -85,7 +85,7 @@ pub fn gen_iunknown_impl(class_factory_ident: &Ident) -> HelperTokenStream {
 
 fn gen_query_interface(class_factory_ident: &Ident) -> HelperTokenStream {
     quote! {
-        unsafe fn query_interface(&mut self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> winapi::shared::winerror::HRESULT {
+        unsafe fn query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> winapi::shared::winerror::HRESULT {
             // Bringing trait into scope to access add_ref method.
             use com::IUnknown;
 
@@ -117,7 +117,7 @@ pub fn gen_class_factory_impl(class_factory_ident: &Ident) -> HelperTokenStream 
                 let vptr = Box::into_raw(Box::new(class_vtable));
                 let class_factory = #class_factory_ident {
                     inner: vptr,
-                    #ref_count_ident: 0,
+                    #ref_count_ident: std::cell::Cell::new(0),
                 };
                 Box::new(class_factory)
             }

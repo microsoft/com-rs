@@ -96,7 +96,7 @@ fn gen_vtable_function(
     let return_type = &fun.output;
     quote! {
         unsafe extern "stdcall" fn #function_ident<C: #interface_ident, O: com::offset::Offset>(#(#params)*) #return_type {
-            let this = arg0.sub(O::VALUE) as *mut C;
+            let this = arg0.sub(O::VALUE) as *const C as *mut C;
             (*this).#method_name(#(#args)*)
         }
     }

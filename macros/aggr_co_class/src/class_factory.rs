@@ -19,7 +19,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
 
         impl com::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
-                &mut self,
+                &self,
                 aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
