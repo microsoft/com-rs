@@ -121,6 +121,30 @@ There are many advanced concepts in COM that our library aim to support. Relevan
 
 [docs]: https://github.com/microsoft/com-rs/tree/master/docs
 
+## Contributing
+
+## Building
+
+This library is Windows only, so the easiest way to contribute will be on a Windows machine. You can execute the examples like so:
+
+```powershell
+cd examples\basic
+cargo run --release
+```
+
+If you are on a Mac or Linux machine, you should still be able to make changes and check that they compile by running the following from the root of the project:
+
+```bash
+cargo check --target=x86_64-pc-windows-msvc
+```
+
+For more information on contributing, take a look at the [contributing doc](./CONTRIBUTING.md)
+
+### Code of Conduct
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct). You can find out more in the [code of conduct doc](./CODE_OF_CONDUCT.md).
+
+
 ## FAQ
 
 **Is there IDL support?**
