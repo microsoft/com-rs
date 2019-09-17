@@ -6,7 +6,7 @@ use com::co_class;
 
 /// The implementation class
 /// https://en.wikipedia.org/wiki/British_Shorthair
-#[co_class(com_implements(ICat, IDomesticAnimal))]
+#[co_class(implements(ICat, IDomesticAnimal))]
 pub struct BritishShortHairCat {
     num_owners: u32,
 }

@@ -172,7 +172,7 @@ pub fn guid_to_string(guid: &GUID) -> String {
 }
 
 #[macro_export]
-macro_rules! com_inproc_dll_module {
+macro_rules! inproc_dll_module {
     (($clsid_one:ident, $classtype_one:ty), $(($clsid:ident, $classtype:ty)),*) => {
         #[no_mangle]
         extern "stdcall" fn DllGetClassObject(rclsid: $crate::_winapi::shared::guiddef::REFCLSID, riid: $crate::_winapi::shared::guiddef::REFIID, ppv: *mut $crate::_winapi::shared::minwindef::LPVOID) -> $crate::_winapi::shared::winerror::HRESULT {

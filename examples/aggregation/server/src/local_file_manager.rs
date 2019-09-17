@@ -5,7 +5,7 @@ use winapi::shared::winerror::{HRESULT, NOERROR};
 use com::co_class;
 
 /// The implementation class
-#[co_class(implements(ILocalFileManager, aggregatable))]
+#[co_class(implements(ILocalFileManager), aggregatable)]
 pub struct LocalFileManager {
     user_field: u32,
 }
