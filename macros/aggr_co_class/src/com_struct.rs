@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
 use std::collections::HashMap;
-use syn::{Fields, Ident, ItemStruct};
+use syn::{Ident, ItemStruct};
 
 /// As an aggregable COM object, you need to have an inner non-delegating IUnknown vtable.
 /// All IUnknown calls to this COM object will delegate to the IUnknown interface pointer
@@ -14,36 +14,25 @@ pub fn generate(
     let struct_ident = &struct_item.ident;
     let vis = &struct_item.vis;
 
-    let bases_interface_idents = base_interface_idents.iter().map(|base| {
-        let field_ident = macro_utils::vptr_field_ident(&base);
-        quote!(#field_ident: <dyn #base as com::ComInterface>::VPtr)
-    });
+    let base_fields = co_class::com_struct::gen_base_fields(base_interface_idents);
+    let ref_count_field = co_class::com_struct::gen_ref_count_field();
+    let user_fields = co_class::com_struct::gen_user_fields(struct_item);
+    let aggregate_fields = co_class::com_struct::gen_aggregate_fields(aggr_map);
 
-    let ref_count_ident = macro_utils::ref_count_ident();
+    // COM Fields for an aggregable coclass.
     let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
     let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
-
-    let fields = match &struct_item.fields {
-        Fields::Named(f) => &f.named,
-        _ => panic!("Found non Named fields in struct."),
-    };
-
-    let aggregates = aggr_map.iter().map(|(aggr_field_ident, _)| {
-        quote!(
-            #aggr_field_ident: *mut <dyn com::IUnknown as com::ComInterface>::VPtr
-        )
-    });
 
     quote!(
         #[repr(C)]
         #vis struct #struct_ident {
-            #(#bases_interface_idents,)*
+            #base_fields
             #non_delegating_iunknown_field_ident: <dyn com::IUnknown as com::ComInterface>::VPtr,
             // Non-reference counted interface pointer to outer IUnknown.
             #iunknown_to_use_field_ident: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
-            #ref_count_ident: u32,
-            #(#aggregates,)*
-            #fields
+            #ref_count_field
+            #aggregate_fields
+            #user_fields
         }
     )
 }

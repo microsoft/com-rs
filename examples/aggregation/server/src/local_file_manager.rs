@@ -11,7 +11,7 @@ pub struct LocalFileManager {
 }
 
 impl ILocalFileManager for LocalFileManager {
-    fn delete_local(&mut self) -> HRESULT {
+    fn delete_local(&self) -> HRESULT {
         println!("Deleting Locally...");
         NOERROR
     }

@@ -21,7 +21,7 @@ fn main() {
 
 fn run_aggr_test(runtime: Runtime) {
     let result = runtime.create_instance::<dyn IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS);
-    let mut filemanager = match result {
+    let filemanager = match result {
         Ok(filemanager) => filemanager,
         Err(e) => {
             println!("Failed to get filemanager, {:x}", e as u32);
@@ -32,7 +32,7 @@ fn run_aggr_test(runtime: Runtime) {
     filemanager.delete_all();
 
     let result = filemanager.get_interface::<dyn ILocalFileManager>();
-    let mut lfm = match result {
+    let lfm = match result {
         Some(lfm) => lfm,
         None => {
             println!("Failed to get Local File Manager!");
@@ -43,7 +43,7 @@ fn run_aggr_test(runtime: Runtime) {
     lfm.delete_local();
 
     let result = runtime.create_instance::<dyn ILocalFileManager>(&CLSID_LOCAL_FILE_MANAGER_CLASS);
-    let mut localfilemanager = match result {
+    let localfilemanager = match result {
         Ok(localfilemanager) => localfilemanager,
         Err(e) => {
             println!("Failed to get localfilemanager, {:x}", e as u32);

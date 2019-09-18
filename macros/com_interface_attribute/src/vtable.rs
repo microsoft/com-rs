@@ -102,7 +102,15 @@ fn gen_raw_params(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTo
     let vptr_ident = vptr::ident(&interface_ident.to_string());
     for param in method.sig.inputs.iter() {
         match param {
-            FnArg::Receiver(_n) => {
+            FnArg::Receiver(s) => {
+                assert!(
+                    s.reference.is_some(),
+                    "COM interface methods cannot take ownership of self"
+                );
+                assert!(
+                    s.mutability.is_none(),
+                    "COM interface methods cannot take mutable reference to self"
+                );
                 params.push(quote!(
                     *mut #vptr_ident,
                 ));
