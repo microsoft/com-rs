@@ -3,7 +3,7 @@ use winapi::{
     shared::{
         guiddef::{IID, REFCLSID, REFIID},
         minwindef::LPVOID,
-        winerror::HRESULT,
+        winerror::{HRESULT, S_FALSE, S_OK},
         wtypesbase::CLSCTX_INPROC_SERVER,
     },
     um::{
@@ -24,17 +24,20 @@ pub struct ApartmentThreadedRuntime {
 
 impl ApartmentThreadedRuntime {
     pub fn new() -> Result<ApartmentThreadedRuntime, HRESULT> {
+        // need to initialize `runtime` before calling `CoInitializeEx`, see below
+        let runtime = ApartmentThreadedRuntime {
+            _not_send: std::ptr::null(),
+        };
         let hr =
             unsafe { CoInitializeEx(std::ptr::null_mut::<c_void>(), COINIT_APARTMENTTHREADED) };
-        if failed(hr) {
+        // if hr is S_OK all is good, if it is S_FALSE, then the runtime was already initialized
+        if hr != S_OK || hr != S_FALSE {
             // `runtime` is dropped here calling `CoUninitialize` which needs to happen no matter if
             // `CoInitializeEx` is successful or not.
             // https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
             return Err(hr);
         }
-        Ok(ApartmentThreadedRuntime {
-            _not_send: std::ptr::null(),
-        })
+        Ok(runtime)
     }
 
     // TODO: accept server options
@@ -61,6 +64,17 @@ impl ApartmentThreadedRuntime {
         &self,
         clsid: &IID,
     ) -> Result<ComPtr<T>, HRESULT> {
+        unsafe {
+            Ok(ComPtr::new(
+                self.create_raw_instance::<T>(clsid)? as *mut c_void
+            ))
+        }
+    }
+
+    pub fn create_raw_instance<T: ComInterface + ?Sized>(
+        &self,
+        clsid: &IID,
+    ) -> Result<*mut T::VPtr, HRESULT> {
         let mut instance = std::ptr::null_mut::<c_void>();
         let hr = unsafe {
             CoCreateInstance(
@@ -75,7 +89,7 @@ impl ApartmentThreadedRuntime {
             return Err(hr);
         }
 
-        unsafe { Ok(ComPtr::new(instance)) }
+        Ok(instance as *mut T::VPtr)
     }
 }
 
