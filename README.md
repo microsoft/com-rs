@@ -38,7 +38,7 @@ Short explanation: This generates the VTable layout for IUnknown and implements 
 Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `ComPtr` struct, which helps manage the lifetime of the COM component through IUnknown methods.
 
 ```rust
-use com::Runtime;
+use com::ApartmentThreadedRuntime as Runtime;
 
 // Initialises the COM library
 let runtime = Runtime::new().expect("Failed to initialize COM Library");
@@ -59,12 +59,12 @@ Producing a COM component is relatively complicated compared to consumption, due
 
 1. Define the struct containing all the user fields you want.
 - Apply the `#[co_class(...)]` macro to the struct. This will expand the struct into a COM-compatible struct, by adding COM-specific fields.
-- You can then use the attribute argument `com_implements(...)` to indicate inheritance of any COM interfaces. The order of interfaces declared is important, as the generated vpointers are going to be in that order.
+- You can then use the attribute argument `implements(...)` to indicate inheritance of any COM interfaces. The order of interfaces declared is important, as the generated vpointers are going to be in that order.
 
 ```rust
 use com::co_class;
 
-#[co_class(com_implements(ICat, IDomesticAnimal)]
+#[co_class(implements(ICat, IDomesticAnimal)]
 pub struct BritishShortHairCat {
     num_owners: u32,
 }
@@ -143,7 +143,6 @@ For more information on contributing, take a look at the [contributing doc](./CO
 ### Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct). You can find out more in the [code of conduct doc](./CODE_OF_CONDUCT.md).
-
 
 ## FAQ
 

@@ -1,7 +1,5 @@
-use quote::{format_ident,};
-use syn::{
-    Ident, Meta, NestedMeta, AttributeArgs,
-};
+use quote::format_ident;
+use syn::{AttributeArgs, Ident, Meta, NestedMeta};
 
 use std::collections::HashMap;
 
@@ -42,13 +40,16 @@ pub fn base_interface_idents(attr_args: &AttributeArgs) -> Vec<Ident> {
 
     for attr_arg in attr_args {
         if let NestedMeta::Meta(Meta::List(ref attr)) = attr_arg {
-            if attr.path.segments.last().unwrap().ident != "com_implements" {
+            if attr.path.segments.last().unwrap().ident != "implements" {
                 continue;
             }
 
             for item in &attr.nested {
                 if let NestedMeta::Meta(Meta::Path(p)) = item {
-                    assert!(p.segments.len() == 1, "Incapable of handling multiple path segments yet.");
+                    assert!(
+                        p.segments.len() == 1,
+                        "Incapable of handling multiple path segments yet."
+                    );
                     base_interface_idents.push(p.segments.last().unwrap().ident.clone());
                 }
             }
@@ -66,28 +67,30 @@ pub fn get_aggr_map(attr_args: &AttributeArgs) -> HashMap<Ident, Vec<Ident>> {
 
     for attr_arg in attr_args {
         if let NestedMeta::Meta(Meta::List(ref attr)) = attr_arg {
-            if attr.path.segments.last().unwrap().ident != "aggr" {
+            if attr.path.segments.last().unwrap().ident != "aggregates" {
                 continue;
             }
 
             let mut aggr_interfaces_idents = Vec::new();
 
-
-            assert!(attr.nested.len() > 0, "Need to expose at least one interface from aggregated COM object.");
+            assert!(
+                attr.nested.len() > 0,
+                "Need to expose at least one interface from aggregated COM object."
+            );
 
             for item in &attr.nested {
                 if let NestedMeta::Meta(Meta::Path(p)) = item {
-                    assert!(p.segments.len() == 1, "Incapable of handling multiple path segments yet.");
+                    assert!(
+                        p.segments.len() == 1,
+                        "Incapable of handling multiple path segments yet."
+                    );
                     aggr_interfaces_idents.push(p.segments.last().unwrap().ident.clone());
                 }
             }
-            let ident = aggr_interfaces_idents.iter()
-            .map(|base| {
-                crate::camel_to_snake(&base.to_string())
-            })
-            .fold("aggr".to_owned(), |acc, base| {
-                format!("{}_{}", acc, base)
-            });
+            let ident = aggr_interfaces_idents
+                .iter()
+                .map(|base| crate::camel_to_snake(&base.to_string()))
+                .fold("aggr".to_owned(), |acc, base| format!("{}_{}", acc, base));
             aggr_map.insert(format_ident!("{}", ident), aggr_interfaces_idents);
         }
     }

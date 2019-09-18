@@ -4,6 +4,7 @@ use com_interface_attribute::{expand_com_interface, expand_derive};
 
 extern crate proc_macro;
 use proc_macro::TokenStream;
+use syn::{AttributeArgs, ItemStruct, Meta, NestedMeta};
 
 // All the Macro exports declared here. Delegates to respective crate for expansion.
 #[proc_macro_attribute]
@@ -19,20 +20,24 @@ pub fn derive(input: TokenStream) -> TokenStream {
 // Macro entry points.
 #[proc_macro_attribute]
 pub fn co_class(attr: TokenStream, item: TokenStream) -> TokenStream {
-    expand_co_class(attr, item)
+    let input = syn::parse_macro_input!(item as ItemStruct);
+    let attr_args = syn::parse_macro_input!(attr as AttributeArgs);
+    if is_aggregatable(&attr_args) {
+        expand_aggr_co_class(&input, &attr_args)
+    } else {
+        expand_co_class(&input, &attr_args)
+    }
 }
 
-#[proc_macro_attribute]
-pub fn aggr_co_class(attr: TokenStream, item: TokenStream) -> TokenStream {
-    expand_aggr_co_class(attr, item)
-}
-
-#[proc_macro_attribute]
-pub fn com_implements(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    item
-}
-
-#[proc_macro_attribute]
-pub fn aggr(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    item
+fn is_aggregatable(attr_args: &AttributeArgs) -> bool {
+    attr_args
+        .iter()
+        .find(|arg| match arg {
+            NestedMeta::Meta(Meta::Path(ref path)) => {
+                let segments = &path.segments;
+                segments.len() == 1 && segments.first().unwrap().ident == "aggregatable"
+            }
+            _ => false,
+        })
+        .is_some()
 }

@@ -6,12 +6,12 @@ If you plan to use aggregation, then we assume you are somewhat familiar with th
 
 We will walk you through producing a `WindowsFileManager`, which aggregates another COM object, the `LocalFileManager`. Specifically, we choose to aggregate the `ILocalFileManager` interface from `LocalFileManager`.
 
-1. Define an aggregable coclass. Here we use the `#[aggr_co_class(...)]` macro instead of the `co_class` one.
+1. Define an aggregable coclass. Here we use the `co_class` macro but with the `aggregatable` attribute like so: `#[co_class(..., aggregatable)]`.
 
 ```rust
-use com::aggr_co_class;
+use com::co_class;
 
-#[aggr_co_class(com_implements(ILocalFileManager)]
+#[co_class(implements(ILocalFileManager), aggregatable)]
 pub struct LocalFileManager {
     user_field_one: u32,
     user_field_two: u32,
@@ -35,10 +35,10 @@ impl LocalFileManager {
 
 2. Define the class that will aggregate `LocalFileManager`. This can be aggregable or not.
 - You are responsible for instantiating your aggregates.
-- In order for us to generate the correct QueryInterface implementation, you need to tell us which interfaces **EACH** aggregated object is exposing. To do this, you use a `aggr(...)` attribute argument for **EACH** aggregated object. The order in which these interfaces are defined doesn't matter.
+- In order for us to generate the correct QueryInterface implementation, you need to tell us which interfaces **EACH** aggregated object is exposing. To do this, you use a `aggregates(...)` attribute argument for **EACH** aggregated object. The order in which these interfaces are defined doesn't matter.
 
 ```rust
-#[co_class(com_implements(IFileManager), aggr(ILocalFileManager))]
+#[co_class(implements(IFileManager), aggregates(ILocalFileManager))]
 pub struct WindowsFileManager {
     user_field_one: u32,
     user_field_two: u32,
@@ -53,15 +53,15 @@ impl IFileManager for WindowsFileManager {
 }
 ```
 
-3. Define the class constructor. 
+3. Define the class constructor.
 
 Here, we chose to instantiate the aggregate in the constructor. Each aggregated object is initialised as NULL, until the aggregate is instantiated, through the `set_aggregate_*` methods. Hence, you could choose to instantiate aggregates whenever you want.
 
-In order to instantiate the aggregate, you will need to 
+In order to instantiate the aggregate, you will need to
 - Create the aggregated object as an aggregate. This can be done through CoCreateInstance,
 - Supply the resultant IUnknown interface pointer to the appropriate `set_aggregate_*` methods. For each base interface exposed, there will be a separate `set_aggregate_*` method defined. Setting aggregate for one base interface will set it for every base interface exposed by the same aggregated object.
 
-In this case, we are exposing only the `ILocalFileManager` as aggregated interfaces. This means a `set_aggregate_ilocal_file_manager` will be generated, which we can use to instantiate the underlying aggregated object. 
+In this case, we are exposing only the `ILocalFileManager` as aggregated interfaces. This means a `set_aggregate_ilocal_file_manager` will be generated, which we can use to instantiate the underlying aggregated object.
 
 ```rust
 impl WindowsFileManager {

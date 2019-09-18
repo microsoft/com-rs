@@ -2,10 +2,10 @@ use interface::ilocal_file_manager::ILocalFileManager;
 
 use winapi::shared::winerror::{HRESULT, NOERROR};
 
-use com::aggr_co_class;
+use com::co_class;
+
 /// The implementation class
-#[repr(C)]
-#[aggr_co_class(com_implements(ILocalFileManager))]
+#[co_class(implements(ILocalFileManager), aggregatable)]
 pub struct LocalFileManager {
     user_field: u32,
 }
