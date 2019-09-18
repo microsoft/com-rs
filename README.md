@@ -6,6 +6,12 @@ A one stop shop for all things related to [COM](https://docs.microsoft.com/en-us
 
 This library exposes various macros, structs and functions to the user for both producing and consuming COM components in an idiomatic manner.
 
+## What is COM?
+
+> [COM](https://docs.microsoft.com/en-us/windows/win32/com/the-component-object-model) is a platform-independent, distributed, object-oriented system for creating binary software components that can interact.
+
+COM has been superseded by [WinRT](https://docs.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/intro-to-using-cpp-with-winrt) which builds on COM to provide even more guarantees about the binary interface. As such, if you're not sure if you need to use COM, you probably shouldn't.
+
 ## Usage
 
 ### Defining a COM interface
@@ -115,11 +121,17 @@ impl BritishShortHairCat {
 }
 ```
 
+## Safety
+
+While COM specifies details about the ABI of method calls, it does little in terms of guranteeing the safety of those method calls. As such, it is left up to the programmer to verify the safety of COM APIs and to write safe wrappers for those APIs.
+
+You can read more about what gurantees this library makes in the [guide to safety](./docs/safety.md).
+
 ## Notes
 
 There are many advanced concepts in COM that our library aim to support. Relevant documentation on these advanced features can be found within the [docs] folder.
 
-[docs]: https://github.com/microsoft/com-rs/tree/master/docs
+[docs]: ./docs
 
 ## Contributing
 
