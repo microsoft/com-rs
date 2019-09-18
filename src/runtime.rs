@@ -66,20 +66,22 @@ impl ApartmentThreadedRuntime {
     ) -> Result<ComPtr<T>, HRESULT> {
         unsafe {
             Ok(ComPtr::new(
-                self.create_raw_instance::<T>(clsid)? as *mut c_void
+                self.create_raw_instance::<T, ()>(clsid, None)? as *mut c_void
             ))
         }
     }
 
-    pub fn create_raw_instance<T: ComInterface + ?Sized>(
+    pub fn create_raw_instance<T: ComInterface + ?Sized, U>(
         &self,
         clsid: &IID,
+        outer: Option<&mut U>,
     ) -> Result<*mut T::VPtr, HRESULT> {
         let mut instance = std::ptr::null_mut::<c_void>();
         let hr = unsafe {
             CoCreateInstance(
                 clsid as REFCLSID,
-                std::ptr::null_mut(),
+                outer.map(|o| o as *mut U).unwrap_or(std::ptr::null_mut())
+                    as winapi::um::unknwnbase::LPUNKNOWN,
                 CLSCTX_INPROC_SERVER,
                 &T::IID as REFIID,
                 &mut instance as *mut LPVOID,
