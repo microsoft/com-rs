@@ -127,6 +127,12 @@ While COM specifies details about the ABI of method calls, it does little in ter
 
 You can read more about what gurantees this library makes in the [guide to safety](./docs/safety.md).
 
+## Existing crates
+
+There are many existing Rust crates that help with COM interactions. Depending on your use case, you may find these crates more suited to your needs. For example, we have 
+- [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platofrm COM components in Rust.
+- [winapi-rs](https://github.com/retep998/winapi-rs), which provides a straightforward macro that allows you to easily consume COM interfaces.
+
 ## Notes
 
 There are many advanced concepts in COM that our library aim to support. Relevant documentation on these advanced features can be found within the [docs] folder.
