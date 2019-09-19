@@ -15,14 +15,30 @@ pub fn failed(result: HRESULT) -> bool {
     result < 0
 }
 
-/// Structs implementing this trait must have the layout of a COM Interface Pointer.
-/// For example, we assume safe conversion and usage of the struct as a `RawIUnknown`.
-pub unsafe trait ComInterface {
+/// A COM compliant interface
+///
+/// # Safety
+///
+/// The trait or struct implementing this trait must provide a valid vtable as the
+/// associated VTable type. A vtable is valid if:
+/// * it is `#[repr(C)]`
+/// * the type only contains `extern "stdcall" fn" definitions
+pub unsafe trait ComInterface: IUnknown {
     type VTable;
     const IID: IID;
 
     fn is_iid_in_inheritance_chain(riid: &IID) -> bool;
 }
+
+/// A COM compliant class
+///
+/// # Safety
+///
+/// The implementing struct must have the following properties:
+/// * it is `#[repr(C)]`
+/// * The first fields of the struct are pointers to the backing VTables for
+/// each of the COM Interfaces the class implements
+pub unsafe trait CoClass: IUnknown {}
 
 pub trait ProductionComInterface<T: IUnknown>: ComInterface {
     fn vtable<O: offset::Offset>() -> Self::VTable;
