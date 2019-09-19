@@ -9,15 +9,16 @@ pub fn generate(trait_item: &ItemTrait) -> HelperTokenStream {
     let vtable_ident = vtable::ident(&interface_ident.to_string());
     let iid_ident = iid::ident(interface_ident);
     let vtable_macro = vtable_macro::ident(&interface_ident);
+    let iid_check = quote! { com::_winapi::shared::guiddef::IsEqualGUID(riid, &Self::IID) };
     let recursive_iid_check = if let Some(TypeParamBound::Trait(t)) = trait_item.supertraits.first()
     {
         let supertrait_ident = t.path.get_ident().unwrap();
-        quote!(com::_winapi::shared::guiddef::IsEqualGUID(riid, &Self::IID) | #supertrait_ident::is_iid_in_inheritance_chain(riid))
+        quote! { #iid_check || <dyn #supertrait_ident as com::ComInterface>::is_iid_in_inheritance_chain(riid) }
     } else {
-        quote!(com::_winapi::shared::guiddef::IsEqualGUID(riid, &Self::IID))
+        iid_check
     };
 
-    quote!(
+    quote! {
         unsafe impl com::ComInterface for dyn #interface_ident {
             type VTable = #vtable_ident;
             const IID: com::_winapi::shared::guiddef::IID = #iid_ident;
@@ -32,5 +33,5 @@ pub fn generate(trait_item: &ItemTrait) -> HelperTokenStream {
                 #vtable_macro!(C, O)
             }
         }
-    )
+    }
 }
