@@ -12,12 +12,6 @@ This library exposes various macros, structs and functions to the user for both 
 
 COM has been superseded by [WinRT](https://docs.microsoft.com/en-us/windows/uwp/cpp-and-winrt-apis/intro-to-using-cpp-with-winrt) which builds on COM to provide even more guarantees about the binary interface. As such, if you're not sure if you need to use COM, you probably shouldn't.
 
-## Existing crates
-
-There are many existing Rust crates that help with COM interactions. Depending on your use case, you may find these crates more suited to your needs. For example, we have 
-- [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platofrm COM components in Rust.
-- [winapi-rs](https://github.com/retep998/winapi-rs), which provides a straightforward macro that allows you to easily consume COM interfaces.
-
 ## Usage
 
 ### Defining a COM interface
@@ -132,6 +126,12 @@ impl BritishShortHairCat {
 While COM specifies details about the ABI of method calls, it does little in terms of guranteeing the safety of those method calls. As such, it is left up to the programmer to verify the safety of COM APIs and to write safe wrappers for those APIs.
 
 You can read more about what gurantees this library makes in the [guide to safety](./docs/safety.md).
+
+## Existing crates
+
+There are many existing Rust crates that help with COM interactions. Depending on your use case, you may find these crates more suited to your needs. For example, we have 
+- [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platofrm COM components in Rust.
+- [winapi-rs](https://github.com/retep998/winapi-rs), which provides a straightforward macro that allows you to easily consume COM interfaces.
 
 ## Notes
 
