@@ -30,7 +30,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
         impl com::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
                 &self,
-                aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+                aggr: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable,
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
             ) -> winapi::shared::winerror::HRESULT {

@@ -38,7 +38,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
         impl com::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
                 &self,
-                aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+                aggr: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable,
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
             ) -> winapi::shared::winerror::HRESULT {
@@ -76,7 +76,7 @@ pub fn gen_class_factory_struct_definition(class_factory_ident: &Ident) -> Helpe
     quote! {
         #[repr(C)]
         pub struct #class_factory_ident {
-            #vptr_field_ident: <dyn com::IClassFactory as com::ComInterface>::VPtr,
+            #vptr_field_ident: *const <dyn com::IClassFactory as com::ComInterface>::VTable,
             #ref_count_field
         }
     }

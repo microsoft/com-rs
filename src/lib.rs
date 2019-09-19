@@ -23,7 +23,6 @@ pub fn failed(result: HRESULT) -> bool {
 /// For example, we assume safe conversion and usage of the struct as a `RawIUnknown`.
 pub unsafe trait ComInterface {
     type VTable;
-    type VPtr;
     const IID: IID;
 
     fn is_iid_in_inheritance_chain(riid: &IID) -> bool;

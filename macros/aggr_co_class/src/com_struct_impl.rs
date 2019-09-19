@@ -39,9 +39,9 @@ fn gen_set_iunknown_fn() -> HelperTokenStream {
     let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
 
     quote!(
-        pub(crate) fn set_iunknown(&mut self, aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr) {
+        pub(crate) fn set_iunknown(&mut self, aggr: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable) {
             if aggr.is_null() {
-                self.#iunknown_to_use_field_ident = &self.#non_delegating_iunknown_field_ident as *const _ as *mut <dyn com::IUnknown as com::ComInterface>::VPtr;
+                self.#iunknown_to_use_field_ident = &self.#non_delegating_iunknown_field_ident as *const _ as *mut *const <dyn com::IUnknown as com::ComInterface>::VTable;
             } else {
                 self.#iunknown_to_use_field_ident = aggr;
             }
@@ -187,7 +187,7 @@ fn gen_allocate_fn(
 
             // Non-delegating methods.
             unsafe extern "stdcall" fn non_delegatingegating_query_interface(
-                this: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+                this: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable,
                 riid: *const winapi::shared::guiddef::IID,
                 ppv: *mut *mut winapi::ctypes::c_void,
             ) -> HRESULT {
@@ -196,14 +196,14 @@ fn gen_allocate_fn(
             }
 
             unsafe extern "stdcall" fn non_delegatingegating_add_ref(
-                this: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+                this: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable,
             ) -> u32 {
                 let this = this.sub(#non_delegating_iunknown_offset) as *mut #struct_ident;
                 (*this).inner_add_ref()
             }
 
             unsafe extern "stdcall" fn non_delegatingegating_release(
-                this: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+                this: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable,
             ) -> u32 {
                 let this = this.sub(#non_delegating_iunknown_offset) as *mut #struct_ident;
                 (*this).inner_release()
@@ -223,7 +223,7 @@ fn gen_allocate_fn(
             let out = #struct_ident {
                 #base_fields
                 #non_delegating_iunknown_field_ident,
-                #iunknown_to_use_field_ident: std::ptr::null_mut::<<dyn com::IUnknown as com::ComInterface>::VPtr>(),
+                #iunknown_to_use_field_ident: std::ptr::null_mut::<*const <dyn com::IUnknown as com::ComInterface>::VTable>(),
                 #ref_count_field
                 #aggregate_fields
                 #user_fields
