@@ -18,7 +18,7 @@ pub fn generate(
     let release = gen_release(base_interface_idents, aggr_map, struct_ident);
 
     quote!(
-        impl com::IUnknown for #struct_ident {
+        impl com::interfaces::iunknown::IUnknown for #struct_ident {
             #query_interface
             #add_ref
             #release
@@ -92,7 +92,7 @@ fn gen_aggregate_drops(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStre
     let aggregate_drops = aggr_map.iter().map(|(aggr_field_ident, _)| {
         quote!(
             if !self.#aggr_field_ident.is_null() {
-                let mut aggr_interface_ptr: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
+                let mut aggr_interface_ptr: com::ComPtr<dyn com::interfaces::iunknown::IUnknown> = com::ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
                 aggr_interface_ptr.release();
                 core::mem::forget(aggr_interface_ptr);
             }
@@ -163,7 +163,7 @@ pub fn gen_query_interface(
         ) -> winapi::shared::winerror::HRESULT {
             let riid = &*riid;
 
-            if winapi::shared::guiddef::IsEqualGUID(riid, &com::IID_IUNKNOWN) {
+            if winapi::shared::guiddef::IsEqualGUID(riid, &com::interfaces::iunknown::IID_IUNKNOWN) {
                 *ppv = &self.#first_vptr_field as *const _ as *mut winapi::ctypes::c_void;
             } #base_match_arms #aggr_match_arms else {
                 *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
@@ -214,7 +214,7 @@ pub fn gen_aggregate_match_arms(aggr_map: &HashMap<Ident, Vec<Ident>>) -> Helper
                     return winapi::shared::winerror::E_NOINTERFACE;
                 }
 
-                let mut aggr_interface_ptr: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
+                let mut aggr_interface_ptr: com::ComPtr<dyn com::interfaces::iunknown::IUnknown> = com::ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
                 let hr = aggr_interface_ptr.query_interface(riid, ppv);
                 if com::failed(hr) {
                     *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();

@@ -1,4 +1,5 @@
-use com::{ApartmentThreadedRuntime as Runtime, IUnknown};
+use com::{ApartmentThreadedRuntime as Runtime, interfaces::iunknown::IUnknown};
+
 use interface::{
     ifile_manager::IFileManager, ilocal_file_manager::ILocalFileManager,
     CLSID_LOCAL_FILE_MANAGER_CLASS,

@@ -1,8 +1,7 @@
-use crate::{failed, ComInterface};
+use crate::{failed, interfaces::iunknown::IUnknown, ComInterface, IID};
 
 use std::ptr::NonNull;
 
-use super::*;
 use std::marker::PhantomData;
 use winapi::ctypes::c_void;
 use winapi::shared::winerror::{E_NOINTERFACE, E_POINTER};

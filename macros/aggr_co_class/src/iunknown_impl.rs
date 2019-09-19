@@ -15,14 +15,14 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let ptr_casting = quote! { as *const winapi::ctypes::c_void as *mut winapi::ctypes::c_void };
 
     quote!(
-        impl com::IUnknown for #struct_ident {
+        impl com::interfaces::iunknown::IUnknown for #struct_ident {
             unsafe fn query_interface(
                 &self,
                 riid: *const winapi::shared::guiddef::IID,
                 ppv: *mut *mut winapi::ctypes::c_void
             ) -> winapi::shared::winerror::HRESULT {
                 println!("Delegating QI");
-                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident #ptr_casting);
+                let mut iunknown_to_use: com::ComPtr<dyn com::interfaces::iunknown::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident #ptr_casting);
                 let hr = iunknown_to_use.query_interface(riid, ppv);
                 core::mem::forget(iunknown_to_use);
 
@@ -30,7 +30,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
             }
 
             fn add_ref(&self) -> u32 {
-                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = unsafe { com::ComPtr::new(self.#iunknown_to_use_field_ident #ptr_casting) };
+                let mut iunknown_to_use: com::ComPtr<dyn com::interfaces::iunknown::IUnknown> = unsafe { com::ComPtr::new(self.#iunknown_to_use_field_ident #ptr_casting) };
                 let res = iunknown_to_use.add_ref();
                 core::mem::forget(iunknown_to_use);
 
@@ -38,7 +38,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
             }
 
             unsafe fn release(&self) -> u32 {
-                let mut iunknown_to_use: com::ComPtr<dyn com::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident #ptr_casting);
+                let mut iunknown_to_use: com::ComPtr<dyn com::interfaces::iunknown::IUnknown> = com::ComPtr::new(self.#iunknown_to_use_field_ident #ptr_casting);
                 let res = iunknown_to_use.release();
                 core::mem::forget(iunknown_to_use);
 

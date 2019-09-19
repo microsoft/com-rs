@@ -1,4 +1,4 @@
-use com::{com_interface, IUnknown};
+use com::{com_interface, interfaces::iunknown::IUnknown};
 
 use winapi::shared::winerror::HRESULT;
 

@@ -1,20 +1,14 @@
-mod comoutptr;
 mod comptr;
-mod iclassfactory;
 mod inproc;
-mod iunknown;
+pub mod interfaces;
 pub mod offset;
 mod runtime;
 
-pub use comoutptr::ComOutPtr;
 pub use comptr::ComPtr;
-pub use iclassfactory::{
-    IClassFactory, IClassFactoryVPtr, IClassFactoryVTable, IID_ICLASS_FACTORY,
-};
 pub use inproc::*;
-pub use iunknown::{IUnknown, IUnknownVPtr, IUnknownVTable, IID_IUNKNOWN};
 pub use runtime::ApartmentThreadedRuntime;
 
+use interfaces::iunknown::IUnknown;
 use winapi::shared::{guiddef::IID, winerror::HRESULT};
 
 pub fn failed(result: HRESULT) -> bool {
@@ -31,7 +25,6 @@ pub fn failed(result: HRESULT) -> bool {
 /// * the type only contains `extern "stdcall" fn" definitions
 pub unsafe trait ComInterface: IUnknown {
     type VTable;
-    type VPtr;
     const IID: IID;
 
     fn is_iid_in_inheritance_chain(riid: &IID) -> bool;

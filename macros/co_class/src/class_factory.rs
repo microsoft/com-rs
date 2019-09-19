@@ -35,15 +35,15 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     quote! {
         #struct_definition
 
-        impl com::IClassFactory for #class_factory_ident {
+        impl com::interfaces::iclass_factory::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
                 &self,
-                aggr: *mut <dyn com::IUnknown as com::ComInterface>::VPtr,
+                aggr: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
             ) -> winapi::shared::winerror::HRESULT {
                 // Bringing trait into scope to access IUnknown methods.
-                use com::IUnknown;
+                use com::interfaces::iunknown::IUnknown;
 
                 println!("Creating instance for {}", stringify!(#struct_ident));
                 if aggr != std::ptr::null_mut() {
@@ -68,7 +68,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     }
 }
 
-// Can't use gen_base_fields here, since user might not have imported com::IClassFactory.
+// Can't use gen_base_fields here, since user might not have imported IClassFactory.
 pub fn gen_class_factory_struct_definition(class_factory_ident: &Ident) -> HelperTokenStream {
     let ref_count_field = crate::com_struct::gen_ref_count_field();
     let interface_ident = get_iclass_factory_interface_ident();
@@ -76,7 +76,7 @@ pub fn gen_class_factory_struct_definition(class_factory_ident: &Ident) -> Helpe
     quote! {
         #[repr(C)]
         pub struct #class_factory_ident {
-            #vptr_field_ident: <dyn com::IClassFactory as com::ComInterface>::VPtr,
+            #vptr_field_ident: *const <dyn com::interfaces::iclass_factory::IClassFactory as com::ComInterface>::VTable,
             #ref_count_field
         }
     }
@@ -101,7 +101,7 @@ pub fn gen_iunknown_impl(
     let add_ref = crate::iunknown_impl::gen_add_ref();
     let release = gen_release(&base_interface_idents, &aggr_map, class_factory_ident);
     quote! {
-        impl com::IUnknown for #class_factory_ident {
+        impl com::interfaces::iunknown::IUnknown for #class_factory_ident {
             #query_interface
             #add_ref
             #release
@@ -128,7 +128,7 @@ pub fn gen_release(
 
     quote! {
         unsafe fn release(&self) -> u32 {
-            use com::IClassFactory;
+            use com::interfaces::iclass_factory::IClassFactory;
 
             #release_decrement
             #release_assign_new_count_to_var
@@ -147,12 +147,12 @@ fn gen_query_interface(class_factory_ident: &Ident) -> HelperTokenStream {
     quote! {
         unsafe fn query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> winapi::shared::winerror::HRESULT {
             // Bringing trait into scope to access add_ref method.
-            use com::IUnknown;
+            use com::interfaces::iunknown::IUnknown;
 
             println!("Querying interface on {}...", stringify!(#class_factory_ident));
 
             let riid = &*riid;
-            if winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::IUnknown as com::ComInterface>::IID) | winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::IClassFactory as com::ComInterface>::IID) {
+            if winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID) | winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iclass_factory::IClassFactory as com::ComInterface>::IID) {
                 *ppv = &self.#vptr_field_ident as *const _ as *mut winapi::ctypes::c_void;
                 self.add_ref();
                 winapi::shared::winerror::NOERROR
@@ -176,7 +176,7 @@ pub fn gen_class_factory_impl(
     quote! {
         impl #class_factory_ident {
             pub(crate) fn new() -> Box<#class_factory_ident> {
-                use com::IClassFactory;
+                use com::interfaces::iclass_factory::IClassFactory;
 
                 // allocate directly since no macros generated an `allocate` function
                 println!("Allocating new Vtable for {}...", stringify!(#class_factory_ident));
