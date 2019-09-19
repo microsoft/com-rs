@@ -74,7 +74,7 @@ impl ApartmentThreadedRuntime {
         &self,
         clsid: &IID,
         outer: &mut U,
-    ) -> Result<*mut T::VPtr, HRESULT> {
+    ) -> Result<*mut *const T::VTable, HRESULT> {
         unsafe { self.create_raw_instance::<T>(clsid, outer as *mut U as LPUNKNOWN) }
     }
 
@@ -82,7 +82,7 @@ impl ApartmentThreadedRuntime {
         &self,
         clsid: &IID,
         outer: LPUNKNOWN,
-    ) -> Result<*mut T::VPtr, HRESULT> {
+    ) -> Result<*mut *const T::VTable, HRESULT> {
         let mut instance = std::ptr::null_mut::<c_void>();
         let hr = CoCreateInstance(
             clsid as REFCLSID,
@@ -95,7 +95,7 @@ impl ApartmentThreadedRuntime {
             return Err(hr);
         }
 
-        Ok(instance as *mut T::VPtr)
+        Ok(instance as *mut *const T::VTable)
     }
 }
 
