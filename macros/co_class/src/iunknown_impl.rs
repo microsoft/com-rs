@@ -216,7 +216,7 @@ pub fn gen_aggregate_match_arms(aggr_map: &HashMap<Ident, Vec<Ident>>) -> Helper
 
                 let mut aggr_interface_ptr: com::ComPtr<dyn com::interfaces::iunknown::IUnknown> = com::ComPtr::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
                 let hr = aggr_interface_ptr.query_interface(riid, ppv);
-                if com::failed(hr) {
+                if com::_winapi::shared::winerror::FAILED(hr) {
                     *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
                     return winapi::shared::winerror::E_NOINTERFACE;
                 }
