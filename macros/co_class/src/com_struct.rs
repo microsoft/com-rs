@@ -11,9 +11,10 @@ use syn::{Fields, Ident, ItemStruct};
 ///     ..init struct..
 /// }
 pub fn generate(
+    struct_item: &ItemStruct,
     aggr_map: &HashMap<Ident, Vec<Ident>>,
     base_interface_idents: &[Ident],
-    struct_item: &ItemStruct,
+    is_aggregating: bool,
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let vis = &struct_item.vis;
@@ -23,10 +24,26 @@ pub fn generate(
     let user_fields = gen_user_fields(struct_item);
     let aggregate_fields = gen_aggregate_fields(aggr_map);
 
+    let aggregating_fields = if is_aggregating {
+        // COM Fields for an aggregable coclass.
+        let non_delegating_iunknown_field_ident =
+            macro_utils::non_delegating_iunknown_field_ident();
+        let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
+        let vtable_ptr = quote! { *const <dyn com::IUnknown as com::ComInterface>::VTable };
+        quote! {
+            #non_delegating_iunknown_field_ident: #vtable_ptr,
+            // Non-reference counted interface pointer to outer IUnknown.
+            #iunknown_to_use_field_ident: *mut #vtable_ptr,
+        }
+    } else {
+        quote!()
+    };
+
     quote!(
         #[repr(C)]
         #vis struct #struct_ident {
             #base_fields
+            #aggregating_fields
             #ref_count_field
             #aggregate_fields
             #user_fields
