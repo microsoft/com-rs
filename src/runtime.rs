@@ -32,7 +32,7 @@ impl ApartmentThreadedRuntime {
         let hr =
             unsafe { CoInitializeEx(std::ptr::null_mut::<c_void>(), COINIT_APARTMENTTHREADED) };
         // if hr is S_OK all is good, if it is S_FALSE, then the runtime was already initialized
-        if hr != S_OK || hr != S_FALSE {
+        if hr != S_OK && hr != S_FALSE {
             // `runtime` is dropped here calling `CoUninitialize` which needs to happen no matter if
             // `CoInitializeEx` is successful or not.
             // https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
