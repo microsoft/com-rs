@@ -9,11 +9,7 @@ pub use inproc::*;
 pub use runtime::ApartmentThreadedRuntime;
 
 use interfaces::iunknown::IUnknown;
-use winapi::shared::{guiddef::IID, winerror::HRESULT};
-
-pub fn failed(result: HRESULT) -> bool {
-    result < 0
-}
+use winapi::shared::guiddef::IID;
 
 /// A COM compliant interface
 ///

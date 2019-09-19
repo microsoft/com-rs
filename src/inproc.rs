@@ -202,7 +202,7 @@ macro_rules! inproc_dll_module {
         #[no_mangle]
         extern "stdcall" fn DllRegisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
             let hr = com::register_keys(get_relevant_registry_keys());
-            if com::failed(hr) {
+            if com::_winapi::shared::winerror::FAILED(hr) {
                 DllUnregisterServer();
             }
 
