@@ -5,6 +5,7 @@ use syn::{AttributeArgs, ItemStruct};
 use std::iter::FromIterator;
 
 pub mod class_factory;
+pub mod co_class_impl;
 pub mod com_struct;
 pub mod com_struct_impl;
 pub mod iunknown_impl;
@@ -18,6 +19,7 @@ pub fn expand_co_class(input: &ItemStruct, attr_args: &AttributeArgs) -> TokenSt
     out.push(
         com_struct_impl::generate(&aggr_interface_idents, &base_interface_idents, input).into(),
     );
+    out.push(co_class_impl::generate(input).into());
     out.push(iunknown_impl::generate(&base_interface_idents, &aggr_interface_idents, input).into());
     out.push(class_factory::generate(input).into());
 

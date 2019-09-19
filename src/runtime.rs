@@ -9,13 +9,14 @@ use winapi::{
     um::{
         combaseapi::{CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize},
         objbase::COINIT_APARTMENTTHREADED,
+        unknwnbase::LPUNKNOWN,
     },
 };
 
 use crate::{
     failed,
     iclassfactory::{IClassFactory, IID_ICLASS_FACTORY},
-    ComInterface, ComPtr,
+    CoClass, ComInterface, ComPtr,
 };
 
 pub struct ApartmentThreadedRuntime {
@@ -40,7 +41,6 @@ impl ApartmentThreadedRuntime {
         Ok(runtime)
     }
 
-    // TODO: accept server options
     pub fn get_class_object(&self, iid: &IID) -> Result<ComPtr<dyn IClassFactory>, HRESULT> {
         let mut class_factory = std::ptr::null_mut::<c_void>();
         let hr = unsafe {
@@ -59,34 +59,38 @@ impl ApartmentThreadedRuntime {
         unsafe { Ok(ComPtr::new(class_factory)) }
     }
 
-    // TODO: accept server options
     pub fn create_instance<T: ComInterface + ?Sized>(
         &self,
         clsid: &IID,
     ) -> Result<ComPtr<T>, HRESULT> {
         unsafe {
             Ok(ComPtr::new(
-                self.create_raw_instance::<T, ()>(clsid, None)? as *mut c_void
+                self.create_raw_instance::<T>(clsid, std::ptr::null_mut())? as *mut c_void,
             ))
         }
     }
 
-    pub fn create_raw_instance<T: ComInterface + ?Sized, U>(
+    pub fn create_aggregated_instance<T: ComInterface + ?Sized, U: CoClass>(
         &self,
         clsid: &IID,
-        outer: Option<&mut U>,
+        outer: &mut U,
+    ) -> Result<*mut T::VPtr, HRESULT> {
+        unsafe { self.create_raw_instance::<T>(clsid, outer as *mut U as LPUNKNOWN) }
+    }
+
+    pub unsafe fn create_raw_instance<T: ComInterface + ?Sized>(
+        &self,
+        clsid: &IID,
+        outer: LPUNKNOWN,
     ) -> Result<*mut T::VPtr, HRESULT> {
         let mut instance = std::ptr::null_mut::<c_void>();
-        let hr = unsafe {
-            CoCreateInstance(
-                clsid as REFCLSID,
-                outer.map(|o| o as *mut U).unwrap_or(std::ptr::null_mut())
-                    as winapi::um::unknwnbase::LPUNKNOWN,
-                CLSCTX_INPROC_SERVER,
-                &T::IID as REFIID,
-                &mut instance as *mut LPVOID,
-            )
-        };
+        let hr = CoCreateInstance(
+            clsid as REFCLSID,
+            outer,
+            CLSCTX_INPROC_SERVER,
+            &T::IID as REFIID,
+            &mut instance as *mut LPVOID,
+        );
         if failed(hr) {
             return Err(hr);
         }

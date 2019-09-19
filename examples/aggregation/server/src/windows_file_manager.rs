@@ -26,7 +26,10 @@ impl WindowsFileManager {
         let mut wfm = WindowsFileManager::allocate(20);
         let runtime = Runtime::new().expect("Failed to get runtime!");
         let iunknown = runtime
-            .create_raw_instance::<dyn IUnknown, _>(&CLSID_LOCAL_FILE_MANAGER_CLASS, Some(&mut wfm))
+            .create_aggregated_instance::<dyn IUnknown, WindowsFileManager>(
+                &CLSID_LOCAL_FILE_MANAGER_CLASS,
+                &mut *wfm,
+            )
             .expect("Failed to instantiate aggregate!");
 
         wfm.set_aggregate_ilocal_file_manager(iunknown);
