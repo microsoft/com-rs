@@ -1,10 +1,10 @@
-use crate::{failed, interfaces::iunknown::IUnknown, ComInterface, IID};
+use crate::{interfaces::iunknown::IUnknown, ComInterface, IID};
 
 use std::ptr::NonNull;
 
 use std::marker::PhantomData;
 use winapi::ctypes::c_void;
-use winapi::shared::winerror::{E_NOINTERFACE, E_POINTER};
+use winapi::shared::winerror::{E_NOINTERFACE, E_POINTER, FAILED};
 
 pub struct ComPtr<T: ?Sized + ComInterface> {
     ptr: NonNull<c_void>,
@@ -39,7 +39,7 @@ impl<T: ?Sized + ComInterface> ComPtr<T> {
     pub fn get_interface<S: ComInterface + ?Sized>(&self) -> Option<ComPtr<S>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
         let hr = unsafe { self.query_interface(&S::IID as *const IID, &mut ppv) };
-        if failed(hr) {
+        if FAILED(hr) {
             assert!(
                 hr == E_NOINTERFACE || hr == E_POINTER,
                 "QueryInterface returned non-standard error"

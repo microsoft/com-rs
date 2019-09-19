@@ -3,7 +3,7 @@ use winapi::{
     shared::{
         guiddef::{IID, REFCLSID, REFIID},
         minwindef::LPVOID,
-        winerror::{HRESULT, S_FALSE, S_OK},
+        winerror::{FAILED, HRESULT, S_FALSE, S_OK},
         wtypesbase::CLSCTX_INPROC_SERVER,
     },
     um::{
@@ -14,7 +14,6 @@ use winapi::{
 };
 
 use crate::{
-    failed,
     interfaces::iclass_factory::{IClassFactory, IID_ICLASS_FACTORY},
     CoClass, ComInterface, ComPtr,
 };
@@ -52,7 +51,7 @@ impl ApartmentThreadedRuntime {
                 &mut class_factory as *mut LPVOID,
             )
         };
-        if failed(hr) {
+        if FAILED(hr) {
             return Err(hr);
         }
 
@@ -91,7 +90,7 @@ impl ApartmentThreadedRuntime {
             &T::IID as REFIID,
             &mut instance as *mut LPVOID,
         );
-        if failed(hr) {
+        if FAILED(hr) {
             return Err(hr);
         }
 

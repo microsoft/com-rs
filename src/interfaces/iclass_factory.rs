@@ -5,11 +5,11 @@ use winapi::{
         guiddef::{IID, REFIID},
         minwindef::BOOL,
         ntdef::HRESULT,
+        winerror::FAILED,
     },
 };
 
 use crate::{
-    failed,
     interfaces::iunknown::{IUnknown, IUnknownVPtr},
     ComInterface, ComPtr,
 };
@@ -30,7 +30,7 @@ impl ComPtr<dyn IClassFactory> {
         let mut ppv = std::ptr::null_mut::<c_void>();
         let aggr = std::ptr::null_mut();
         let hr = unsafe { self.create_instance(aggr, &T::IID as *const IID, &mut ppv) };
-        if failed(hr) {
+        if FAILED(hr) {
             // TODO: decide what failures are possible
             return None;
         }
