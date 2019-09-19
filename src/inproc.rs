@@ -134,13 +134,13 @@ fn remove_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
 
 pub fn get_dll_file_path() -> String {
     unsafe {
-        let max_file_path_length = 260;
+        const MAX_FILE_PATH_LENGTH: usize = 260;
         let h_module = GetModuleHandleA(CString::new("server.dll").unwrap().as_ptr());
-        let raw_ptr = CString::new(Vec::with_capacity(max_file_path_length))
+        let raw_ptr = CString::new(Vec::with_capacity(MAX_FILE_PATH_LENGTH))
             .expect("Failed to create empty string!")
             .into_raw();
 
-        GetModuleFileNameA(h_module, raw_ptr, max_file_path_length.try_into().unwrap());
+        GetModuleFileNameA(h_module, raw_ptr, MAX_FILE_PATH_LENGTH.try_into().unwrap());
 
         CString::from_raw(raw_ptr).into_string().unwrap()
     }
