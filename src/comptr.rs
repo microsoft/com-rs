@@ -7,6 +7,7 @@ use std::marker::PhantomData;
 use winapi::ctypes::c_void;
 use winapi::shared::winerror::E_NOINTERFACE;
 
+#[repr(C)]
 pub struct ComPtr<T: ?Sized + ComInterface> {
     ptr: NonNull<c_void>,
     phantom: PhantomData<T>,
