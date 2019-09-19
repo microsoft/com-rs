@@ -27,9 +27,9 @@ pub fn generate(
         #[repr(C)]
         #vis struct #struct_ident {
             #base_fields
-            #non_delegating_iunknown_field_ident: *const <dyn com::IUnknown as com::ComInterface>::VTable,
+            #non_delegating_iunknown_field_ident: *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
             // Non-reference counted interface pointer to outer IUnknown.
-            #iunknown_to_use_field_ident: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable,
+            #iunknown_to_use_field_ident: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
             #ref_count_field
             #aggregate_fields
             #user_fields

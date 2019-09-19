@@ -50,7 +50,7 @@ pub fn gen_ref_count_field() -> HelperTokenStream {
 pub fn gen_aggregate_fields(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStream {
     let aggregates = aggr_map.iter().map(|(aggr_field_ident, _)| {
         quote!(
-            #aggr_field_ident: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable
+            #aggr_field_ident: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable
         )
     });
 

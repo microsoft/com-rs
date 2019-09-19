@@ -14,7 +14,7 @@ use winapi::{
 
 use crate::{
     failed,
-    iclassfactory::{IClassFactory, IID_ICLASS_FACTORY},
+    interfaces::iclass_factory::{IClassFactory, IID_ICLASS_FACTORY},
     ComInterface, ComPtr,
 };
 

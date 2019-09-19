@@ -10,7 +10,7 @@ use winapi::{
 
 use crate::{
     failed,
-    iunknown::{IUnknown, IUnknownVPtr},
+    interfaces::iunknown::{IUnknown, IUnknownVPtr},
     ComInterface, ComPtr,
 };
 

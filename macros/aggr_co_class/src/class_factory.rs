@@ -27,20 +27,20 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     quote! {
         #struct_definition
 
-        impl com::IClassFactory for #class_factory_ident {
+        impl com::interfaces::iclass_factory::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
                 &self,
-                aggr: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable,
+                aggr: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
                 riid: winapi::shared::guiddef::REFIID,
                 ppv: *mut *mut winapi::ctypes::c_void,
             ) -> winapi::shared::winerror::HRESULT {
                 // Bringing trait into scope to access IUnknown methods.
-                use com::IUnknown;
+                use com::interfaces::iunknown::IUnknown;
 
                 let riid = unsafe { &*riid };
 
                 println!("Creating instance for {}", stringify!(#struct_ident));
-                if !aggr.is_null() && !winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::IUnknown as com::ComInterface>::IID) {
+                if !aggr.is_null() && !winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID) {
                     unsafe {
                         *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
                     }
