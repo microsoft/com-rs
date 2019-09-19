@@ -176,7 +176,7 @@ macro_rules! inproc_dll_module {
     (($clsid_one:ident, $classtype_one:ty), $(($clsid:ident, $classtype:ty)),*) => {
         #[no_mangle]
         extern "stdcall" fn DllGetClassObject(rclsid: $crate::_winapi::shared::guiddef::REFCLSID, riid: $crate::_winapi::shared::guiddef::REFIID, ppv: *mut $crate::_winapi::shared::minwindef::LPVOID) -> $crate::_winapi::shared::winerror::HRESULT {
-            use com::IUnknown;
+            use com::interfaces::iunknown::IUnknown;
             let rclsid = unsafe{ &*rclsid };
             if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid_one) {
                 let mut instance = <$classtype_one>::get_class_object();

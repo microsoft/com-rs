@@ -1,4 +1,4 @@
-use com::{failed, IUnknownVPtr, IID_IUNKNOWN};
+use com::{failed, interfaces::iunknown::IUnknownVPtr, interfaces::iunknown::IID_IUNKNOWN};
 use interface::{
     ifile_manager::IFileManager, ilocal_file_manager::ILocalFileManager,
     CLSID_LOCAL_FILE_MANAGER_CLASS,

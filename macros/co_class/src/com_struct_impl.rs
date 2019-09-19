@@ -152,7 +152,7 @@ pub fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTok
         for base in aggr_base_interface_idents {
             let set_aggregate_fn_ident = macro_utils::set_aggregate_fn_ident(&base);
             fns.push(quote!(
-                fn #set_aggregate_fn_ident(&mut self, aggr: *mut *const <dyn com::IUnknown as com::ComInterface>::VTable) {
+                fn #set_aggregate_fn_ident(&mut self, aggr: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable) {
                     // TODO: What happens if we are overwriting an existing aggregate?
                     self.#aggr_field_ident = aggr
                 }
