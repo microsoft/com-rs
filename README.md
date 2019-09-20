@@ -131,7 +131,7 @@ You can read more about what gurantees this library makes in the [guide to safet
 ## Existing crates
 
 There are many existing Rust crates that help with COM interactions. Depending on your use case, you may find these crates more suited to your needs. For example, we have
-- [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platofrm COM components in Rust.
+- [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platform COM components in Rust.
 - [winapi-rs](https://github.com/retep998/winapi-rs), which provides a straightforward macro that allows you to easily consume COM interfaces.
 
 ## Notes
@@ -156,7 +156,7 @@ cargo check --target=x86_64-pc-windows-msvc
 
 For further information on contributing, please take a look at the [contributing doc](./CONTRIBUTING.md)
 
-### Code of Conduct
+## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct). You can find out more in the [code of conduct doc](./CODE_OF_CONDUCT.md).
 
