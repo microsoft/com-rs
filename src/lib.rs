@@ -1,4 +1,5 @@
 pub mod inproc;
+mod interface_ptr;
 mod interface_rc;
 pub mod interfaces;
 pub mod offset;
@@ -7,6 +8,7 @@ pub mod runtime;
 use interfaces::iunknown::IUnknown;
 use winapi::shared::guiddef::IID;
 
+pub use interface_ptr::InterfacePtr;
 pub use interface_rc::InterfaceRc;
 
 /// A COM compliant interface

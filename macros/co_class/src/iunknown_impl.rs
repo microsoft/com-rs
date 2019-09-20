@@ -92,9 +92,8 @@ fn gen_aggregate_drops(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStre
     let aggregate_drops = aggr_map.iter().map(|(aggr_field_ident, _)| {
         quote!(
             if !self.#aggr_field_ident.is_null() {
-                let mut aggr_interface_ptr: com::InterfaceRc<dyn com::interfaces::iunknown::IUnknown> = com::InterfaceRc::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
+                let mut aggr_interface_ptr = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
                 aggr_interface_ptr.release();
-                core::mem::forget(aggr_interface_ptr);
             }
         )
     });
@@ -214,7 +213,7 @@ pub fn gen_aggregate_match_arms(aggr_map: &HashMap<Ident, Vec<Ident>>) -> Helper
                     return winapi::shared::winerror::E_NOINTERFACE;
                 }
 
-                let mut aggr_interface_ptr: com::InterfaceRc<dyn com::interfaces::iunknown::IUnknown> = com::InterfaceRc::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
+                let mut aggr_interface_ptr = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut winapi::ctypes::c_void);
                 let hr = aggr_interface_ptr.query_interface(riid, ppv);
                 if com::_winapi::shared::winerror::FAILED(hr) {
                     *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
@@ -225,8 +224,6 @@ pub fn gen_aggregate_match_arms(aggr_map: &HashMap<Ident, Vec<Ident>>) -> Helper
                 // The intention is to transfer reference counting logic to the
                 // outer object.
                 aggr_interface_ptr.release();
-
-                core::mem::forget(aggr_interface_ptr);
             }
         )
     });
