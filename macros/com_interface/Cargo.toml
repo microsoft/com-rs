@@ -1,5 +1,5 @@
 [package]
-name = "com_interface_attribute"
+name = "com_interface"
 version = "0.1.0"
 authors = ["adrianwithah <lim.weiheng.hadrian@gmail.com>"]
 edition = "2018"

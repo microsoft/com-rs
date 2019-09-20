@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use winapi::ctypes::c_void;
 use winapi::shared::winerror::{E_NOINTERFACE, E_POINTER, FAILED};
 
-/// A reference counted Interface. This smart pointer type automatically
+/// A reference counted COM interface. This smart pointer type automatically
 /// calls `AddRef` when cloned and `Release` when dropped.
 ///
 /// This is normally the correct way to interact with an interface. If for some
@@ -21,21 +21,21 @@ pub struct InterfaceRc<T: ?Sized + ComInterface> {
 }
 
 impl<T: ?Sized + ComInterface> InterfaceRc<T> {
-    /// Creates a new InterfaceRc that comforms to the interface T
+    /// Creates a new `InterfaceRc` that comforms to the interface T.
     ///
     /// # Safety
     ///
     /// `ptr` must be a valid interface pointer for interface `T`. An interface
     /// pointer as the name suggests points to an interface struct. A valid
     /// interface is itself trivial castable to a `*mut T::VTable`. In other words,
-    /// `ptr` should also be equal to `*mut *mut T::VTable`
+    /// `ptr` should also be equal to `*mut *mut T::VTable`.
     ///
     /// `ptr` is owned by `InterfaceRc` and thus the `InterfaceRc` is responsible
-    /// for
+    /// for its destruction.
     ///
     /// # Panics
     ///
-    /// Panics if `ptr` is null
+    /// Panics if `ptr` is null.
     pub unsafe fn new(ptr: *mut c_void) -> InterfaceRc<T> {
         InterfaceRc {
             ptr: NonNull::new(ptr).expect("ptr was null"),
@@ -45,7 +45,7 @@ impl<T: ?Sized + ComInterface> InterfaceRc<T> {
 
     /// Gets the underlying interface ptr. This ptr is only guarnteed to live for
     /// as long as the current `InterfaceRc` is alive.
-    pub fn into_raw(&self) -> *mut c_void {
+    pub fn as_raw(&self) -> *mut c_void {
         self.ptr.as_ptr()
     }
 
