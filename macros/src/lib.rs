@@ -12,8 +12,8 @@ pub fn com_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
     expand_com_interface(attr, item)
 }
 
-#[proc_macro_derive(VTableMacro)]
-pub fn derive(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(VTable)]
+pub fn derive_vtable(input: TokenStream) -> TokenStream {
     expand_derive(input)
 }
 

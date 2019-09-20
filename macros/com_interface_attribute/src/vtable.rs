@@ -43,7 +43,7 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
     quote!(
         #[allow(non_snake_case)]
         #[repr(C)]
-        #[derive(com::VTableMacro)]
+        #[derive(com::VTable)]
         pub struct #vtable_ident {
             #base_field
             #methods

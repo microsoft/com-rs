@@ -1,4 +1,4 @@
-use com::ApartmentThreadedRuntime as Runtime;
+use com::runtime::ApartmentThreadedRuntime as Runtime;
 use interface::{
     IFileManager, ILocalFileManager, CLSID_LOCAL_FILE_MANAGER_CLASS,
     CLSID_WINDOWS_FILE_MANAGER_CLASS,
