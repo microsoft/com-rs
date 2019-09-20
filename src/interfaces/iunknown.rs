@@ -19,18 +19,18 @@ pub trait IUnknown {
     /// The COM [`AddRef` Method]
     ///
     /// This method normally should not be called directly. This method is used by
-    /// [`ComPtr`] to implement the reference counting mechanism.
+    /// [`InterfaceRc`] to implement the reference counting mechanism.
     ///
     /// [`AddRef` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
-    /// [`ComPtr`]: struct.ComPtr.html
+    /// [`InterfaceRc`]: struct.InterfaceRc.html
     fn add_ref(&self) -> u32;
 
     /// The COM [`Release` Method]
     ///
     /// This method normally should not be called directly. This method is used by
-    /// [`ComPtr`] to implement the reference counting mechanism.
+    /// [`InterfaceRc`] to implement the reference counting mechanism.
     ///
     /// [`Release` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
-    /// [`ComPtr`]: struct.ComPtr.html
+    /// [`InterfaceRc`]: struct.InterfaceRc.html
     unsafe fn release(&self) -> u32;
 }

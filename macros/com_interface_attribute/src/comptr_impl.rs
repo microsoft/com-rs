@@ -19,7 +19,7 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
     }
 
     quote!(
-        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::ComPtr<T> {
+        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::InterfaceRc<T> {
             #(#impl_methods)*
         }
     )

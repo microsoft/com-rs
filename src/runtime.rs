@@ -15,7 +15,7 @@ use winapi::{
 
 use crate::{
     interfaces::iclass_factory::{IClassFactory, IID_ICLASS_FACTORY},
-    CoClass, ComInterface, ComPtr,
+    CoClass, ComInterface, InterfaceRc,
 };
 
 pub struct ApartmentThreadedRuntime {
@@ -40,7 +40,7 @@ impl ApartmentThreadedRuntime {
         Ok(runtime)
     }
 
-    pub fn get_class_object(&self, iid: &IID) -> Result<ComPtr<dyn IClassFactory>, HRESULT> {
+    pub fn get_class_object(&self, iid: &IID) -> Result<InterfaceRc<dyn IClassFactory>, HRESULT> {
         let mut class_factory = std::ptr::null_mut::<c_void>();
         let hr = unsafe {
             CoGetClassObject(
@@ -55,15 +55,15 @@ impl ApartmentThreadedRuntime {
             return Err(hr);
         }
 
-        unsafe { Ok(ComPtr::new(class_factory)) }
+        unsafe { Ok(InterfaceRc::new(class_factory)) }
     }
 
     pub fn create_instance<T: ComInterface + ?Sized>(
         &self,
         clsid: &IID,
-    ) -> Result<ComPtr<T>, HRESULT> {
+    ) -> Result<InterfaceRc<T>, HRESULT> {
         unsafe {
-            Ok(ComPtr::new(
+            Ok(InterfaceRc::new(
                 self.create_raw_instance::<T>(clsid, std::ptr::null_mut())? as *mut c_void,
             ))
         }
