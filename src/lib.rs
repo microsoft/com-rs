@@ -1,10 +1,10 @@
-mod comptr;
+mod com_ptr;
 mod inproc;
 pub mod interfaces;
 pub mod offset;
 mod runtime;
 
-pub use comptr::ComPtr;
+pub use com_ptr::ComPtr;
 pub use inproc::*;
 pub use runtime::ApartmentThreadedRuntime;
 
