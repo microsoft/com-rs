@@ -135,11 +135,7 @@ There are many existing Rust crates that help with COM interactions. Depending o
 
 ## Notes
 
-There are many advanced concepts in COM that our library aim to support. Relevant documentation on these advanced features can be found within the [docs] folder.
-
-[docs]: ./docs
-
-## Contributing
+There are many advanced concepts in COM that our library aim to support. Relevant documentation on these advanced features can be found within the [docs](./docs) folder.
 
 ## Building
 
@@ -155,8 +151,9 @@ If you are on a Mac or Linux machine, you should still be able to make changes a
 ```bash
 cargo check --target=x86_64-pc-windows-msvc
 ```
+## Contributing
 
-For more information on contributing, take a look at the [contributing doc](./CONTRIBUTING.md)
+For further information on contributing, please take a look at the [contributing doc](./CONTRIBUTING.md)
 
 ### Code of Conduct
 
