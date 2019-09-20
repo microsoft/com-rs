@@ -1,8 +1,7 @@
-use crate::{interfaces::iunknown::IUnknown, ComInterface, IID};
-
-use std::ptr::NonNull;
+use crate::{interface_ptr::InterfacePtr, interfaces::iunknown::IUnknown, ComInterface, IID};
 
 use std::marker::PhantomData;
+
 use winapi::ctypes::c_void;
 use winapi::shared::winerror::{E_NOINTERFACE, E_POINTER, FAILED};
 
@@ -16,29 +15,15 @@ use winapi::shared::winerror::{E_NOINTERFACE, E_POINTER, FAILED};
 ///
 /// [`InterfacePtr`]: struct.InterfacePtr.html
 pub struct InterfaceRc<T: ?Sized + ComInterface> {
-    ptr: NonNull<c_void>,
+    ptr: InterfacePtr<T>,
     phantom: PhantomData<T>,
 }
 
 impl<T: ?Sized + ComInterface> InterfaceRc<T> {
     /// Creates a new `InterfaceRc` that comforms to the interface T.
-    ///
-    /// # Safety
-    ///
-    /// `ptr` must be a valid interface pointer for interface `T`. An interface
-    /// pointer as the name suggests points to an interface struct. A valid
-    /// interface is itself trivial castable to a `*mut T::VTable`. In other words,
-    /// `ptr` should also be equal to `*mut *mut T::VTable`.
-    ///
-    /// `ptr` is owned by `InterfaceRc` and thus the `InterfaceRc` is responsible
-    /// for its destruction.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `ptr` is null.
-    pub unsafe fn new(ptr: *mut c_void) -> InterfaceRc<T> {
+    pub fn new(ptr: InterfacePtr<T>) -> InterfaceRc<T> {
         InterfaceRc {
-            ptr: NonNull::new(ptr).expect("ptr was null"),
+            ptr,
             phantom: PhantomData,
         }
     }
@@ -46,7 +31,7 @@ impl<T: ?Sized + ComInterface> InterfaceRc<T> {
     /// Gets the underlying interface ptr. This ptr is only guarnteed to live for
     /// as long as the current `InterfaceRc` is alive.
     pub fn as_raw(&self) -> *mut c_void {
-        self.ptr.as_ptr()
+        self.ptr.as_raw()
     }
 
     /// A safe version of `QueryInterface`. If the backing CoClass implements the
@@ -63,7 +48,7 @@ impl<T: ?Sized + ComInterface> InterfaceRc<T> {
             return None;
         }
         assert!(!ppv.is_null(), "The pointer to the interface returned from a successful call to QueryInterface was null");
-        unsafe { Some(InterfaceRc::new(ppv)) }
+        Some(InterfaceRc::new(unsafe { InterfacePtr::new(ppv) }))
     }
 }
 
@@ -71,7 +56,7 @@ impl<T: ComInterface + ?Sized> Drop for InterfaceRc<T> {
     fn drop(&mut self) {
         unsafe {
             self.release();
-            // self.ptr may be dangling at this point
+            // self.ptr may contain a dangling pointer at this point
         }
     }
 }
@@ -79,7 +64,7 @@ impl<T: ComInterface + ?Sized> Drop for InterfaceRc<T> {
 impl<T: ComInterface> Clone for InterfaceRc<T> {
     fn clone(&self) -> Self {
         let new_ptr = InterfaceRc {
-            ptr: self.ptr,
+            ptr: self.ptr.clone(),
             phantom: PhantomData,
         };
         new_ptr.add_ref();

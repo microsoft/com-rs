@@ -45,3 +45,12 @@ impl<T: ?Sized + ComInterface> InterfacePtr<T> {
         self.ptr.as_ptr()
     }
 }
+
+impl<T: ComInterface> Clone for InterfacePtr<T> {
+    fn clone(&self) -> Self {
+        InterfacePtr {
+            ptr: self.ptr,
+            phantom: PhantomData,
+        }
+    }
+}
