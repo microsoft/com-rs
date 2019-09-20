@@ -44,7 +44,7 @@ Short explanation: This generates the VTable layout for IUnknown and implements 
 Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `ComPtr` struct, which helps manage the lifetime of the COM component through IUnknown methods.
 
 ```rust
-use com::ApartmentThreadedRuntime as Runtime;
+use com::runtime::ApartmentThreadedRuntime as Runtime;
 
 // Initialises the COM library
 let runtime = Runtime::new().expect("Failed to initialize COM Library");
@@ -129,7 +129,7 @@ You can read more about what gurantees this library makes in the [guide to safet
 
 ## Existing crates
 
-There are many existing Rust crates that help with COM interactions. Depending on your use case, you may find these crates more suited to your needs. For example, we have 
+There are many existing Rust crates that help with COM interactions. Depending on your use case, you may find these crates more suited to your needs. For example, we have
 - [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platofrm COM components in Rust.
 - [winapi-rs](https://github.com/retep998/winapi-rs), which provides a straightforward macro that allows you to easily consume COM interfaces.
 

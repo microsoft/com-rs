@@ -1,8 +1,10 @@
+use crate::interfaces::iunknown::IUnknown;
+
 use winapi::{
     ctypes::c_void,
     shared::{
-        guiddef::{GUID, IID},
-        minwindef::{DWORD, HKEY},
+        guiddef::{GUID, IID, REFIID},
+        minwindef::{DWORD, HKEY, LPVOID},
         winerror::{ERROR_SUCCESS, HRESULT, S_OK},
     },
     um::{
@@ -154,7 +156,7 @@ pub fn class_inproc_key_path(clsid: IID) -> String {
     format!("CLSID\\{}\\InprocServer32", guid_to_string(&clsid))
 }
 
-pub fn guid_to_string(guid: &GUID) -> String {
+fn guid_to_string(guid: &GUID) -> String {
     format!(
         "{{{:04X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
         guid.Data1,
@@ -171,6 +173,20 @@ pub fn guid_to_string(guid: &GUID) -> String {
     )
 }
 
+#[inline]
+pub fn initialize_class_object<T: IUnknown>(
+    instance: Box<T>,
+    riid: REFIID,
+    ppv: *mut LPVOID,
+) -> HRESULT {
+    instance.add_ref();
+    let hr = unsafe { instance.query_interface(riid, ppv) };
+    unsafe { instance.release() };
+    Box::into_raw(instance);
+
+    hr
+}
+
 #[macro_export]
 macro_rules! inproc_dll_module {
     (($clsid_one:ident, $classtype_one:ty), $(($clsid:ident, $classtype:ty)),*) => {
@@ -180,20 +196,10 @@ macro_rules! inproc_dll_module {
             let rclsid = unsafe{ &*rclsid };
             if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid_one) {
                 let mut instance = <$classtype_one>::get_class_object();
-                instance.add_ref();
-                let hr = unsafe { instance.query_interface(riid, ppv) };
-                unsafe { instance.release() };
-                Box::into_raw(instance);
-
-                hr
+                com::inproc::initialize_class_object(instance, riid, ppv)
             } $(else if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid) {
                 let mut instance = <$classtype>::get_class_object();
-                instance.add_ref();
-                let hr = unsafe { instance.query_interface(riid, ppv) };
-                unsafe { instance.release() };
-                Box::into_raw(instance);
-
-                hr
+                com::inproc::initialize_class_object(instance, riid, ppv)
             })* else  {
                 $crate::_winapi::shared::winerror::CLASS_E_CLASSNOTAVAILABLE
             }
@@ -201,7 +207,7 @@ macro_rules! inproc_dll_module {
 
         #[no_mangle]
         extern "stdcall" fn DllRegisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
-            let hr = com::register_keys(get_relevant_registry_keys());
+            let hr = com::inproc::register_keys(get_relevant_registry_keys());
             if com::_winapi::shared::winerror::FAILED(hr) {
                 DllUnregisterServer();
             }
@@ -209,38 +215,36 @@ macro_rules! inproc_dll_module {
             hr
         }
 
-        // Function tries to delete as many registry keys as possible.
         #[no_mangle]
         extern "stdcall" fn DllUnregisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
             let mut registry_keys_to_remove = get_relevant_registry_keys();
             registry_keys_to_remove.reverse();
-            com::unregister_keys(registry_keys_to_remove)
+            com::inproc::unregister_keys(registry_keys_to_remove)
         }
 
 
-        fn get_relevant_registry_keys() -> Vec<com::RegistryKeyInfo> {
-            let file_path = com::get_dll_file_path();
-            // IMPORTANT: Assumption of order: Subkeys are located at a higher index than the parent key.
+        fn get_relevant_registry_keys() -> Vec<com::inproc::RegistryKeyInfo> {
+            let file_path = com::inproc::get_dll_file_path();
             vec![
-                com::RegistryKeyInfo::new(
-                    com::class_key_path($clsid_one).as_str(),
+                com::inproc::RegistryKeyInfo::new(
+                    &com::inproc::class_key_path($clsid_one),
                     "",
                     stringify!($classtype_one),
                 ),
-                com::RegistryKeyInfo::new(
-                    com::class_inproc_key_path($clsid_one).as_str(),
+                com::inproc::RegistryKeyInfo::new(
+                    &com::inproc::class_inproc_key_path($clsid_one),
                     "",
-                    file_path.clone().as_str(),
+                    &file_path,
                 ),
-                $(com::RegistryKeyInfo::new(
-                    com::class_key_path($clsid).as_str(),
+                $(com::inproc::RegistryKeyInfo::new(
+                    &com::inproc::class_key_path($clsid),
                     "",
                     stringify!($classtype),
                 ),
-                com::RegistryKeyInfo::new(
-                    com::class_inproc_key_path($clsid).as_str(),
+                com::inproc::RegistryKeyInfo::new(
+                    &com::inproc::class_inproc_key_path($clsid),
                     "",
-                    file_path.clone().as_str(),
+                    &file_path,
                 )),*
             ]
         }

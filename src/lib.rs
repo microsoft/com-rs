@@ -1,15 +1,13 @@
 mod com_ptr;
-mod inproc;
+pub mod inproc;
 pub mod interfaces;
 pub mod offset;
-mod runtime;
-
-pub use com_ptr::ComPtr;
-pub use inproc::*;
-pub use runtime::ApartmentThreadedRuntime;
+pub mod runtime;
 
 use interfaces::iunknown::IUnknown;
 use winapi::shared::guiddef::IID;
+
+pub use com_ptr::ComPtr;
 
 /// A COM compliant interface
 ///
@@ -66,7 +64,7 @@ macro_rules! vtable {
 pub extern crate winapi as _winapi;
 
 #[doc(hidden)]
-pub use macros::*;
+pub use macros::{co_class, com_interface, VTable};
 
 // this allows for the crate to refer to itself as `com` to keep macros consistent
 // whether they are used by some other crate or internally
