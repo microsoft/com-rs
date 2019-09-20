@@ -1,8 +1,8 @@
 extern crate proc_macro;
 
 mod com_interface_impl;
-mod comptr_impl;
 mod iid;
+mod interface_impl;
 mod vptr;
 mod vtable;
 mod vtable_macro;
@@ -24,7 +24,7 @@ pub fn expand_com_interface(attr: TokenStream, item: TokenStream) -> TokenStream
     out.push(input.to_token_stream().into());
     out.push(vtable::generate(&input).into());
     out.push(vptr::generate(&input.ident).into());
-    out.push(comptr_impl::generate(&input).into());
+    out.push(interface_impl::generate(&input).into());
     out.push(com_interface_impl::generate(&input).into());
     out.push(iid::generate(&attr, &input.ident).into());
 
