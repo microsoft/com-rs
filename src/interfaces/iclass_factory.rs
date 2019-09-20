@@ -11,7 +11,7 @@ use winapi::{
 
 use crate::{
     interfaces::iunknown::{IUnknown, IUnknownVPtr},
-    ComInterface, InterfaceRc,
+    ComInterface, InterfacePtr, InterfaceRc,
 };
 
 #[com_interface(00000001-0000-0000-c000-000000000046)]
@@ -34,6 +34,6 @@ impl InterfaceRc<dyn IClassFactory> {
             // TODO: decide what failures are possible
             return None;
         }
-        unsafe { Some(InterfaceRc::new(ppv)) }
+        Some(InterfaceRc::new(unsafe { InterfacePtr::new(ppv) }))
     }
 }
