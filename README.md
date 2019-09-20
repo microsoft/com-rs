@@ -1,6 +1,7 @@
 # COM
 
 [![Build Status](https://dev.azure.com/microsoft-rust/com-rs/_apis/build/status/microsoft.com-rs?branchName=master)](https://dev.azure.com/microsoft-rust/com-rs/_build/latest?definitionId=1&branchName=master)
+[![Gitter](https://badges.gitter.im/com-rs/community.svg)](https://gitter.im/com-rs/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 A one stop shop for all things related to [COM](https://docs.microsoft.com/en-us/windows/win32/com/component-object-model--com--portal) programming in Rust.
 
@@ -130,7 +131,7 @@ You can read more about what gurantees this library makes in the [guide to safet
 ## Existing crates
 
 There are many existing Rust crates that help with COM interactions. Depending on your use case, you may find these crates more suited to your needs. For example, we have
-- [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platofrm COM components in Rust.
+- [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platform COM components in Rust.
 - [winapi-rs](https://github.com/retep998/winapi-rs), which provides a straightforward macro that allows you to easily consume COM interfaces.
 
 ## Notes
