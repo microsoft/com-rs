@@ -225,26 +225,24 @@ macro_rules! inproc_dll_module {
 
         fn get_relevant_registry_keys() -> Vec<com::inproc::RegistryKeyInfo> {
             let file_path = com::inproc::get_dll_file_path();
-            let key_path = com::inproc::class_key_path($clsid_one);
-            let inproc_key_path = com::inproc::class_inproc_key_path($clsid_one);
             vec![
                 com::inproc::RegistryKeyInfo::new(
-                    &key_path,
+                    &com::inproc::class_key_path($clsid_one),
                     "",
                     stringify!($classtype_one),
                 ),
                 com::inproc::RegistryKeyInfo::new(
-                    &inproc_key_path,
+                    &com::inproc::class_inproc_key_path($clsid_one),
                     "",
                     &file_path,
                 ),
                 $(com::inproc::RegistryKeyInfo::new(
-                    &key_path,
+                    &com::inproc::class_key_path($clsid),
                     "",
                     stringify!($classtype),
                 ),
                 com::inproc::RegistryKeyInfo::new(
-                    &inproc_key_path,
+                    &com::inproc::class_inproc_key_path($clsid),
                     "",
                     &file_path,
                 )),*
