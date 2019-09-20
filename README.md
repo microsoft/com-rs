@@ -156,7 +156,7 @@ cargo check --target=x86_64-pc-windows-msvc
 
 For further information on contributing, please take a look at the [contributing doc](./CONTRIBUTING.md)
 
-## Code of Conduct
+### Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct). You can find out more in the [code of conduct doc](./CODE_OF_CONDUCT.md).
 
