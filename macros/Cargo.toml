@@ -3,9 +3,18 @@ name = "macros"
 version = "0.1.0"
 authors = ["adrianwithah <lim.weiheng.hadrian@gmail.com>"]
 edition = "2018"
+autotests = false
 
 [lib]
 proc-macro = true
+
+[[test]]
+name = "tests"
+path = "tests/progress.rs"
+
+[dev-dependencies]
+trybuild = "1.0.13"
+com = { path = ".." }
 
 [dependencies]
 syn = { version = "1.0.5", features = ["full"] }
