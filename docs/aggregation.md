@@ -71,25 +71,15 @@ impl WindowsFileManager {
         let user_field_two = 40;
         let mut wfm = WindowsFileManager::allocate(user_field_one, user_field_two);
 
-        // Instantiate object to aggregate
-        // TODO: Should change to use safe ComPtr methods instead.
-        let mut unknown_file_manager = std::ptr::null_mut::<c_void>();
-        let hr = unsafe {
-            CoCreateInstance(
-                &CLSID_LOCAL_FILE_MANAGER_CLASS as REFCLSID,
-                &*wfm as *const _ as winapi::um::unknwnbase::LPUNKNOWN,
-                CLSCTX_INPROC_SERVER,
-                &IID_IUNKNOWN as REFIID,
-                &mut unknown_file_manager as *mut LPVOID,
+        let runtime = Runtime::new().expect("Failed to get runtime!");
+        let iunknown = runtime
+            .create_aggregated_instance::<dyn IUnknown, WindowsFileManager>(
+                &CLSID_LOCAL_FILE_MANAGER_CLASS,
+                &mut *wfm,
             )
-        };
-        if failed(hr) {
-            println!("Failed to instantiate aggregate! Error: {:x}", hr as u32);
-            panic!();
-        }
+            .expect("Failed to instantiate aggregate!");
 
-        // Instantiate aggregate that exposes ILocalFileManager.
-        wfm.set_aggregate_ilocal_file_manager(unknown_file_manager as *mut IUnknownVPtr);
+        wfm.set_aggregate_ilocal_file_manager(iunknown);
 
         wfm
     }

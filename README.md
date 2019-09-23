@@ -38,11 +38,11 @@ pub trait IAnimal: IUnknown {
 
 ```
 
-Short explanation: This generates the VTable layout for IUnknown and implements the trait on ComPtr so that it dereferences the correct function pointer entry within the VTable.
+Short explanation: This generates the VTable layout for IUnknown and implements the trait on `com::InterfaceRc` so that it dereferences the correct function pointer entry within the VTable.
 
 ### Consuming a COM component
 
-Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `ComPtr` struct, which helps manage the lifetime of the COM component through IUnknown methods.
+Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::InterfaceRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
 
 ```rust
 use com::runtime::ApartmentThreadedRuntime as Runtime;
@@ -53,10 +53,10 @@ let runtime = Runtime::new().expect("Failed to initialize COM Library");
 // Get a COM instance's interface pointer, by specifying
 // - The CLSID of the COM component
 // - The interface of the COM component that you want
-// runtime.create_instance returns a ComPtr<dyn IAnimal> in this case.
+// runtime.create_instance returns a InterfaceRc<dyn IAnimal> in this case.
 let mut cat = runtime.create_instance::<dyn IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
 
-// All IAnimal methods will be defined on ComPtr<T: IAnimal>
+// All IAnimal methods will be defined on InterfaceRc<T: IAnimal>
 cat.eat();
 ```
 
@@ -131,7 +131,7 @@ You can read more about what gurantees this library makes in the [guide to safet
 ## Existing crates
 
 There are many existing Rust crates that help with COM interactions. Depending on your use case, you may find these crates more suited to your needs. For example, we have
-- [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platofrm COM components in Rust.
+- [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platform COM components in Rust.
 - [winapi-rs](https://github.com/retep998/winapi-rs), which provides a straightforward macro that allows you to easily consume COM interfaces.
 
 ## Notes

@@ -11,7 +11,7 @@ use winapi::{
 
 use crate::{
     interfaces::iunknown::{IUnknown, IUnknownVPtr},
-    ComInterface, ComPtr,
+    ComInterface, InterfacePtr, InterfaceRc,
 };
 
 #[com_interface(00000001-0000-0000-c000-000000000046)]
@@ -25,8 +25,8 @@ pub trait IClassFactory: IUnknown {
     fn lock_server(&self, increment: BOOL) -> HRESULT;
 }
 
-impl ComPtr<dyn IClassFactory> {
-    pub fn get_instance<T: ComInterface + ?Sized>(&self) -> Option<ComPtr<T>> {
+impl InterfaceRc<dyn IClassFactory> {
+    pub fn get_instance<T: ComInterface + ?Sized>(&self) -> Option<InterfaceRc<T>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
         let aggr = std::ptr::null_mut();
         let hr = unsafe { self.create_instance(aggr, &T::IID as *const IID, &mut ppv) };
@@ -34,6 +34,6 @@ impl ComPtr<dyn IClassFactory> {
             // TODO: decide what failures are possible
             return None;
         }
-        unsafe { Some(ComPtr::new(ppv)) }
+        Some(InterfaceRc::new(unsafe { InterfacePtr::new(ppv) }))
     }
 }

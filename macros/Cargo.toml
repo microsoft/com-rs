@@ -20,6 +20,6 @@ com = { path = ".." }
 syn = { version = "1.0.5", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0.1"
-com_interface_attribute = { path = "com_interface_attribute" }
+com_interface = { path = "com_interface" }
 co_class = { path = "co_class" }
 aggr_co_class = { path = "aggr_co_class" }

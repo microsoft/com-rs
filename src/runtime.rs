@@ -15,7 +15,7 @@ use winapi::{
 
 use crate::{
     interfaces::iclass_factory::{IClassFactory, IID_ICLASS_FACTORY},
-    CoClass, ComInterface, ComPtr,
+    CoClass, ComInterface, InterfacePtr, InterfaceRc,
 };
 
 pub struct ApartmentThreadedRuntime {
@@ -40,7 +40,7 @@ impl ApartmentThreadedRuntime {
         Ok(runtime)
     }
 
-    pub fn get_class_object(&self, iid: &IID) -> Result<ComPtr<dyn IClassFactory>, HRESULT> {
+    pub fn get_class_object(&self, iid: &IID) -> Result<InterfaceRc<dyn IClassFactory>, HRESULT> {
         let mut class_factory = std::ptr::null_mut::<c_void>();
         let hr = unsafe {
             CoGetClassObject(
@@ -55,16 +55,18 @@ impl ApartmentThreadedRuntime {
             return Err(hr);
         }
 
-        unsafe { Ok(ComPtr::new(class_factory)) }
+        Ok(InterfaceRc::new(unsafe {
+            InterfacePtr::new(class_factory)
+        }))
     }
 
     pub fn create_instance<T: ComInterface + ?Sized>(
         &self,
         clsid: &IID,
-    ) -> Result<ComPtr<T>, HRESULT> {
+    ) -> Result<InterfaceRc<T>, HRESULT> {
         unsafe {
-            Ok(ComPtr::new(
-                self.create_raw_instance::<T>(clsid, std::ptr::null_mut())? as *mut c_void,
+            Ok(InterfaceRc::new(
+                self.create_raw_instance::<T>(clsid, std::ptr::null_mut())?,
             ))
         }
     }
@@ -73,7 +75,7 @@ impl ApartmentThreadedRuntime {
         &self,
         clsid: &IID,
         outer: &mut U,
-    ) -> Result<*mut *const T::VTable, HRESULT> {
+    ) -> Result<InterfacePtr<T>, HRESULT> {
         unsafe { self.create_raw_instance::<T>(clsid, outer as *mut U as LPUNKNOWN) }
     }
 
@@ -81,7 +83,7 @@ impl ApartmentThreadedRuntime {
         &self,
         clsid: &IID,
         outer: LPUNKNOWN,
-    ) -> Result<*mut *const T::VTable, HRESULT> {
+    ) -> Result<InterfacePtr<T>, HRESULT> {
         let mut instance = std::ptr::null_mut::<c_void>();
         let hr = CoCreateInstance(
             clsid as REFCLSID,
@@ -94,7 +96,7 @@ impl ApartmentThreadedRuntime {
             return Err(hr);
         }
 
-        Ok(instance as *mut *const T::VTable)
+        Ok(InterfacePtr::new(instance))
     }
 }
 
