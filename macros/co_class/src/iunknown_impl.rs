@@ -41,7 +41,6 @@ pub fn gen_add_ref_implementation() -> HelperTokenStream {
     quote!(
         let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
         self.#ref_count_ident.set(value);
-        println!("Count now {}", value);
         value
     )
 }
@@ -114,7 +113,6 @@ fn gen_vptr_drops(base_interface_idents: &[Ident]) -> HelperTokenStream {
 
 fn gen_com_object_drop(struct_ident: &Ident) -> HelperTokenStream {
     quote!(
-        println!("Count is 0 for {}. Freeing memory...", stringify!(#struct_ident));
         Box::from_raw(self as *const _ as *mut #struct_ident);
     )
 }
@@ -132,7 +130,6 @@ pub fn gen_release_assign_new_count_to_var(
 ) -> HelperTokenStream {
     quote!(
         let #new_count_ident = self.#ref_count_ident.get();
-        println!("Count now {}", #new_count_ident);
     )
 }
 
@@ -166,11 +163,9 @@ pub fn gen_query_interface(
                 *ppv = &self.#first_vptr_field as *const _ as *mut winapi::ctypes::c_void;
             } #base_match_arms #aggr_match_arms else {
                 *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
-                println!("Returning NO INTERFACE.");
                 return winapi::shared::winerror::E_NOINTERFACE;
             }
 
-            println!("Successful!.");
             self.add_ref();
             NOERROR
         }
