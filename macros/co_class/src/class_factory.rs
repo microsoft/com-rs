@@ -45,7 +45,6 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                 // Bringing trait into scope to access IUnknown methods.
                 use com::interfaces::iunknown::IUnknown;
 
-                println!("Creating instance for {}", stringify!(#struct_ident));
                 if aggr != std::ptr::null_mut() {
                     return winapi::shared::winerror::CLASS_E_NOAGGREGATION;
                 }
@@ -86,7 +85,6 @@ pub fn gen_lock_server() -> HelperTokenStream {
     quote! {
         // TODO: Implement correctly
         fn lock_server(&self, _increment: winapi::shared::minwindef::BOOL) -> winapi::shared::winerror::HRESULT {
-            println!("LockServer called");
             winapi::shared::winerror::S_OK
         }
     }
@@ -97,7 +95,7 @@ pub fn gen_iunknown_impl(
     aggr_map: &HashMap<Ident, Vec<Ident>>,
     class_factory_ident: &Ident,
 ) -> HelperTokenStream {
-    let query_interface = gen_query_interface(class_factory_ident);
+    let query_interface = gen_query_interface();
     let add_ref = crate::iunknown_impl::gen_add_ref();
     let release = gen_release(&base_interface_idents, &aggr_map, class_factory_ident);
     quote! {
@@ -141,15 +139,13 @@ pub fn gen_release(
     }
 }
 
-fn gen_query_interface(class_factory_ident: &Ident) -> HelperTokenStream {
+fn gen_query_interface() -> HelperTokenStream {
     let vptr_field_ident = macro_utils::vptr_field_ident(&get_iclass_factory_interface_ident());
 
     quote! {
         unsafe fn query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> winapi::shared::winerror::HRESULT {
             // Bringing trait into scope to access add_ref method.
             use com::interfaces::iunknown::IUnknown;
-
-            println!("Querying interface on {}...", stringify!(#class_factory_ident));
 
             let riid = &*riid;
             if winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID) | winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iclass_factory::IClassFactory as com::ComInterface>::IID) {
@@ -179,7 +175,6 @@ pub fn gen_class_factory_impl(
                 use com::interfaces::iclass_factory::IClassFactory;
 
                 // allocate directly since no macros generated an `allocate` function
-                println!("Allocating new Vtable for {}...", stringify!(#class_factory_ident));
                 #base_inits
 
                 let out = #class_factory_ident {

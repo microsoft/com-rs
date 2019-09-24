@@ -39,7 +39,6 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
 
                 let riid = unsafe { &*riid };
 
-                println!("Creating instance for {}", stringify!(#struct_ident));
                 if !aggr.is_null() && !winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID) {
                     unsafe {
                         *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();

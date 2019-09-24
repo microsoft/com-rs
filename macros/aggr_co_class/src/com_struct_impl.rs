@@ -132,8 +132,6 @@ fn gen_inner_query_interface(
 
     quote!(
         pub(crate) fn inner_query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> HRESULT {
-            println!("Non delegating QI");
-
             unsafe {
                 let riid = &*riid;
 
@@ -141,11 +139,9 @@ fn gen_inner_query_interface(
                     *ppv = &self.#non_delegating_iunknown_field_ident as *const _ as *mut winapi::ctypes::c_void;
                 } #base_match_arms #aggr_match_arms else {
                     *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
-                    println!("Returning NO INTERFACE.");
                     return winapi::shared::winerror::E_NOINTERFACE;
                 }
 
-                println!("Successful!.");
                 self.inner_add_ref();
                 NOERROR
             }
@@ -183,8 +179,6 @@ fn gen_allocate_fn(
 
     quote!(
         fn allocate(#allocate_parameters) -> Box<#struct_ident> {
-            println!("Allocating new VTable for {}", stringify!(#struct_ident));
-
             // Non-delegating methods.
             unsafe extern "stdcall" fn non_delegatingegating_query_interface(
                 this: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
