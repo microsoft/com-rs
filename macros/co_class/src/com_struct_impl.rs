@@ -45,8 +45,6 @@ pub fn gen_allocate_fn(
     // Initialise all aggregated objects as NULL.
     quote!(
         fn allocate(#allocate_parameters) -> Box<#struct_ident> {
-            println!("Allocating new VTable for {}", stringify!(#struct_ident));
-
             #base_inits
 
             let out = #struct_ident {

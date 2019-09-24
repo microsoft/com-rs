@@ -41,7 +41,6 @@ pub fn register_keys(registry_keys_to_add: Vec<RegistryKeyInfo>) -> HRESULT {
     for key_info in registry_keys_to_add.iter() {
         let result = add_class_key(&key_info);
         if result as u32 != ERROR_SUCCESS {
-            println!("Error creating key. error code: {}", result);
             return SELFREG_E_CLASS;
         }
     }
@@ -54,7 +53,6 @@ pub fn unregister_keys(registry_keys_to_remove: Vec<RegistryKeyInfo>) -> HRESULT
     for key_info in registry_keys_to_remove.iter() {
         let result = remove_class_key(&key_info);
         if result as u32 != ERROR_SUCCESS {
-            println!("Error deleting key. error code: {}", result);
             hr = SELFREG_E_CLASS;
         }
     }
@@ -114,7 +112,6 @@ fn add_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
     let key_handle = match create_class_key(key_info) {
         Ok(key_handle) => key_handle,
         Err(e) => {
-            println!("Error creating key. error code: {}", e);
             return e;
         }
     };
@@ -122,7 +119,6 @@ fn add_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
     let key_handle = match set_class_key(key_handle, key_info) {
         Ok(key_handle) => key_handle,
         Err(e) => {
-            println!("Error setting key. error code: {}", e);
             return e;
         }
     };
