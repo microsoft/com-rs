@@ -1,5 +1,5 @@
 [package]
-name = "co_class"
+name = "com_macros_support"
 version = "0.1.0"
 authors = ["adrianwithah <lim.weiheng.hadrian@gmail.com>"]
 edition = "2018"
@@ -8,4 +8,3 @@ edition = "2018"
 syn = { version = "1.0.5", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0.1"
-macro_utils = { path = "../macro_utils" }

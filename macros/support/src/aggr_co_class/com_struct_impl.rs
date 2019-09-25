@@ -18,8 +18,9 @@ pub fn generate(
     let allocate_fn = gen_allocate_fn(aggr_map, base_interface_idents, struct_item);
     let set_iunknown_fn = gen_set_iunknown_fn();
     let inner_iunknown_fns = gen_inner_iunknown_fns(base_interface_idents, aggr_map, struct_ident);
-    let get_class_object_fn = co_class::com_struct_impl::gen_get_class_object_fn(struct_item);
-    let set_aggregate_fns = co_class::com_struct_impl::gen_set_aggregate_fns(aggr_map);
+    let get_class_object_fn =
+        crate::co_class::com_struct_impl::gen_get_class_object_fn(struct_item);
+    let set_aggregate_fns = crate::co_class::com_struct_impl::gen_set_aggregate_fns(aggr_map);
 
     quote!(
         impl #struct_ident {
@@ -35,8 +36,8 @@ pub fn generate(
 /// Function that should only be used by Class Object, to set the
 /// object's iunknown_to_use, if the object is going to get aggregated.
 fn gen_set_iunknown_fn() -> HelperTokenStream {
-    let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
-    let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
+    let iunknown_to_use_field_ident = crate::utils::iunknown_to_use_field_ident();
+    let non_delegating_iunknown_field_ident = crate::utils::non_delegating_iunknown_field_ident();
 
     quote!(
         pub(crate) fn set_iunknown(&mut self, aggr: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable) {
@@ -68,7 +69,7 @@ fn gen_inner_iunknown_fns(
 }
 
 pub fn gen_inner_add_ref() -> HelperTokenStream {
-    let add_ref_implementation = co_class::iunknown_impl::gen_add_ref_implementation();
+    let add_ref_implementation = crate::co_class::iunknown_impl::gen_add_ref_implementation();
 
     quote! {
         pub(crate) fn inner_add_ref(&self) -> u32 {
@@ -82,18 +83,21 @@ pub fn gen_inner_release(
     aggr_map: &HashMap<Ident, Vec<Ident>>,
     struct_ident: &Ident,
 ) -> HelperTokenStream {
-    let ref_count_ident = macro_utils::ref_count_ident();
+    let ref_count_ident = crate::utils::ref_count_ident();
 
-    let release_decrement = co_class::iunknown_impl::gen_release_decrement(&ref_count_ident);
+    let release_decrement = crate::co_class::iunknown_impl::gen_release_decrement(&ref_count_ident);
     let release_assign_new_count_to_var =
-        co_class::iunknown_impl::gen_release_assign_new_count_to_var(
+        crate::co_class::iunknown_impl::gen_release_assign_new_count_to_var(
             &ref_count_ident,
             &ref_count_ident,
         );
     let release_new_count_var_zero_check =
-        co_class::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
-    let release_drops =
-        co_class::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
+        crate::co_class::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
+    let release_drops = crate::co_class::iunknown_impl::gen_release_drops(
+        base_interface_idents,
+        aggr_map,
+        struct_ident,
+    );
     let non_delegating_iunknown_drop = gen_non_delegating_iunknown_drop();
 
     quote! {
@@ -111,7 +115,7 @@ pub fn gen_inner_release(
 }
 
 fn gen_non_delegating_iunknown_drop() -> HelperTokenStream {
-    let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
+    let non_delegating_iunknown_field_ident = crate::utils::non_delegating_iunknown_field_ident();
     quote!(
         Box::from_raw(self.#non_delegating_iunknown_field_ident as *mut <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable);
     )
@@ -122,13 +126,14 @@ fn gen_inner_query_interface(
     base_interface_idents: &[Ident],
     aggr_map: &HashMap<Ident, Vec<Ident>>,
 ) -> HelperTokenStream {
-    let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
+    let non_delegating_iunknown_field_ident = crate::utils::non_delegating_iunknown_field_ident();
 
     // Generate match arms for implemented interfaces
-    let base_match_arms = co_class::iunknown_impl::gen_base_match_arms(base_interface_idents);
+    let base_match_arms =
+        crate::co_class::iunknown_impl::gen_base_match_arms(base_interface_idents);
 
     // Generate match arms for aggregated interfaces
-    let aggr_match_arms = co_class::iunknown_impl::gen_aggregate_match_arms(aggr_map);
+    let aggr_match_arms = crate::co_class::iunknown_impl::gen_aggregate_match_arms(aggr_map);
 
     quote!(
         pub(crate) fn inner_query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> HRESULT {
@@ -159,22 +164,26 @@ fn gen_allocate_fn(
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
 
-    let base_inits =
-        co_class::com_struct_impl::gen_allocate_base_inits(struct_ident, base_interface_idents);
+    let base_inits = crate::co_class::com_struct_impl::gen_allocate_base_inits(
+        struct_ident,
+        base_interface_idents,
+    );
 
     // Allocate function signature
     let allocate_parameters =
-        co_class::com_struct_impl::gen_allocate_function_parameters_signature(struct_item);
+        crate::co_class::com_struct_impl::gen_allocate_function_parameters_signature(struct_item);
 
     // Syntax for instantiating the fields of the struct.
-    let base_fields = co_class::com_struct_impl::gen_allocate_base_fields(base_interface_idents);
-    let ref_count_field = co_class::com_struct_impl::gen_allocate_ref_count_field();
-    let user_fields = co_class::com_struct_impl::gen_allocate_user_fields(struct_item);
-    let aggregate_fields = co_class::com_struct_impl::gen_allocate_aggregate_fields(aggr_map);
+    let base_fields =
+        crate::co_class::com_struct_impl::gen_allocate_base_fields(base_interface_idents);
+    let ref_count_field = crate::co_class::com_struct_impl::gen_allocate_ref_count_field();
+    let user_fields = crate::co_class::com_struct_impl::gen_allocate_user_fields(struct_item);
+    let aggregate_fields =
+        crate::co_class::com_struct_impl::gen_allocate_aggregate_fields(aggr_map);
 
     // Aggregable COM struct specific fields
-    let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
-    let non_delegating_iunknown_field_ident = macro_utils::non_delegating_iunknown_field_ident();
+    let iunknown_to_use_field_ident = crate::utils::iunknown_to_use_field_ident();
+    let non_delegating_iunknown_field_ident = crate::utils::non_delegating_iunknown_field_ident();
     let non_delegating_iunknown_offset = base_interface_idents.len();
 
     quote!(

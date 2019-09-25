@@ -93,7 +93,7 @@ pub fn gen_allocate_user_fields(struct_item: &ItemStruct) -> HelperTokenStream {
 
 // Reference count field initialisation.
 pub fn gen_allocate_ref_count_field() -> HelperTokenStream {
-    let ref_count_ident = macro_utils::ref_count_ident();
+    let ref_count_ident = crate::utils::ref_count_ident();
     quote!(
         #ref_count_ident: std::cell::Cell::new(0),
     )
@@ -102,7 +102,7 @@ pub fn gen_allocate_ref_count_field() -> HelperTokenStream {
 // Generate the vptr field idents needed in the instantiation syntax of the COM struct.
 pub fn gen_allocate_base_fields(base_interface_idents: &[Ident]) -> HelperTokenStream {
     let base_fields = base_interface_idents.iter().map(|base| {
-        let vptr_field_ident = macro_utils::vptr_field_ident(base);
+        let vptr_field_ident = crate::utils::vptr_field_ident(base);
         quote!(#vptr_field_ident)
     });
 
@@ -117,7 +117,7 @@ pub fn gen_allocate_base_inits(
     let mut offset_count: usize = 0;
     let base_inits = base_interface_idents.iter().map(|base| {
         let vtable_var_ident = format_ident!("{}_vtable", base.to_string().to_lowercase());
-        let vptr_field_ident = macro_utils::vptr_field_ident(&base);
+        let vptr_field_ident = crate::utils::vptr_field_ident(&base);
 
         let out = quote!(
             let #vtable_var_ident = com::vtable!(#struct_ident: #base, #offset_count);
@@ -135,7 +135,7 @@ pub fn gen_allocate_base_inits(
 /// class object.
 pub fn gen_get_class_object_fn(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
-    let class_factory_ident = macro_utils::class_factory_ident(&struct_ident);
+    let class_factory_ident = crate::utils::class_factory_ident(&struct_ident);
 
     quote!(
         pub fn get_class_object() -> Box<#class_factory_ident> {
@@ -148,7 +148,7 @@ pub fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTok
     let mut fns = Vec::new();
     for (aggr_field_ident, aggr_base_interface_idents) in aggr_map.iter() {
         for base in aggr_base_interface_idents {
-            let set_aggregate_fn_ident = macro_utils::set_aggregate_fn_ident(&base);
+            let set_aggregate_fn_ident = crate::utils::set_aggregate_fn_ident(&base);
             fns.push(quote!(
                 fn #set_aggregate_fn_ident(&mut self, aggr: com::InterfacePtr<dyn com::interfaces::iunknown::IUnknown>) {
                     // TODO: What happens if we are overwriting an existing aggregate?

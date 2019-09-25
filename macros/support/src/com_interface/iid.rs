@@ -1,5 +1,3 @@
-use macro_utils;
-
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span, TokenStream as HelperTokenStream};
 use quote::{format_ident, quote};
@@ -85,6 +83,6 @@ pub fn generate(macro_attr: &TokenStream, interface_ident: &Ident) -> HelperToke
 pub fn ident(interface_ident: &Ident) -> Ident {
     format_ident!(
         "IID_{}",
-        macro_utils::camel_to_snake(&interface_ident.to_string()).to_uppercase()
+        crate::utils::camel_to_snake(&interface_ident.to_string()).to_uppercase()
     )
 }

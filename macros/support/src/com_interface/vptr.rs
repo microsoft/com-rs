@@ -1,4 +1,4 @@
-use crate::vtable;
+use super::vtable;
 use proc_macro2::{Ident, TokenStream as HelperTokenStream};
 use quote::{format_ident, quote};
 

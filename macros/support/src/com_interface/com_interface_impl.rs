@@ -1,4 +1,4 @@
-use crate::{iid, vtable, vtable_macro};
+use crate::com_interface::{iid, vtable, vtable_macro};
 
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
