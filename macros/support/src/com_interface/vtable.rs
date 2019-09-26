@@ -1,5 +1,4 @@
-use crate::vptr;
-use macro_utils;
+use super::vptr;
 use proc_macro2::{Ident, TokenStream as HelperTokenStream};
 use quote::{format_ident, quote};
 use std::iter::FromIterator;
@@ -56,7 +55,7 @@ pub fn ident(interface_name: &str) -> Ident {
 }
 
 fn base_field_ident(base_interface_name: &str) -> Ident {
-    format_ident!("{}_base", macro_utils::camel_to_snake(base_interface_name))
+    format_ident!("{}_base", crate::utils::camel_to_snake(base_interface_name))
 }
 
 fn gen_vtable_methods(interface: &ItemTrait) -> HelperTokenStream {
@@ -76,7 +75,7 @@ fn gen_vtable_methods(interface: &ItemTrait) -> HelperTokenStream {
 fn gen_vtable_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
     let method_ident = format_ident!(
         "{}",
-        macro_utils::snake_to_camel(&method.sig.ident.to_string())
+        crate::utils::snake_to_camel(&method.sig.ident.to_string())
     );
     let vtable_function_signature = gen_vtable_function_signature(interface_ident, method);
 

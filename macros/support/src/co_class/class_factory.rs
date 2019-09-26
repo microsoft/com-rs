@@ -25,7 +25,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let aggr_map = get_class_factory_aggr_map();
 
     let struct_ident = &struct_item.ident;
-    let class_factory_ident = macro_utils::class_factory_ident(&struct_ident);
+    let class_factory_ident = crate::utils::class_factory_ident(&struct_ident);
 
     let struct_definition = gen_class_factory_struct_definition(&class_factory_ident);
     let lock_server = gen_lock_server();
@@ -69,9 +69,9 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
 
 // Can't use gen_base_fields here, since user might not have imported IClassFactory.
 pub fn gen_class_factory_struct_definition(class_factory_ident: &Ident) -> HelperTokenStream {
-    let ref_count_field = crate::com_struct::gen_ref_count_field();
+    let ref_count_field = super::com_struct::gen_ref_count_field();
     let interface_ident = get_iclass_factory_interface_ident();
-    let vptr_field_ident = macro_utils::vptr_field_ident(&interface_ident);
+    let vptr_field_ident = crate::utils::vptr_field_ident(&interface_ident);
     quote! {
         #[repr(C)]
         pub struct #class_factory_ident {
@@ -96,7 +96,7 @@ pub fn gen_iunknown_impl(
     class_factory_ident: &Ident,
 ) -> HelperTokenStream {
     let query_interface = gen_query_interface();
-    let add_ref = crate::iunknown_impl::gen_add_ref();
+    let add_ref = super::iunknown_impl::gen_add_ref();
     let release = gen_release(&base_interface_idents, &aggr_map, class_factory_ident);
     quote! {
         impl com::interfaces::iunknown::IUnknown for #class_factory_ident {
@@ -112,17 +112,17 @@ pub fn gen_release(
     aggr_map: &HashMap<Ident, Vec<Ident>>,
     struct_ident: &Ident,
 ) -> HelperTokenStream {
-    let ref_count_ident = macro_utils::ref_count_ident();
+    let ref_count_ident = crate::utils::ref_count_ident();
 
-    let release_decrement = crate::iunknown_impl::gen_release_decrement(&ref_count_ident);
-    let release_assign_new_count_to_var = crate::iunknown_impl::gen_release_assign_new_count_to_var(
+    let release_decrement = super::iunknown_impl::gen_release_decrement(&ref_count_ident);
+    let release_assign_new_count_to_var = super::iunknown_impl::gen_release_assign_new_count_to_var(
         &ref_count_ident,
         &ref_count_ident,
     );
     let release_new_count_var_zero_check =
-        crate::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
+        super::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
     let release_drops =
-        crate::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
+        super::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
 
     quote! {
         unsafe fn release(&self) -> u32 {
@@ -140,7 +140,7 @@ pub fn gen_release(
 }
 
 fn gen_query_interface() -> HelperTokenStream {
-    let vptr_field_ident = macro_utils::vptr_field_ident(&get_iclass_factory_interface_ident());
+    let vptr_field_ident = crate::utils::vptr_field_ident(&get_iclass_factory_interface_ident());
 
     quote! {
         unsafe fn query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> winapi::shared::winerror::HRESULT {
@@ -164,10 +164,10 @@ pub fn gen_class_factory_impl(
     base_interface_idents: &[Ident],
     class_factory_ident: &Ident,
 ) -> HelperTokenStream {
-    let ref_count_field = crate::com_struct_impl::gen_allocate_ref_count_field();
-    let base_fields = crate::com_struct_impl::gen_allocate_base_fields(base_interface_idents);
+    let ref_count_field = super::com_struct_impl::gen_allocate_ref_count_field();
+    let base_fields = super::com_struct_impl::gen_allocate_base_fields(base_interface_idents);
     let base_inits =
-        crate::com_struct_impl::gen_allocate_base_inits(class_factory_ident, base_interface_idents);
+        super::com_struct_impl::gen_allocate_base_inits(class_factory_ident, base_interface_idents);
 
     quote! {
         impl #class_factory_ident {

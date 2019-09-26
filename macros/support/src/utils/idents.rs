@@ -7,14 +7,6 @@ pub fn class_factory_ident(class_ident: &Ident) -> Ident {
     format_ident!("{}ClassFactory", class_ident)
 }
 
-pub fn vtable_ident(interface_ident: &Ident) -> Ident {
-    format_ident!("{}VTable", interface_ident)
-}
-
-pub fn vptr_ident(interface_ident: &Ident) -> Ident {
-    format_ident!("{}VPtr", interface_ident)
-}
-
 pub fn non_delegating_iunknown_field_ident() -> Ident {
     format_ident!("__non_delegatingegating_iunknown")
 }
@@ -32,7 +24,7 @@ pub fn vptr_field_ident(interface_ident: &Ident) -> Ident {
 }
 
 pub fn set_aggregate_fn_ident(base: &Ident) -> Ident {
-    format_ident!("set_aggregate_{}", crate::camel_to_snake(&base.to_string()))
+    format_ident!("set_aggregate_{}", super::camel_to_snake(&base.to_string()))
 }
 
 pub fn base_interface_idents(attr_args: &AttributeArgs) -> Vec<Ident> {
@@ -89,7 +81,7 @@ pub fn get_aggr_map(attr_args: &AttributeArgs) -> HashMap<Ident, Vec<Ident>> {
             }
             let ident = aggr_interfaces_idents
                 .iter()
-                .map(|base| crate::camel_to_snake(&base.to_string()))
+                .map(|base| super::camel_to_snake(&base.to_string()))
                 .fold("aggr".to_owned(), |acc, base| format!("{}_{}", acc, base));
             aggr_map.insert(format_ident!("{}", ident), aggr_interfaces_idents);
         }

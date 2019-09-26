@@ -66,7 +66,7 @@ macro_rules! vtable {
 pub extern crate winapi as _winapi;
 
 #[doc(hidden)]
-pub use macros::{co_class, com_interface, VTable};
+pub use com_macros::{co_class, com_interface, VTable};
 
 // this allows for the crate to refer to itself as `com` to keep macros consistent
 // whether they are used by some other crate or internally

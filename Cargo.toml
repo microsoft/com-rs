@@ -1,7 +1,7 @@
 [package]
 name = "com"
-version = "0.0.1"
-authors = ["Microsoft Corp"]
+version = "0.1.0"
+authors = ["Microsoft Corp."]
 description = """
 Utilities for implementing COM Client and Servers
 """
@@ -16,4 +16,5 @@ readme = "./README.md"
 winapi = { version = "0.3", features = ["winuser", "winreg", "winerror", "winnt", "libloaderapi", "olectl", "objbase",] }
 
 [dependencies]
-macros = { path = "macros" }
+com_macros = { path = "macros" }
+

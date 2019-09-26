@@ -1,5 +1,3 @@
-use macro_utils;
-
 use proc_macro2::{Ident, TokenStream as HelperTokenStream};
 use quote::{format_ident, quote};
 use syn::{ItemStruct, Type, TypeBareFn};
@@ -24,7 +22,7 @@ pub fn generate(item: &ItemStruct) -> HelperTokenStream {
 pub fn ident(struct_ident: &Ident) -> Ident {
     format_ident!(
         "{}_gen_vtable",
-        macro_utils::camel_to_snake(&struct_ident.to_string().replace("VTable", ""))
+        crate::utils::camel_to_snake(&struct_ident.to_string().replace("VTable", ""))
     )
 }
 
@@ -35,7 +33,7 @@ fn gen_parent_vtable_binding(item: &ItemStruct) -> HelperTokenStream {
         if parent.ends_with("_base") {
             let parent = format_ident!(
                 "I{}",
-                macro_utils::snake_to_camel(
+                crate::utils::snake_to_camel(
                     parent.trim_end_matches("_base").trim_start_matches("i")
                 )
             );
@@ -75,7 +73,7 @@ fn gen_vtable_function(
 ) -> HelperTokenStream {
     assert!(fun.unsafety.is_some(), "Function must be marked unsafe");
     assert!(fun.abi.is_some(), "Function must have marked ABI");
-    let method_name = format_ident!("{}", macro_utils::camel_to_snake(&method_name.to_string()));
+    let method_name = format_ident!("{}", crate::utils::camel_to_snake(&method_name.to_string()));
     let interface_name = struct_ident.to_string().replace("VTable", "");
     let interface_ident = format_ident!("{}", interface_name);
     let function_ident = format_ident!("{}_{}", interface_name.to_lowercase(), method_name);
@@ -127,7 +125,7 @@ fn gen_vtable_method_initialization(item: &ItemStruct) -> HelperTokenStream {
             let function_ident = format_ident!(
                 "{}_{}",
                 item.ident.to_string().replace("VTable", "").to_lowercase(),
-                macro_utils::camel_to_snake(&method_ident.to_string())
+                crate::utils::camel_to_snake(&method_ident.to_string())
             );
             quote! {
                 #function_ident::<$class, $offset>,

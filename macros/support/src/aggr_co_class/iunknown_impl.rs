@@ -7,7 +7,7 @@ use syn::ItemStruct;
 /// delegate to the interface pointer at __iunknown_to_use.
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
-    let iunknown_to_use_field_ident = macro_utils::iunknown_to_use_field_ident();
+    let iunknown_to_use_field_ident = crate::utils::iunknown_to_use_field_ident();
     let ptr_casting = quote! { as *mut winapi::ctypes::c_void };
 
     quote!(

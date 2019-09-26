@@ -37,7 +37,7 @@ pub fn gen_add_ref() -> HelperTokenStream {
 }
 
 pub fn gen_add_ref_implementation() -> HelperTokenStream {
-    let ref_count_ident = macro_utils::ref_count_ident();
+    let ref_count_ident = crate::utils::ref_count_ident();
     quote!(
         let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
         self.#ref_count_ident.set(value);
@@ -50,7 +50,7 @@ pub fn gen_release(
     aggr_map: &HashMap<Ident, Vec<Ident>>,
     struct_ident: &Ident,
 ) -> HelperTokenStream {
-    let ref_count_ident = macro_utils::ref_count_ident();
+    let ref_count_ident = crate::utils::ref_count_ident();
 
     let release_decrement = gen_release_decrement(&ref_count_ident);
     let release_assign_new_count_to_var =
@@ -102,7 +102,7 @@ fn gen_aggregate_drops(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStre
 
 fn gen_vptr_drops(base_interface_idents: &[Ident]) -> HelperTokenStream {
     let vptr_drops = base_interface_idents.iter().map(|base| {
-        let vptr_field_ident = macro_utils::vptr_field_ident(&base);
+        let vptr_field_ident = crate::utils::vptr_field_ident(&base);
         quote!(
             Box::from_raw(self.#vptr_field_ident as *mut <dyn #base as com::ComInterface>::VTable);
         )
@@ -143,7 +143,7 @@ pub fn gen_query_interface(
     base_interface_idents: &[Ident],
     aggr_map: &HashMap<Ident, Vec<Ident>>,
 ) -> HelperTokenStream {
-    let first_vptr_field = macro_utils::vptr_field_ident(&base_interface_idents[0]);
+    let first_vptr_field = crate::utils::vptr_field_ident(&base_interface_idents[0]);
 
     // Generate match arms for implemented interfaces
     let base_match_arms = gen_base_match_arms(base_interface_idents);
@@ -177,7 +177,7 @@ pub fn gen_base_match_arms(base_interface_idents: &[Ident]) -> HelperTokenStream
     let base_match_arms = base_interface_idents.iter().map(|base| {
         let match_condition =
             quote!(<dyn #base as com::ComInterface>::is_iid_in_inheritance_chain(riid));
-        let vptr_field_ident = macro_utils::vptr_field_ident(&base);
+        let vptr_field_ident = crate::utils::vptr_field_ident(&base);
 
         quote!(
             else if #match_condition {
