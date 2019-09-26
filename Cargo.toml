@@ -2,10 +2,18 @@
 name = "com"
 version = "0.0.1"
 authors = ["Microsoft Corp"]
+description = """
+Utilities for implementing COM Client and Servers
+"""
 edition = "2018"
+repository = "https://github.com/microsoft/com-rs"
+categories = ["os::windows-apis"]
+keywords = ["windows", "ffi", "com"]
+license = "MIT"
+readme = "./README.md"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser", "winreg", "winerror", "winnt", "libloaderapi", "olectl", "objbase",] }
 
 [dependencies]
-macros = { path="macros" }
+macros = { path = "macros" }
