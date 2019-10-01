@@ -3,6 +3,12 @@ name = "com_macros"
 version = "0.1.0"
 authors = ["Microsoft Corp."]
 edition = "2018"
+description = """
+COM crate macros
+"""
+license = "MIT"
+keywords = ["windows", "ffi", "com", "macros"]
+repository = "https://github.com/microsoft/com-rs"
 autotests = false
 
 [lib]
