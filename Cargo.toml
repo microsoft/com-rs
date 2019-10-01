@@ -16,5 +16,5 @@ readme = "./README.md"
 winapi = { version = "0.3", features = ["winuser", "winreg", "winerror", "winnt", "libloaderapi", "olectl", "objbase",] }
 
 [dependencies]
-com_macros = { path = "macros" }
+com_macros = { version = "0.1", path = "macros" }
 

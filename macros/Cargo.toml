@@ -19,4 +19,4 @@ com = { path = ".." }
 [dependencies]
 syn = { version = "1.0.5", features = ["full"] }
 proc-macro2 = "1.0.1"
-com_macros_support = { path = "support" }
+com_macros_support = { version = "0.1", path = "support" }
