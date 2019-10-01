@@ -20,7 +20,7 @@ path = "tests/progress.rs"
 
 [dev-dependencies]
 trybuild = "1.0.13"
-com = { path = ".." }
+com = { version = "0.1", path = ".." }
 
 [dependencies]
 syn = { version = "1.0.5", features = ["full"] }
