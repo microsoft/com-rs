@@ -2,9 +2,8 @@ name: Testing
 on: [push]
 
 jobs:
-  build:
-    name: test
-    runs-on: ubuntu-latest
+  test:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/cargo@v1
