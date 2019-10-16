@@ -5,7 +5,8 @@ use syn::ItemStruct;
 // We manually generate a ClassFactory without macros, otherwise
 // it leads to an infinite loop.
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
-    let base_interface_idents = crate::co_class::class_factory::get_class_factory_base_interface_idents();
+    let base_interface_idents =
+        crate::co_class::class_factory::get_class_factory_base_interface_idents();
     let aggr_map = crate::co_class::class_factory::get_class_factory_aggr_map();
 
     let struct_ident = &struct_item.ident;
