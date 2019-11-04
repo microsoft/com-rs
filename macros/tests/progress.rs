@@ -4,4 +4,5 @@ extern crate trybuild;
 fn test_com_interface() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/no_supertrait.rs");
+    t.pass("tests/unsafe-traits.rs");
 }

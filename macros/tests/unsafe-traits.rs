@@ -1,5 +1,3 @@
-// This is a compile-test to ensure the proc macro can handle unsafe traits.
-
 use com::interfaces::iunknown::IUnknown;
 use winapi::shared::winerror::NOERROR;
 
@@ -22,3 +20,5 @@ impl CoClass {
 unsafe impl IUnsafe for CoClass {
     fn method(&self) {}
 }
+
+fn main() {}

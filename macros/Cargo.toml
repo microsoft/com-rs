@@ -21,6 +21,7 @@ path = "tests/progress.rs"
 [dev-dependencies]
 trybuild = "1.0.13"
 com = { version = "0.1", path = ".." }
+winapi = "0.3"
 
 [dependencies]
 syn = { version = "1.0.5", features = ["full"] }
