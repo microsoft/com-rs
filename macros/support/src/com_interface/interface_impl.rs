@@ -6,6 +6,7 @@ use syn::{FnArg, ItemTrait, TraitItem, TraitItemMethod};
 
 pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
     let interface_ident = &interface.ident;
+    let unsafety = &interface.unsafety;
     let mut impl_methods = Vec::new();
 
     for trait_item in &interface.items {
@@ -18,11 +19,11 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
     }
 
     quote! {
-        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::InterfaceRc<T> {
+        #unsafety impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::InterfaceRc<T> {
             #(#impl_methods)*
         }
 
-        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::InterfacePtr<T> {
+        #unsafety impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::InterfacePtr<T> {
             #(#impl_methods)*
         }
     }
