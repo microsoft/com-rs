@@ -9,8 +9,8 @@ pub trait IUnknown {
     /// The COM [`QueryInterface` Method]
     ///
     /// This method normally should not be called directly. Interfaces that implement
-    /// `IUnknown` also implement [`IUknown::get_interface`] which is a safe wrapper around
-    /// `IUknown::query_interface`.
+    /// `IUnknown` also implement [`IUnknown::get_interface`] which is a safe wrapper around
+    /// `IUnknown::query_interface`.
     ///
     /// [`QueryInterface` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
     /// [`IUnknown::get_interface`]: trait.IUnknown.html#method.get_interface
