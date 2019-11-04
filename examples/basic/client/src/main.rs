@@ -12,7 +12,7 @@ fn main() {
 
     let unknown = factory
         .get_instance::<dyn IUnknown>()
-        .expect("Failed to get IUknown");
+        .expect("Failed to get IUnknown");
     println!("Got IUnknown");
 
     let animal = unknown
