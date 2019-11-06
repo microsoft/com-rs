@@ -136,15 +136,15 @@ fn gen_inner_query_interface(
     let aggr_match_arms = crate::co_class::iunknown_impl::gen_aggregate_match_arms(aggr_map);
 
     quote!(
-        pub(crate) fn inner_query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> HRESULT {
+        pub(crate) fn inner_query_interface(&self, riid: *const com::_winapi::shared::guiddef::IID, ppv: *mut *mut com::_winapi::ctypes::c_void) -> HRESULT {
             unsafe {
                 let riid = &*riid;
 
-                if winapi::shared::guiddef::IsEqualGUID(riid, &com::interfaces::iunknown::IID_IUNKNOWN) {
-                    *ppv = &self.#non_delegating_iunknown_field_ident as *const _ as *mut winapi::ctypes::c_void;
+                if com::_winapi::shared::guiddef::IsEqualGUID(riid, &com::interfaces::iunknown::IID_IUNKNOWN) {
+                    *ppv = &self.#non_delegating_iunknown_field_ident as *const _ as *mut com::_winapi::ctypes::c_void;
                 } #base_match_arms #aggr_match_arms else {
-                    *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
-                    return winapi::shared::winerror::E_NOINTERFACE;
+                    *ppv = std::ptr::null_mut::<com::_winapi::ctypes::c_void>();
+                    return com::_winapi::shared::winerror::E_NOINTERFACE;
                 }
 
                 self.inner_add_ref();
@@ -191,8 +191,8 @@ fn gen_allocate_fn(
             // Non-delegating methods.
             unsafe extern "stdcall" fn non_delegatingegating_query_interface(
                 this: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
-                riid: *const winapi::shared::guiddef::IID,
-                ppv: *mut *mut winapi::ctypes::c_void,
+                riid: *const com::_winapi::shared::guiddef::IID,
+                ppv: *mut *mut com::_winapi::ctypes::c_void,
             ) -> HRESULT {
                 let this = this.sub(#non_delegating_iunknown_offset) as *mut #struct_ident;
                 (*this).inner_query_interface(riid, ppv)

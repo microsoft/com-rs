@@ -21,8 +21,7 @@ pub fn generate(
     let aggregate_fields = co_class::com_struct::gen_aggregate_fields(aggr_map);
 
     // COM Fields for an aggregable coclass.
-    let non_delegating_iunknown_field_ident =
-        crate::utils::non_delegating_iunknown_field_ident();
+    let non_delegating_iunknown_field_ident = crate::utils::non_delegating_iunknown_field_ident();
     let iunknown_to_use_field_ident = crate::utils::iunknown_to_use_field_ident();
 
     quote!(
