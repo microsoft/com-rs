@@ -18,3 +18,11 @@ winapi = { version = "0.3", features = ["winuser", "winreg", "winerror", "winnt"
 [dependencies]
 com_macros = { version = "0.1", path = "macros" }
 
+[package.metadata.docs.rs]
+default-target = "x86_64-pc-windows-msvc"
+
+[workspace]
+members = [
+    "macros",
+    "macros/support",
+]
