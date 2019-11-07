@@ -32,19 +32,19 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
             unsafe fn create_instance(
                 &self,
                 aggr: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
-                riid: winapi::shared::guiddef::REFIID,
-                ppv: *mut *mut winapi::ctypes::c_void,
-            ) -> winapi::shared::winerror::HRESULT {
+                riid: com::_winapi::shared::guiddef::REFIID,
+                ppv: *mut *mut com::_winapi::ctypes::c_void,
+            ) -> com::_winapi::shared::winerror::HRESULT {
                 // Bringing trait into scope to access IUnknown methods.
                 use com::interfaces::iunknown::IUnknown;
 
                 let riid = unsafe { &*riid };
 
-                if !aggr.is_null() && !winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID) {
+                if !aggr.is_null() && !com::_winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID) {
                     unsafe {
-                        *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
+                        *ppv = std::ptr::null_mut::<com::_winapi::ctypes::c_void>();
                     }
-                    return winapi::shared::winerror::E_INVALIDARG;
+                    return com::_winapi::shared::winerror::E_INVALIDARG;
                 }
 
                 let mut instance = #struct_ident::new();
