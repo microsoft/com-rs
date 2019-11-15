@@ -24,20 +24,24 @@ pub struct ApartmentThreadedRuntime {
 
 impl ApartmentThreadedRuntime {
     pub fn new() -> Result<ApartmentThreadedRuntime, HRESULT> {
-        // need to initialize `runtime` before calling `CoInitializeEx`, see below
-        let runtime = ApartmentThreadedRuntime {
-            _not_send: std::ptr::null(),
-        };
-        let hr =
-            unsafe { CoInitializeEx(std::ptr::null_mut::<c_void>(), COINIT_APARTMENTTHREADED) };
-        // if hr is S_OK all is good, if it is S_FALSE, then the runtime was already initialized
-        if hr != S_OK && hr != S_FALSE {
-            // `runtime` is dropped here calling `CoUninitialize` which needs to happen no matter if
-            // `CoInitializeEx` is successful or not.
-            // https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
-            return Err(hr);
+        // Attempt to initialize the runtime first. `CoUninitialize` should be called only if this
+        // is successful. Since the `CoUninitialize` call is made through the `Drop` implementation
+        // of `ApartmentThreadedRuntime`, we need to be careful to not instantiate the runtime in
+        // case the `CoInitializeEx` fails.
+        //
+        // https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
+        unsafe {
+            match CoInitializeEx(std::ptr::null_mut::<c_void>(), COINIT_APARTMENTTHREADED) {
+                // S_OK indicates the runtime was initialized, S_FALSE means it was initialized
+                // previously. In both cases we need to invoke `CoUninitialize` later.
+                S_OK | S_FALSE => Ok(ApartmentThreadedRuntime {
+                    _not_send: std::ptr::null(),
+                }),
+
+                // Any other result is considered an error here.
+                hr => Err(hr),
+            }
         }
-        Ok(runtime)
     }
 
     pub fn get_class_object(&self, iid: &IID) -> Result<InterfaceRc<dyn IClassFactory>, HRESULT> {
