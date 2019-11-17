@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::quote;
 use std::collections::HashMap;
-use syn::{Ident, ItemStruct};
+use syn::{parse_quote, Ident, ItemStruct};
 
 /// Generates the methods that the com struct needs to have. These include:
 /// allocate: To initialise the vtables, including the non_delegatingegating_iunknown one.
@@ -83,6 +83,7 @@ pub fn gen_inner_release(
     aggr_map: &HashMap<Ident, Vec<Ident>>,
     struct_ident: &Ident,
 ) -> HelperTokenStream {
+    let struct_type = parse_quote!(#struct_ident);
     let ref_count_ident = crate::utils::ref_count_ident();
 
     let release_decrement = crate::co_class::iunknown_impl::gen_release_decrement(&ref_count_ident);
@@ -96,7 +97,7 @@ pub fn gen_inner_release(
     let release_drops = crate::co_class::iunknown_impl::gen_release_drops(
         base_interface_idents,
         aggr_map,
-        struct_ident,
+        &struct_type,
     );
     let non_delegating_iunknown_drop = gen_non_delegating_iunknown_drop();
 
@@ -163,9 +164,10 @@ fn gen_allocate_fn(
     struct_item: &ItemStruct,
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
+    let struct_type = parse_quote!(#struct_ident);
 
     let base_inits = crate::co_class::com_struct_impl::gen_allocate_base_inits(
-        struct_ident,
+        &struct_type,
         base_interface_idents,
     );
 

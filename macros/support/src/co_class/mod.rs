@@ -20,7 +20,13 @@ pub fn expand_co_class(input: &ItemStruct, attr_args: &AttributeArgs) -> TokenSt
     );
     out.push(co_class_impl::generate(input).into());
     out.push(iunknown_impl::generate(&base_interface_idents, &aggr_interface_idents, input).into());
-    out.push(class_factory::generate(input).into());
+
+    // Generate class factory only for non-generic structs.
+    // We are using the presence of the '<' token in the struct generics to
+    // detect if the struct is a generic struct or not.
+    if input.generics.lt_token.is_none() {
+        out.push(class_factory::generate(input).into());
+    }
 
     TokenStream::from_iter(out)
 }

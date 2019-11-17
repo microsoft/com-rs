@@ -42,21 +42,21 @@ pub trait ProductionComInterface<T: IUnknown>: ComInterface {
 
 #[macro_export]
 macro_rules! vtable {
-    ($class:ident: $interface:ident, $offset:ident) => {
+    ($class:ty: $interface:ident, $offset:ident) => {
         <dyn $interface as $crate::ProductionComInterface<$class>>::vtable::<
             $crate::offset::$offset,
         >();
     };
-    ($class:ident: $interface:ident, 2usize) => {
+    ($class:ty: $interface:ident, 2usize) => {
         $crate::vtable!($class: $interface, Two)
     };
-    ($class:ident: $interface:ident, 1usize) => {
+    ($class:ty: $interface:ident, 1usize) => {
         $crate::vtable!($class: $interface, One)
     };
-    ($class:ident: $interface:ident, 0usize) => {
+    ($class:ty: $interface:ident, 0usize) => {
         $crate::vtable!($class: $interface, Zero)
     };
-    ($class:ident: $interface:ident) => {
+    ($class:ty: $interface:ident) => {
         $crate::vtable!($class: $interface, Zero)
     };
 }

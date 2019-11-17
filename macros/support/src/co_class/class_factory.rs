@@ -1,7 +1,7 @@
 use proc_macro2::{Ident, TokenStream as HelperTokenStream};
 use quote::{format_ident, quote};
 use std::collections::HashMap;
-use syn::ItemStruct;
+use syn::{parse_quote, ItemStruct};
 
 fn get_iclass_factory_interface_ident() -> Ident {
     format_ident!("IClassFactory")
@@ -112,6 +112,7 @@ pub fn gen_release(
     aggr_map: &HashMap<Ident, Vec<Ident>>,
     struct_ident: &Ident,
 ) -> HelperTokenStream {
+    let struct_type = parse_quote!(#struct_ident);
     let ref_count_ident = crate::utils::ref_count_ident();
 
     let release_decrement = super::iunknown_impl::gen_release_decrement(&ref_count_ident);
@@ -122,7 +123,7 @@ pub fn gen_release(
     let release_new_count_var_zero_check =
         super::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
     let release_drops =
-        super::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
+        super::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, &struct_type);
 
     quote! {
         unsafe fn release(&self) -> u32 {
@@ -166,8 +167,9 @@ pub fn gen_class_factory_impl(
 ) -> HelperTokenStream {
     let ref_count_field = super::com_struct_impl::gen_allocate_ref_count_field();
     let base_fields = super::com_struct_impl::gen_allocate_base_fields(base_interface_idents);
+    let class_factory_type = parse_quote!(#class_factory_ident);
     let base_inits =
-        super::com_struct_impl::gen_allocate_base_inits(class_factory_ident, base_interface_idents);
+        super::com_struct_impl::gen_allocate_base_inits(&class_factory_type, base_interface_idents);
 
     quote! {
         impl #class_factory_ident {

@@ -17,6 +17,7 @@ pub fn generate(
 ) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let vis = &struct_item.vis;
+    let (_, ty_generics, where_clause) = struct_item.generics.split_for_impl();
 
     let base_fields = gen_base_fields(base_interface_idents);
     let ref_count_field = gen_ref_count_field();
@@ -25,7 +26,7 @@ pub fn generate(
 
     quote!(
         #[repr(C)]
-        #vis struct #struct_ident {
+        #vis struct #struct_ident #ty_generics #where_clause {
             #base_fields
             #ref_count_field
             #aggregate_fields
