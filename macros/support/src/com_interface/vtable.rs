@@ -20,15 +20,15 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
     } else {
         assert!(
             !(interface.supertraits.len() > 1),
-            "Multiple inheirtance is not supported in COM interfaces"
+            "Multiple inheritance is not supported in COM interfaces"
         );
         assert!(
             interface.supertraits.len() != 0,
             "All interfaces must inherit from another COM interface"
         );
 
-        let base_interface_ident = match interface.supertraits.first().unwrap() {
-            TypeParamBound::Trait(t) => t.path.get_ident().unwrap(),
+        let base_interface_ident = match interface.supertraits.first().expect("No supertraits") {
+            TypeParamBound::Trait(t) => t.path.get_ident().expect("Supertrait path isn't an ident"),
             _ => panic!("Unhandled super trait typeparambound"),
         };
 

@@ -32,7 +32,14 @@ pub fn base_interface_idents(attr_args: &AttributeArgs) -> Vec<Ident> {
 
     for attr_arg in attr_args {
         if let NestedMeta::Meta(Meta::List(ref attr)) = attr_arg {
-            if attr.path.segments.last().unwrap().ident != "implements" {
+            if attr
+                .path
+                .segments
+                .last()
+                .expect("Invalid attribute syntax")
+                .ident
+                != "implements"
+            {
                 continue;
             }
 
@@ -42,7 +49,13 @@ pub fn base_interface_idents(attr_args: &AttributeArgs) -> Vec<Ident> {
                         p.segments.len() == 1,
                         "Incapable of handling multiple path segments yet."
                     );
-                    base_interface_idents.push(p.segments.last().unwrap().ident.clone());
+                    base_interface_idents.push(
+                        p.segments
+                            .last()
+                            .expect("Implemented interface is empty path")
+                            .ident
+                            .clone(),
+                    );
                 }
             }
         }
@@ -59,7 +72,14 @@ pub fn get_aggr_map(attr_args: &AttributeArgs) -> HashMap<Ident, Vec<Ident>> {
 
     for attr_arg in attr_args {
         if let NestedMeta::Meta(Meta::List(ref attr)) = attr_arg {
-            if attr.path.segments.last().unwrap().ident != "aggregates" {
+            if attr
+                .path
+                .segments
+                .last()
+                .expect("Invalid attribute syntax")
+                .ident
+                != "aggregates"
+            {
                 continue;
             }
 
@@ -76,7 +96,13 @@ pub fn get_aggr_map(attr_args: &AttributeArgs) -> HashMap<Ident, Vec<Ident>> {
                         p.segments.len() == 1,
                         "Incapable of handling multiple path segments yet."
                     );
-                    aggr_interfaces_idents.push(p.segments.last().unwrap().ident.clone());
+                    aggr_interfaces_idents.push(
+                        p.segments
+                            .last()
+                            .expect("Aggregated interface is empty path")
+                            .ident
+                            .clone(),
+                    );
                 }
             }
             let ident = aggr_interfaces_idents

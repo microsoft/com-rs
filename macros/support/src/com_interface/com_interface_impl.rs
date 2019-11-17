@@ -12,7 +12,7 @@ pub fn generate(trait_item: &ItemTrait) -> HelperTokenStream {
     let iid_check = quote! { com::_winapi::shared::guiddef::IsEqualGUID(riid, &Self::IID) };
     let recursive_iid_check = if let Some(TypeParamBound::Trait(t)) = trait_item.supertraits.first()
     {
-        let supertrait_ident = t.path.get_ident().unwrap();
+        let supertrait_ident = t.path.get_ident().expect("Path isn't ident");
         quote! { #iid_check || <dyn #supertrait_ident as com::ComInterface>::is_iid_in_inheritance_chain(riid) }
     } else {
         iid_check

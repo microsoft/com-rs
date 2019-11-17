@@ -84,7 +84,7 @@ pub fn gen_allocate_user_fields(struct_item: &ItemStruct) -> HelperTokenStream {
         _ => panic!("Found non Named fields in struct."),
     };
     let field_idents = fields.iter().map(|field| {
-        let field_ident = field.ident.as_ref().unwrap().clone();
+        let field_ident = field.ident.as_ref().expect("Field has no ident").clone();
         quote!(#field_ident)
     });
 
