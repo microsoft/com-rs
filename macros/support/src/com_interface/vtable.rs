@@ -32,7 +32,12 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
             _ => panic!("Unhandled super trait typeparambound"),
         };
 
-        let last_ident = &base_interface_path.path.segments.last().expect("Supertrait has empty path").ident;
+        let last_ident = &base_interface_path
+            .path
+            .segments
+            .last()
+            .expect("Supertrait has empty path")
+            .ident;
         let base_field_ident = base_field_ident(&last_ident.to_string());
         quote! {
             pub #base_field_ident: <dyn #base_interface_path as com::ComInterface>::VTable,

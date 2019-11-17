@@ -29,7 +29,8 @@ pub fn ident(struct_ident: &Ident) -> Ident {
 fn gen_parent_vtable_binding(item: &ItemStruct) -> HelperTokenStream {
     let parent = item.fields.iter().nth(0);
     if let Some(parent) = parent {
-        let is_base = parent.ident
+        let is_base = parent
+            .ident
             .as_ref()
             .map(|i| i.to_string().ends_with("_base"))
             .unwrap_or(false);
@@ -38,7 +39,10 @@ fn gen_parent_vtable_binding(item: &ItemStruct) -> HelperTokenStream {
                 syn::Type::Path(type_path) => type_path,
                 _ => panic!("vtable fields types must be type paths"),
             };
-            let qself = type_path.qself.as_ref().expect("vtable type paths must use associated types");
+            let qself = type_path
+                .qself
+                .as_ref()
+                .expect("vtable type paths must use associated types");
             let parent_ty = &qself.ty;
             return quote! {
                 let parent_vtable = <#parent_ty as com::ProductionComInterface<$class>>::vtable::<$offset>();
