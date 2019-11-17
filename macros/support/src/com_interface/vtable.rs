@@ -27,14 +27,15 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
             "All interfaces must inherit from another COM interface"
         );
 
-        let base_interface_ident = match interface.supertraits.first().expect("No supertraits") {
-            TypeParamBound::Trait(t) => t.path.get_ident().expect("Supertrait path isn't an ident"),
+        let base_interface_path = match interface.supertraits.first().expect("No supertraits") {
+            TypeParamBound::Trait(path) => path,
             _ => panic!("Unhandled super trait typeparambound"),
         };
 
-        let base_field_ident = base_field_ident(&base_interface_ident.to_string());
+        let last_ident = &base_interface_path.path.segments.last().expect("Supertrait has empty path").ident;
+        let base_field_ident = base_field_ident(&last_ident.to_string());
         quote! {
-            pub #base_field_ident: <dyn #base_interface_ident as com::ComInterface>::VTable,
+            pub #base_field_ident: <dyn #base_interface_path as com::ComInterface>::VTable,
         }
     };
     let methods = gen_vtable_methods(&interface);
