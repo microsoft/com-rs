@@ -35,7 +35,8 @@ fn is_aggregatable(attr_args: &AttributeArgs) -> bool {
         .find(|arg| match arg {
             NestedMeta::Meta(Meta::Path(ref path)) => {
                 let segments = &path.segments;
-                segments.len() == 1 && segments.first().unwrap().ident == "aggregatable"
+                segments.len() == 1
+                    && segments.first().expect("Invalid attribute syntax").ident == "aggregatable"
             }
             _ => false,
         })
