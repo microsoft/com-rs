@@ -1,0 +1,7 @@
+error: custom attribute panicked
+ --> $DIR/non_string_guid.rs:4:1
+  |
+4 | #[com_interface(cc2d05c7-7d20-4ccb-ad75-1e7fb7c77254)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: message: [com_interface] parameter must be a GUID string: Error("expected literal")

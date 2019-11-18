@@ -4,7 +4,9 @@ use quote::{format_ident, quote};
 use syn::LitInt;
 
 pub fn generate(macro_attr: &TokenStream, interface_ident: &Ident) -> HelperTokenStream {
-    let iid_value = macro_attr.to_string().replace(' ', "");
+    let iid_string: syn::LitStr =
+        syn::parse(macro_attr.clone()).expect("[com_interface] parameter must be a GUID string");
+    let iid_value = iid_string.value();
     assert!(
         iid_value.len() == 36,
         "IIDs must be exactly 36 characters long"

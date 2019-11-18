@@ -4,7 +4,7 @@ use winapi::{
     shared::{guiddef::REFIID, ntdef::HRESULT},
 };
 
-#[com_interface(00000000-0000-0000-C000-000000000046)]
+#[com_interface("00000000-0000-0000-C000-000000000046")]
 pub trait IUnknown {
     /// The COM [`QueryInterface` Method]
     ///

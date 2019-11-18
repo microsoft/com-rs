@@ -21,7 +21,7 @@ COM has been superseded by [WinRT](https://docs.microsoft.com/en-us/windows/uwp/
 To both consume or produce a COM component through an interface, you will first need to generate the Rust representation of said interface. The `com_interface` macro is the main tool for automatically generating this Rust representation.
 
 ```rust
-#[com_interface(00000000-0000-0000-C000-000000000046)]
+#[com_interface("00000000-0000-0000-C000-000000000046")]
 pub trait IUnknown {
     unsafe fn query_interface(
         &self,
@@ -32,7 +32,7 @@ pub trait IUnknown {
     unsafe fn release(&self) -> u32;
 }
 
-#[com_interface(EFF8970E-C50F-45E0-9284-291CE5A6F771)]
+#[com_interface("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
 pub trait IAnimal: IUnknown {
     fn eat(&self) -> HRESULT;
 }

@@ -14,7 +14,7 @@ use crate::{
     ComInterface, InterfacePtr, InterfaceRc,
 };
 
-#[com_interface(00000001-0000-0000-c000-000000000046)]
+#[com_interface("00000001-0000-0000-c000-000000000046")]
 pub trait IClassFactory: IUnknown {
     unsafe fn create_instance(
         &self,
