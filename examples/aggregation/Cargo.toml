@@ -1,5 +1,5 @@
 [package]
-name = "basic"
+name = "aggregation"
 version = "0.0.1"
 authors = ["Microsoft Corp"]
 edition = "2018"
