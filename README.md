@@ -72,7 +72,7 @@ Producing a COM component is relatively complicated compared to consumption, due
 ```rust
 use com::co_class;
 
-#[co_class(implements(ICat, IDomesticAnimal)]
+#[co_class(implements(ICat, IDomesticAnimal))]
 pub struct BritishShortHairCat {
     num_owners: u32,
 }
