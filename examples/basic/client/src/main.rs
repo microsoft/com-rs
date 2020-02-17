@@ -20,7 +20,7 @@ fn main() {
         .expect("Failed to get IAnimal");
     println!("Got IAnimal");
 
-    animal.eat();
+    unsafe { animal.eat() };
 
     // Test cross-vtable interface queries for both directions.
     let domestic_animal = animal
@@ -28,27 +28,27 @@ fn main() {
         .expect("Failed to get IDomesticAnimal");
     println!("Got IDomesticAnimal");
 
-    domestic_animal.train();
+    unsafe { domestic_animal.train() };
 
     let new_cat = domestic_animal
         .get_interface::<dyn ICat>()
         .expect("Failed to get ICat");
     println!("Got ICat");
-    new_cat.ignore_humans();
+    unsafe { new_cat.ignore_humans() };
 
     // Test querying within second vtable.
     let domestic_animal_two = domestic_animal
         .get_interface::<dyn IDomesticAnimal>()
         .expect("Failed to get second IDomesticAnimal");
     println!("Got IDomesticAnimal");
-    domestic_animal_two.train();
+    unsafe { domestic_animal_two.train() };
 
     let cat = runtime
         .create_instance::<dyn ICat>(&CLSID_CAT_CLASS)
         .unwrap_or_else(|hr| panic!("Failed to get a cat {:x}", hr));
     println!("Got another cat");
 
-    cat.eat();
+    unsafe { cat.eat() };
 
     assert!(animal.get_interface::<dyn ICat>().is_some());
     assert!(animal.get_interface::<dyn IUnknown>().is_some());

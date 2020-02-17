@@ -21,7 +21,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                 iunknown_to_use.query_interface(riid, ppv)
             }
 
-            fn add_ref(&self) -> u32 {
+            unsafe fn add_ref(&self) -> u32 {
                 let iunknown_to_use  = unsafe { com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting) };
                 iunknown_to_use.add_ref()
             }

@@ -175,9 +175,12 @@ pub fn initialize_class_object<T: IUnknown>(
     riid: REFIID,
     ppv: *mut LPVOID,
 ) -> HRESULT {
-    instance.add_ref();
-    let hr = unsafe { instance.query_interface(riid, ppv) };
-    unsafe { instance.release() };
+    let hr = unsafe {
+        instance.add_ref();
+        let hr = instance.query_interface(riid, ppv);
+        instance.release();
+        hr
+    };
     Box::into_raw(instance);
 
     hr

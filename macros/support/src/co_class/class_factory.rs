@@ -84,7 +84,7 @@ pub fn gen_class_factory_struct_definition(class_factory_ident: &Ident) -> Helpe
 pub fn gen_lock_server() -> HelperTokenStream {
     quote! {
         // TODO: Implement correctly
-        fn lock_server(&self, _increment: com::_winapi::shared::minwindef::BOOL) -> com::_winapi::shared::winerror::HRESULT {
+        unsafe fn lock_server(&self, _increment: com::_winapi::shared::minwindef::BOOL) -> com::_winapi::shared::winerror::HRESULT {
             com::_winapi::shared::winerror::S_OK
         }
     }

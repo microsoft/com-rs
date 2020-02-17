@@ -49,7 +49,7 @@ fn gen_impl_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperT
     quote!(
         #method_sig {
             let #interface_ptr_ident = self.as_raw() as *mut #vptr_ident;
-            unsafe { ((**#interface_ptr_ident).#method_ident)(#(#params),*) }
+            ((**#interface_ptr_ident).#method_ident)(#(#params),*)
         }
     )
 }

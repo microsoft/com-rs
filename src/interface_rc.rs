@@ -1,7 +1,5 @@
 use crate::{interface_ptr::InterfacePtr, interfaces::iunknown::IUnknown, ComInterface, IID};
 
-use std::marker::PhantomData;
-
 use winapi::ctypes::c_void;
 use winapi::shared::winerror::{E_NOINTERFACE, E_POINTER, FAILED};
 
@@ -16,16 +14,12 @@ use winapi::shared::winerror::{E_NOINTERFACE, E_POINTER, FAILED};
 /// [`InterfacePtr`]: struct.InterfacePtr.html
 pub struct InterfaceRc<T: ?Sized + ComInterface> {
     ptr: InterfacePtr<T>,
-    phantom: PhantomData<T>,
 }
 
 impl<T: ?Sized + ComInterface> InterfaceRc<T> {
     /// Creates a new `InterfaceRc` that comforms to the interface T.
     pub fn new(ptr: InterfacePtr<T>) -> InterfaceRc<T> {
-        InterfaceRc {
-            ptr,
-            phantom: PhantomData,
-        }
+        InterfaceRc { ptr }
     }
 
     /// Gets the underlying interface ptr. This ptr is only guarnteed to live for
@@ -56,7 +50,7 @@ impl<T: ComInterface + ?Sized> Drop for InterfaceRc<T> {
     fn drop(&mut self) {
         unsafe {
             self.release();
-            // self.ptr may contain a dangling pointer at this point
+            // TODO: Safety issue. self.ptr may contain a dangling pointer at this point
         }
     }
 }
@@ -65,9 +59,8 @@ impl<T: ComInterface> Clone for InterfaceRc<T> {
     fn clone(&self) -> Self {
         let new_ptr = InterfaceRc {
             ptr: self.ptr.clone(),
-            phantom: PhantomData,
         };
-        new_ptr.add_ref();
+        unsafe { new_ptr.add_ref() };
         new_ptr
     }
 }

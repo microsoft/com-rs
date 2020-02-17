@@ -79,6 +79,10 @@ fn gen_vtable_methods(interface: &ItemTrait) -> HelperTokenStream {
 }
 
 fn gen_vtable_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
+    assert!(
+        method.sig.unsafety.is_some(),
+        "COM Interface methods must be declared unsafe"
+    );
     let method_ident = format_ident!(
         "{}",
         crate::utils::snake_to_camel(&method.sig.ident.to_string())
@@ -105,6 +109,7 @@ fn gen_vtable_function_signature(
 fn gen_raw_params(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
     let mut params = Vec::new();
     let vptr_ident = vptr::ident(&interface_ident.to_string());
+
     for param in method.sig.inputs.iter() {
         match param {
             FnArg::Receiver(s) => {
