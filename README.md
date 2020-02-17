@@ -8,6 +8,9 @@ A one stop shop for all things related to [COM](https://docs.microsoft.com/en-us
 
 This library exposes various macros, structs and functions to the user for both producing and consuming COM components in an idiomatic manner.
 
+:rotating_light: :rotating_light: :rotating_light: **NOTE** This crate is currently in heavy development as we decide on a stable API. :rotating_light:
+:rotating_light: :rotating_light:
+
 ## What is COM?
 
 > [COM](https://docs.microsoft.com/en-us/windows/win32/com/the-component-object-model) is a platform-independent, distributed, object-oriented system for creating binary software components that can interact.
