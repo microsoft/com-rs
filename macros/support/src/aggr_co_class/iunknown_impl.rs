@@ -8,7 +8,7 @@ use syn::ItemStruct;
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let iunknown_to_use_field_ident = crate::utils::iunknown_to_use_field_ident();
-    let ptr_casting = quote! { as *mut std::ffi::c_void };
+    let ptr_casting = quote! { as *mut _ };
 
     quote!(
         impl com::interfaces::iunknown::IUnknown for #struct_ident {

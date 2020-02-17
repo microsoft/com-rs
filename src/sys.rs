@@ -6,6 +6,7 @@ pub fn FAILED(result: HRESULT) -> bool {
     result < 0
 }
 pub type BOOL = i32;
+pub type LSTATUS = i32;
 
 pub const S_OK: HRESULT = 0;
 pub const NOERROR: HRESULT = 0;
@@ -41,9 +42,9 @@ extern "system" {
         lpSecurityAttributes: *mut c_void,
         phkResult: *mut *mut c_void,
         lpdwDisposition: *mut u32,
-    ) -> i32;
+    ) -> LSTATUS;
     pub fn GetModuleFileNameA(hModule: *mut c_void, lpFilename: *mut i8, nSize: u32) -> u32;
-    pub fn RegCloseKey(hKey: *mut c_void) -> i32;
+    pub fn RegCloseKey(hKey: *mut c_void) -> LSTATUS;
     pub fn RegSetValueExA(
         hKey: *mut c_void,
         lpValueName: *const i8,
@@ -51,8 +52,8 @@ extern "system" {
         dwType: u32,
         lpData: *const u8,
         cbData: u32,
-    ) -> i32;
-    pub fn RegDeleteKeyA(hKey: *mut c_void, lpSubKey: *const i8) -> i32;
+    ) -> LSTATUS;
+    pub fn RegDeleteKeyA(hKey: *mut c_void, lpSubKey: *const i8) -> LSTATUS;
     pub fn GetModuleHandleA(lpModuleName: *const i8) -> *mut c_void;
     pub fn CoInitializeEx(pvReserved: *mut c_void, dwCoInit: u32) -> HRESULT;
     pub fn CoGetClassObject(
@@ -64,7 +65,7 @@ extern "system" {
     ) -> HRESULT;
     pub fn CoCreateInstance(
         rclsid: *const IID,
-        pUnkOuter: *mut *const c_void,
+        pUnkOuter: *mut c_void,
         dwClsContext: u32,
         riid: *const IID,
         ppv: *mut *mut c_void,

@@ -69,13 +69,13 @@ impl ApartmentThreadedRuntime {
         clsid: &IID,
         outer: &mut U,
     ) -> Result<InterfacePtr<T>, HRESULT> {
-        unsafe { self.create_raw_instance::<T>(clsid, outer as *mut U as *mut *const c_void) }
+        unsafe { self.create_raw_instance::<T>(clsid, outer as *mut U as *mut c_void) }
     }
 
     pub unsafe fn create_raw_instance<T: ComInterface + ?Sized>(
         &self,
         clsid: &IID,
-        outer: *mut *const c_void,
+        outer: *mut c_void,
     ) -> Result<InterfacePtr<T>, HRESULT> {
         let mut instance = std::ptr::null_mut::<c_void>();
         let hr = CoCreateInstance(
