@@ -7,7 +7,7 @@ fn main() {
 
     let factory = runtime
         .get_class_object(&CLSID_CAT_CLASS)
-        .unwrap_or_else(|hr| panic!("Failed to get cat class object {:x}", hr));
+        .unwrap_or_else(|hr| panic!("Failed to get cat class object 0x{:x}", hr));
     println!("Got cat class object");
 
     let unknown = factory

@@ -4,7 +4,7 @@ pub mod ilocal_file_manager;
 pub use ifile_manager::IFileManager;
 pub use ilocal_file_manager::ILocalFileManager;
 
-use com::sys:IID;
+use com::sys::IID;
 
 pub const CLSID_WINDOWS_FILE_MANAGER_CLASS: IID = IID {
     data1: 0x5ffa71bd,
