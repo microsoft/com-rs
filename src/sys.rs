@@ -21,7 +21,7 @@ pub const COINIT_APARTMENTTHREADED: u32 = 0x2;
 pub const CLSCTX_INPROC_SERVER: u32 = 0x1;
 
 #[repr(C)]
-#[derive(PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct IID {
     pub data1: u32,
     pub data2: u16,

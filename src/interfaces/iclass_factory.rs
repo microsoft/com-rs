@@ -4,7 +4,7 @@ use std::ffi::c_void;
 
 use crate::{
     interfaces::iunknown::{IUnknown, IUnknownVPtr},
-    ComInterface, InterfacePtr, InterfaceRc,
+    ComInterface, InterfaceRc,
 };
 
 #[com_interface("00000001-0000-0000-c000-000000000046")]
@@ -27,6 +27,6 @@ impl InterfaceRc<dyn IClassFactory> {
             // TODO: decide what failures are possible
             return None;
         }
-        Some(InterfaceRc::new(unsafe { InterfacePtr::new(ppv) }))
+        Some(unsafe { InterfaceRc::from_raw(ppv as *mut _) })
     }
 }

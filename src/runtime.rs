@@ -50,9 +50,7 @@ impl ApartmentThreadedRuntime {
             return Err(hr);
         }
 
-        Ok(InterfaceRc::new(unsafe {
-            InterfacePtr::new(class_factory)
-        }))
+        Ok(unsafe { InterfaceRc::from_raw(class_factory as *mut *mut _) })
     }
 
     pub fn create_instance<T: ComInterface + ?Sized>(
@@ -91,7 +89,7 @@ impl ApartmentThreadedRuntime {
             return Err(hr);
         }
 
-        Ok(InterfacePtr::new(instance))
+        Ok(InterfacePtr::new(instance as *mut _))
     }
 }
 

@@ -1,9 +1,7 @@
 use crate::ComInterface;
 
-use std::ptr::NonNull;
-
-use std::ffi::c_void;
 use std::marker::PhantomData;
+use std::ptr::NonNull;
 
 /// A transparent ptr to a COM interface.
 ///
@@ -13,7 +11,7 @@ use std::marker::PhantomData;
 ///
 /// [`InterfaceRc`]: struct.InterfaceRc.html
 pub struct InterfacePtr<T: ?Sized + ComInterface> {
-    ptr: NonNull<c_void>,
+    ptr: NonNull<*mut <T as ComInterface>::VTable>,
     phantom: PhantomData<T>,
 }
 
@@ -32,7 +30,7 @@ impl<T: ?Sized + ComInterface> InterfacePtr<T> {
     /// # Panics
     ///
     /// Panics if `ptr` is null
-    pub unsafe fn new(ptr: *mut c_void) -> InterfacePtr<T> {
+    pub unsafe fn new(ptr: *mut *mut <T as ComInterface>::VTable) -> InterfacePtr<T> {
         InterfacePtr {
             ptr: NonNull::new(ptr).expect("ptr was null"),
             phantom: PhantomData,
@@ -41,7 +39,7 @@ impl<T: ?Sized + ComInterface> InterfacePtr<T> {
 
     /// Gets the underlying interface ptr. This ptr is only guarnteed to live for
     /// as long as the current `InterfacePtr` is alive.
-    pub fn as_raw(&self) -> *mut c_void {
+    pub fn as_raw(&self) -> *mut *mut <T as ComInterface>::VTable {
         self.ptr.as_ptr()
     }
 }

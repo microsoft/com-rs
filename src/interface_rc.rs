@@ -21,9 +21,13 @@ impl<T: ?Sized + ComInterface> InterfaceRc<T> {
         InterfaceRc { ptr }
     }
 
+    pub unsafe fn from_raw(ptr: *mut *mut <T as ComInterface>::VTable) -> Self {
+        Self::new(InterfacePtr::new(ptr))
+    }
+
     /// Gets the underlying interface ptr. This ptr is only guarnteed to live for
     /// as long as the current `InterfaceRc` is alive.
-    pub fn as_raw(&self) -> *mut c_void {
+    pub fn as_raw(&self) -> *mut *mut <T as ComInterface>::VTable {
         self.ptr.as_raw()
     }
 
@@ -41,7 +45,9 @@ impl<T: ?Sized + ComInterface> InterfaceRc<T> {
             return None;
         }
         assert!(!ppv.is_null(), "The pointer to the interface returned from a successful call to QueryInterface was null");
-        Some(InterfaceRc::new(unsafe { InterfacePtr::new(ppv) }))
+        Some(InterfaceRc::new(unsafe {
+            InterfacePtr::new(ppv as *mut *mut _)
+        }))
     }
 }
 
