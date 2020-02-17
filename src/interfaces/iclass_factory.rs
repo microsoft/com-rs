@@ -22,7 +22,7 @@ pub trait IClassFactory: IUnknown {
         riid: REFIID,
         ppv: *mut *mut c_void,
     ) -> HRESULT;
-    fn lock_server(&self, increment: BOOL) -> HRESULT;
+    unsafe fn lock_server(&self, increment: BOOL) -> HRESULT;
 }
 
 impl InterfaceRc<dyn IClassFactory> {

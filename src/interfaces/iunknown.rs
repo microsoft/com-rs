@@ -23,7 +23,7 @@ pub trait IUnknown {
     ///
     /// [`AddRef` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
     /// [`InterfaceRc`]: struct.InterfaceRc.html
-    fn add_ref(&self) -> u32;
+    unsafe fn add_ref(&self) -> u32;
 
     /// The COM [`Release` Method]
     ///

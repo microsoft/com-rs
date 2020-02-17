@@ -12,21 +12,21 @@ pub struct BritishShortHairCat {
 }
 
 impl IDomesticAnimal for BritishShortHairCat {
-    fn train(&self) -> HRESULT {
+    unsafe fn train(&self) -> HRESULT {
         println!("Training...");
         NOERROR
     }
 }
 
 impl ICat for BritishShortHairCat {
-    fn ignore_humans(&self) -> HRESULT {
+    unsafe fn ignore_humans(&self) -> HRESULT {
         println!("Ignoring Humans...");
         NOERROR
     }
 }
 
 impl IAnimal for BritishShortHairCat {
-    fn eat(&self) -> HRESULT {
+    unsafe fn eat(&self) -> HRESULT {
         println!("Eating...");
         NOERROR
     }

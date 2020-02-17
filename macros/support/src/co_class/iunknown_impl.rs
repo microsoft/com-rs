@@ -30,7 +30,7 @@ pub fn gen_add_ref() -> HelperTokenStream {
     let add_ref_implementation = gen_add_ref_implementation();
 
     quote! {
-        fn add_ref(&self) -> u32 {
+        unsafe fn add_ref(&self) -> u32 {
             #add_ref_implementation
         }
     }
