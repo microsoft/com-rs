@@ -2,8 +2,8 @@ use crate::ComInterface;
 
 use std::ptr::NonNull;
 
+use std::ffi::c_void;
 use std::marker::PhantomData;
-use winapi::ctypes::c_void;
 
 /// A transparent ptr to a COM interface.
 ///

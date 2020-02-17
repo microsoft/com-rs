@@ -1,24 +1,11 @@
 use crate::interfaces::iunknown::IUnknown;
-
-use winapi::{
-    ctypes::c_void,
-    shared::{
-        guiddef::{GUID, IID, REFIID},
-        minwindef::{DWORD, HKEY, LPVOID},
-        winerror::{ERROR_SUCCESS, HRESULT, S_OK},
-    },
-    um::{
-        libloaderapi::{GetModuleFileNameA, GetModuleHandleA},
-        minwinbase::SECURITY_ATTRIBUTES,
-        olectl::SELFREG_E_CLASS,
-        winnt::{CHAR, KEY_ALL_ACCESS, REG_OPTION_NON_VOLATILE, REG_SZ},
-        winreg::{
-            RegCloseKey, RegCreateKeyExA, RegDeleteKeyA, RegSetValueExA, HKEY_CLASSES_ROOT, LSTATUS,
-        },
-    },
+use crate::sys::{
+    GetModuleFileNameA, GetModuleHandleA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA,
+    RegSetValueExA, ERROR_SUCCESS, HRESULT, IID, SELFREG_E_CLASS, S_OK,
 };
 
 use std::convert::TryInto;
+use std::ffi::c_void;
 use std::ffi::CString;
 
 pub struct RegistryKeyInfo {
@@ -60,11 +47,14 @@ pub fn unregister_keys(registry_keys_to_remove: Vec<RegistryKeyInfo>) -> HRESULT
     hr
 }
 
-fn create_class_key(key_info: &RegistryKeyInfo) -> Result<HKEY, LSTATUS> {
-    let hk_result: HKEY = std::ptr::null_mut::<c_void>() as HKEY;
-    let lp_class = std::ptr::null_mut::<CHAR>();
-    let lp_security_attributes = std::ptr::null_mut::<SECURITY_ATTRIBUTES>();
-    let lpdw_disposition = std::ptr::null_mut::<DWORD>();
+const HKEY_CLASSES_ROOT: *mut c_void = 0x8000_0000 as *mut c_void;
+const KEY_ALL_ACCESS: u32 = 0x000F_003F;
+const REG_OPTION_NON_VOLATILE: u32 = 0x00000000;
+fn create_class_key(key_info: &RegistryKeyInfo) -> Result<*mut c_void, i32> {
+    let hk_result = std::ptr::null_mut::<c_void>();
+    let lp_class = std::ptr::null_mut::<u8>();
+    let lp_security_attributes = std::ptr::null_mut::<c_void>();
+    let lpdw_disposition = std::ptr::null_mut::<u32>();
     let result = unsafe {
         RegCreateKeyExA(
             HKEY_CLASSES_ROOT,
@@ -74,7 +64,7 @@ fn create_class_key(key_info: &RegistryKeyInfo) -> Result<HKEY, LSTATUS> {
             REG_OPTION_NON_VOLATILE,
             KEY_ALL_ACCESS,
             lp_security_attributes,
-            &hk_result as *const _ as *mut HKEY,
+            &hk_result as *const _ as *mut _,
             lpdw_disposition,
         )
     };
@@ -85,7 +75,8 @@ fn create_class_key(key_info: &RegistryKeyInfo) -> Result<HKEY, LSTATUS> {
     Ok(hk_result)
 }
 
-fn set_class_key(key_handle: HKEY, key_info: &RegistryKeyInfo) -> Result<HKEY, LSTATUS> {
+const REG_SZ: u32 = 1;
+fn set_class_key(key_handle: *mut c_void, key_info: &RegistryKeyInfo) -> Result<*mut c_void, i32> {
     let result = unsafe {
         RegSetValueExA(
             key_handle,
@@ -108,7 +99,7 @@ fn set_class_key(key_handle: HKEY, key_info: &RegistryKeyInfo) -> Result<HKEY, L
     Ok(key_handle)
 }
 
-fn add_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
+fn add_class_key(key_info: &RegistryKeyInfo) -> i32 {
     let key_handle = match create_class_key(key_info) {
         Ok(key_handle) => key_handle,
         Err(e) => {
@@ -126,7 +117,7 @@ fn add_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
     unsafe { RegCloseKey(key_handle) }
 }
 
-fn remove_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
+fn remove_class_key(key_info: &RegistryKeyInfo) -> i32 {
     unsafe { RegDeleteKeyA(HKEY_CLASSES_ROOT, key_info.key_path.as_ptr()) }
 }
 
@@ -152,28 +143,28 @@ pub fn class_inproc_key_path(clsid: IID) -> String {
     format!("CLSID\\{}\\InprocServer32", guid_to_string(&clsid))
 }
 
-fn guid_to_string(guid: &GUID) -> String {
+fn guid_to_string(guid: &IID) -> String {
     format!(
         "{{{:04X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
-        guid.Data1,
-        guid.Data2,
-        guid.Data3,
-        guid.Data4[0],
-        guid.Data4[1],
-        guid.Data4[2],
-        guid.Data4[3],
-        guid.Data4[4],
-        guid.Data4[5],
-        guid.Data4[6],
-        guid.Data4[7],
+        guid.data1,
+        guid.data2,
+        guid.data3,
+        guid.data4[0],
+        guid.data4[1],
+        guid.data4[2],
+        guid.data4[3],
+        guid.data4[4],
+        guid.data4[5],
+        guid.data4[6],
+        guid.data4[7],
     )
 }
 
 #[inline]
 pub fn initialize_class_object<T: IUnknown>(
     instance: Box<T>,
-    riid: REFIID,
-    ppv: *mut LPVOID,
+    riid: *const IID,
+    ppv: *mut *mut c_void,
 ) -> HRESULT {
     let hr = unsafe {
         instance.add_ref();
@@ -190,24 +181,24 @@ pub fn initialize_class_object<T: IUnknown>(
 macro_rules! inproc_dll_module {
     (($clsid_one:ident, $classtype_one:ty), $(($clsid:ident, $classtype:ty)),*) => {
         #[no_mangle]
-        extern "stdcall" fn DllGetClassObject(rclsid: $crate::_winapi::shared::guiddef::REFCLSID, riid: $crate::_winapi::shared::guiddef::REFIID, ppv: *mut $crate::_winapi::shared::minwindef::LPVOID) -> $crate::_winapi::shared::winerror::HRESULT {
+        extern "stdcall" fn DllGetClassObject(rclsid: *const $crate::sys::IID, riid: *const $crate::sys::IID, ppv: *mut *mut std::ffi::c_void) -> $crate::sys::HRESULT {
             use com::interfaces::iunknown::IUnknown;
             let rclsid = unsafe{ &*rclsid };
-            if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid_one) {
+            if rclsid == &$clsid_one {
                 let mut instance = <$classtype_one>::get_class_object();
                 com::inproc::initialize_class_object(instance, riid, ppv)
-            } $(else if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid) {
+            } $(else if rclsid == &$clsid {
                 let mut instance = <$classtype>::get_class_object();
                 com::inproc::initialize_class_object(instance, riid, ppv)
             })* else  {
-                $crate::_winapi::shared::winerror::CLASS_E_CLASSNOTAVAILABLE
+                $crate::sys::CLASS_E_CLASSNOTAVAILABLE
             }
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllRegisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
+        extern "stdcall" fn DllRegisterServer() -> $crate::sys::HRESULT {
             let hr = com::inproc::register_keys(get_relevant_registry_keys());
-            if com::_winapi::shared::winerror::FAILED(hr) {
+            if $crate::sys::FAILED(hr) {
                 DllUnregisterServer();
             }
 
@@ -215,10 +206,10 @@ macro_rules! inproc_dll_module {
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllUnregisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
+        extern "stdcall" fn DllUnregisterServer() -> $crate::sys::HRESULT {
             let mut registry_keys_to_remove = get_relevant_registry_keys();
             registry_keys_to_remove.reverse();
-            com::inproc::unregister_keys(registry_keys_to_remove)
+            $crate::inproc::unregister_keys(registry_keys_to_remove)
         }
 
 

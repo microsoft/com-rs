@@ -1,13 +1,6 @@
 use crate::com_interface;
-use winapi::{
-    ctypes::c_void,
-    shared::{
-        guiddef::{IID, REFIID},
-        minwindef::BOOL,
-        ntdef::HRESULT,
-        winerror::FAILED,
-    },
-};
+use crate::sys::{BOOL, FAILED, HRESULT, IID};
+use std::ffi::c_void;
 
 use crate::{
     interfaces::iunknown::{IUnknown, IUnknownVPtr},
@@ -19,7 +12,7 @@ pub trait IClassFactory: IUnknown {
     unsafe fn create_instance(
         &self,
         aggr: *mut IUnknownVPtr,
-        riid: REFIID,
+        riid: *const IID,
         ppv: *mut *mut c_void,
     ) -> HRESULT;
     unsafe fn lock_server(&self, increment: BOOL) -> HRESULT;

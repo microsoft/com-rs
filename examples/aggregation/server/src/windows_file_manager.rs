@@ -5,9 +5,8 @@ use interface::{
     CLSID_LOCAL_FILE_MANAGER_CLASS,
 };
 
-use winapi::shared::winerror::{HRESULT, NOERROR};
-
 use com::co_class;
+use com::sys::HRESULT;
 
 /// The implementation class
 #[co_class(implements(IFileManager), aggregates(ILocalFileManager))]
@@ -18,7 +17,7 @@ pub struct WindowsFileManager {
 impl IFileManager for WindowsFileManager {
     unsafe fn delete_all(&self) -> HRESULT {
         println!("Deleting all by delegating to Local and Remote File Managers...");
-        NOERROR
+        0
     }
 }
 

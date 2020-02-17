@@ -37,8 +37,7 @@ This interface will expand to the following code.
 
 ```rust 
 pub mod ianimal {
-    use com::{com_interface, interfaces::iunknown::IUnknown};
-    use winapi::um::winnt::HRESULT;
+    use com::{com_interface, interfaces::iunknown::IUnknown, sys::HRESULT};
 
     // Redeclaration of the trait
     pub trait IAnimal: IUnknown {
@@ -74,9 +73,9 @@ pub mod ianimal {
     // Declaration that IAnimal is a COM Interface
     unsafe impl com::ComInterface for dyn IAnimal {
         type VTable = IAnimalVTable;
-        const IID: com::_winapi::shared::guiddef::IID = IID_IANIMAL;
-        fn is_iid_in_inheritance_chain(riid: &com::_winapi::shared::guiddef::IID) -> bool {
-            com::_winapi::shared::guiddef::IsEqualGUID(riid, &Self::IID)
+        const IID: com::sys::IID = IID_IANIMAL;
+        fn is_iid_in_inheritance_chain(riid: &com::sys::IID) -> bool {
+            riid == &Self::IID
                 || <dyn IUnknown as com::ComInterface>::is_iid_in_inheritance_chain(riid)
         }
     }
@@ -102,12 +101,12 @@ pub mod ianimal {
         }
     }
     #[allow(non_upper_case_globals)]
-    pub const IID_IANIMAL: com::_winapi::shared::guiddef::GUID =
-        com::_winapi::shared::guiddef::GUID {
-            Data1: 0xEFF8970E,
-            Data2: 0xC50F,
-            Data3: 0x45E0,
-            Data4: [0x92, 0x84, 0x29, 0x1C, 0xE5, 0xA6, 0xF7, 0x71],
+    pub const IID_IANIMAL: com::sys::IID =
+        com::sys:::IID {
+            data1: 0xEFF8970E,
+            data2: 0xC50F,
+            data3: 0x45E0,
+            data4: [0x92, 0x84, 0x29, 0x1C, 0xE5, 0xA6, 0xF7, 0x71],
         };
 }
 ```

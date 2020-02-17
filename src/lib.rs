@@ -4,12 +4,12 @@ mod interface_rc;
 pub mod interfaces;
 pub mod offset;
 pub mod runtime;
-
-use interfaces::iunknown::IUnknown;
-use winapi::shared::guiddef::IID;
+pub mod sys;
 
 pub use interface_ptr::InterfacePtr;
 pub use interface_rc::InterfaceRc;
+use interfaces::iunknown::IUnknown;
+use sys::IID;
 
 /// A COM compliant interface
 ///
@@ -60,10 +60,6 @@ macro_rules! vtable {
         $crate::vtable!($class: $interface, Zero)
     };
 }
-
-// Export winapi for use by macros
-#[doc(hidden)]
-pub extern crate winapi as _winapi;
 
 #[doc(hidden)]
 pub use com_macros::{co_class, com_interface, VTable};

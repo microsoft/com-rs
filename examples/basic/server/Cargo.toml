@@ -8,8 +8,5 @@ edition = "2018"
 com = { path = "../../.." }
 interface = { path = "../interface" }
 
-[target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["winuser", "winreg", "winerror", "combaseapi"] }
-
 [lib]
 crate-type = ["rlib", "cdylib"]

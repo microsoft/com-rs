@@ -1,8 +1,6 @@
 use crate::com_interface;
-use winapi::{
-    ctypes::c_void,
-    shared::{guiddef::REFIID, ntdef::HRESULT},
-};
+use crate::sys::{HRESULT, IID};
+use std::ffi::c_void;
 
 #[com_interface("00000000-0000-0000-C000-000000000046")]
 pub trait IUnknown {
@@ -14,7 +12,7 @@ pub trait IUnknown {
     ///
     /// [`QueryInterface` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
     /// [`IUnknown::get_interface`]: trait.IUnknown.html#method.get_interface
-    unsafe fn query_interface(&self, riid: REFIID, ppv: *mut *mut c_void) -> HRESULT;
+    unsafe fn query_interface(&self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT;
 
     /// The COM [`AddRef` Method]
     ///

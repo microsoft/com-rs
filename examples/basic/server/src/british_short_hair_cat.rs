@@ -1,8 +1,7 @@
 use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal};
 
-use winapi::shared::winerror::{HRESULT, NOERROR};
-
 use com::co_class;
+use com::sys::HRESULT;
 
 /// The implementation class
 /// https://en.wikipedia.org/wiki/British_Shorthair
@@ -14,21 +13,21 @@ pub struct BritishShortHairCat {
 impl IDomesticAnimal for BritishShortHairCat {
     unsafe fn train(&self) -> HRESULT {
         println!("Training...");
-        NOERROR
+        0
     }
 }
 
 impl ICat for BritishShortHairCat {
     unsafe fn ignore_humans(&self) -> HRESULT {
         println!("Ignoring Humans...");
-        NOERROR
+        0
     }
 }
 
 impl IAnimal for BritishShortHairCat {
     unsafe fn eat(&self) -> HRESULT {
         println!("Eating...");
-        NOERROR
+        0
     }
 }
 

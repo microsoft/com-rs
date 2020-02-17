@@ -1,17 +1,8 @@
-use winapi::{
-    ctypes::c_void,
-    shared::{
-        guiddef::{IID, REFCLSID, REFIID},
-        minwindef::LPVOID,
-        winerror::{FAILED, HRESULT, S_FALSE, S_OK},
-        wtypesbase::CLSCTX_INPROC_SERVER,
-    },
-    um::{
-        combaseapi::{CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize},
-        objbase::COINIT_APARTMENTTHREADED,
-        unknwnbase::LPUNKNOWN,
-    },
+use crate::sys::{
+    CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize, CLSCTX_INPROC_SERVER,
+    COINIT_APARTMENTTHREADED, FAILED, HRESULT, IID, S_FALSE, S_OK,
 };
+use std::ffi::c_void;
 
 use crate::{
     interfaces::iclass_factory::{IClassFactory, IID_ICLASS_FACTORY},
@@ -48,11 +39,11 @@ impl ApartmentThreadedRuntime {
         let mut class_factory = std::ptr::null_mut::<c_void>();
         let hr = unsafe {
             CoGetClassObject(
-                iid as REFCLSID,
+                iid as *const IID,
                 CLSCTX_INPROC_SERVER,
                 std::ptr::null_mut::<c_void>(),
-                &IID_ICLASS_FACTORY as REFIID,
-                &mut class_factory as *mut LPVOID,
+                &IID_ICLASS_FACTORY as *const IID,
+                &mut class_factory as *mut *mut c_void,
             )
         };
         if FAILED(hr) {
@@ -80,21 +71,21 @@ impl ApartmentThreadedRuntime {
         clsid: &IID,
         outer: &mut U,
     ) -> Result<InterfacePtr<T>, HRESULT> {
-        unsafe { self.create_raw_instance::<T>(clsid, outer as *mut U as LPUNKNOWN) }
+        unsafe { self.create_raw_instance::<T>(clsid, outer as *mut U as *mut *const c_void) }
     }
 
     pub unsafe fn create_raw_instance<T: ComInterface + ?Sized>(
         &self,
         clsid: &IID,
-        outer: LPUNKNOWN,
+        outer: *mut *const c_void,
     ) -> Result<InterfacePtr<T>, HRESULT> {
         let mut instance = std::ptr::null_mut::<c_void>();
         let hr = CoCreateInstance(
-            clsid as REFCLSID,
+            clsid as *const IID,
             outer,
             CLSCTX_INPROC_SERVER,
-            &T::IID as REFIID,
-            &mut instance as *mut LPVOID,
+            &T::IID as *const IID,
+            &mut instance as *mut *mut c_void,
         );
         if FAILED(hr) {
             return Err(hr);

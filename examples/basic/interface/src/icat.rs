@@ -1,5 +1,5 @@
 use com::com_interface;
-use winapi::um::winnt::HRESULT;
+use com::sys::HRESULT;
 
 use crate::IAnimal;
 

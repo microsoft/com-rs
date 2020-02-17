@@ -8,15 +8,15 @@ use syn::ItemStruct;
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let iunknown_to_use_field_ident = crate::utils::iunknown_to_use_field_ident();
-    let ptr_casting = quote! { as *mut com::_winapi::ctypes::c_void };
+    let ptr_casting = quote! { as *mut std::ffi::c_void };
 
     quote!(
         impl com::interfaces::iunknown::IUnknown for #struct_ident {
             unsafe fn query_interface(
                 &self,
-                riid: *const com::_winapi::shared::guiddef::IID,
-                ppv: *mut *mut com::_winapi::ctypes::c_void
-            ) -> com::_winapi::shared::winerror::HRESULT {
+                riid: *const com::sys::IID,
+                ppv: *mut *mut std::ffi::c_void
+            ) -> com::sys::HRESULT {
                 let iunknown_to_use = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting);
                 iunknown_to_use.query_interface(riid, ppv)
             }
