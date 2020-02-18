@@ -28,9 +28,9 @@ To both consume or produce a COM component through an interface, you will first 
 pub trait IUnknown {
     unsafe fn query_interface(
         &self,
-        riid: winapi::shared::guiddef::REFIID,
-        ppv: *mut *mut winapi::ctypes::c_void
-    ) -> winapi::shared::winerror::HRESULT;
+        riid: *const IID,
+        ppv: *mut *mut c_void
+    ) -> HRESULT;
     fn add_ref(&self) -> u32;
     unsafe fn release(&self) -> u32;
 }

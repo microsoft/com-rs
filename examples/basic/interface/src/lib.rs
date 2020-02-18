@@ -10,11 +10,11 @@ pub use icat_class::ICatClass;
 pub use idomesticanimal::IDomesticAnimal;
 pub use iexample::IExample;
 
-use winapi::shared::guiddef::IID;
+use com::sys::IID;
 
 pub const CLSID_CAT_CLASS: IID = IID {
-    Data1: 0xC5F45CBC,
-    Data2: 0x4439,
-    Data3: 0x418C,
-    Data4: [0xA9, 0xF9, 0x05, 0xAC, 0x67, 0x52, 0x5E, 0x43],
+    data1: 0xC5F45CBC,
+    data2: 0x4439,
+    data3: 0x418C,
+    data4: [0xA9, 0xF9, 0x05, 0xAC, 0x67, 0x52, 0x5E, 0x43],
 };

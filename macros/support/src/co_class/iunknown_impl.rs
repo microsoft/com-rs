@@ -91,7 +91,7 @@ fn gen_aggregate_drops(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStre
     let aggregate_drops = aggr_map.iter().map(|(aggr_field_ident, _)| {
         quote!(
             if !self.#aggr_field_ident.is_null() {
-                let mut aggr_interface_ptr = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut com::_winapi::ctypes::c_void);
+                let mut aggr_interface_ptr = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut _);
                 aggr_interface_ptr.release();
             }
         )
@@ -154,20 +154,20 @@ pub fn gen_query_interface(
     quote!(
         unsafe fn query_interface(
             &self,
-            riid: *const com::_winapi::shared::guiddef::IID,
-            ppv: *mut *mut com::_winapi::ctypes::c_void
-        ) -> com::_winapi::shared::winerror::HRESULT {
+            riid: *const com::sys::IID,
+            ppv: *mut *mut std::ffi::c_void
+        ) -> com::sys::HRESULT {
             let riid = &*riid;
 
-            if com::_winapi::shared::guiddef::IsEqualGUID(riid, &com::interfaces::iunknown::IID_IUNKNOWN) {
-                *ppv = &self.#first_vptr_field as *const _ as *mut com::_winapi::ctypes::c_void;
+            if riid == &com::interfaces::iunknown::IID_IUNKNOWN {
+                *ppv = &self.#first_vptr_field as *const _ as *mut std::ffi::c_void;
             } #base_match_arms #aggr_match_arms else {
-                *ppv = std::ptr::null_mut::<com::_winapi::ctypes::c_void>();
-                return com::_winapi::shared::winerror::E_NOINTERFACE;
+                *ppv = std::ptr::null_mut::<std::ffi::c_void>();
+                return com::sys::E_NOINTERFACE;
             }
 
             self.add_ref();
-            com::_winapi::shared::winerror::NOERROR
+            com::sys::NOERROR
         }
     )
 }
@@ -181,7 +181,7 @@ pub fn gen_base_match_arms(base_interface_idents: &[Ident]) -> HelperTokenStream
 
         quote!(
             else if #match_condition {
-                *ppv = &self.#vptr_field_ident as *const _ as *mut com::_winapi::ctypes::c_void;
+                *ppv = &self.#vptr_field_ident as *const _ as *mut std::ffi::c_void;
             }
         )
     });
@@ -204,15 +204,15 @@ pub fn gen_aggregate_match_arms(aggr_map: &HashMap<Ident, Vec<Ident>>) -> Helper
         quote!(
             else if #first_aggr_match_condition #(#rem_aggr_match_conditions)* {
                 if self.#aggr_field_ident.is_null() {
-                    *ppv = std::ptr::null_mut::<com::_winapi::ctypes::c_void>();
-                    return com::_winapi::shared::winerror::E_NOINTERFACE;
+                    *ppv = std::ptr::null_mut::<std::ffi::c_void>();
+                    return com::sys::E_NOINTERFACE;
                 }
 
-                let mut aggr_interface_ptr = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut com::_winapi::ctypes::c_void);
+                let mut aggr_interface_ptr = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut _);
                 let hr = aggr_interface_ptr.query_interface(riid, ppv);
-                if com::_winapi::shared::winerror::FAILED(hr) {
-                    *ppv = std::ptr::null_mut::<com::_winapi::ctypes::c_void>();
-                    return com::_winapi::shared::winerror::E_NOINTERFACE;
+                if com::sys::FAILED(hr) {
+                    *ppv = std::ptr::null_mut::<std::ffi::c_void>();
+                    return com::sys::E_NOINTERFACE;
                 }
 
                 // We release it as the previous call add_ref-ed the inner object.

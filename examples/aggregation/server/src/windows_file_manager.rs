@@ -5,9 +5,8 @@ use interface::{
     CLSID_LOCAL_FILE_MANAGER_CLASS,
 };
 
-use winapi::shared::winerror::{HRESULT, NOERROR};
-
 use com::co_class;
+use com::sys::{HRESULT, NOERROR};
 
 /// The implementation class
 #[co_class(implements(IFileManager), aggregates(ILocalFileManager))]
