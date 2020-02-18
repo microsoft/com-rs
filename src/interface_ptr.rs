@@ -12,6 +12,7 @@ use std::ptr::NonNull;
 /// automatically calls `AddRef` and `Release` at the right time .
 ///
 /// [`InterfaceRc`]: struct.InterfaceRc.html
+#[repr(transparent)]
 pub struct InterfacePtr<T: ?Sized + ComInterface> {
     ptr: NonNull<*mut <T as ComInterface>::VTable>,
     phantom: PhantomData<T>,
