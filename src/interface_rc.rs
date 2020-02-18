@@ -1,6 +1,4 @@
-use crate::sys::{E_NOINTERFACE, E_POINTER, FAILED};
-use crate::{interface_ptr::InterfacePtr, interfaces::iunknown::IUnknown, ComInterface, IID};
-use std::ffi::c_void;
+use crate::{interfaces::IUnknown, ComInterface, InterfacePtr};
 
 /// A reference counted COM interface. This smart pointer type automatically
 /// calls `AddRef` when cloned and `Release` when dropped.
@@ -21,6 +19,11 @@ impl<T: ?Sized + ComInterface> InterfaceRc<T> {
         InterfaceRc { ptr }
     }
 
+    /// Construct an `InterfaceRc` from a raw pointer to a COM interface.
+    ///
+    /// # Safety
+    ///
+    /// The same safety guarantees as `InterfacePtr::new` must be upheld by the function.
     pub unsafe fn from_raw(ptr: *mut *mut <T as ComInterface>::VTable) -> Self {
         Self::new(InterfacePtr::new(ptr))
     }
@@ -35,19 +38,7 @@ impl<T: ?Sized + ComInterface> InterfaceRc<T> {
     /// interface `I` then a `Some` containing an `InterfaceRc` pointing to that
     /// interface will be returned otherwise `None` will be returned.
     pub fn get_interface<I: ComInterface + ?Sized>(&self) -> Option<InterfaceRc<I>> {
-        let mut ppv = std::ptr::null_mut::<c_void>();
-        let hr = unsafe { self.query_interface(&I::IID as *const IID, &mut ppv) };
-        if FAILED(hr) {
-            assert!(
-                hr == E_NOINTERFACE || hr == E_POINTER,
-                "QueryInterface returned non-standard error"
-            );
-            return None;
-        }
-        assert!(!ppv.is_null(), "The pointer to the interface returned from a successful call to QueryInterface was null");
-        Some(InterfaceRc::new(unsafe {
-            InterfacePtr::new(ppv as *mut *mut _)
-        }))
+        self.ptr.get_interface().map(|ptr| ptr.upgrade())
     }
 }
 
@@ -62,10 +53,6 @@ impl<T: ComInterface + ?Sized> Drop for InterfaceRc<T> {
 
 impl<T: ComInterface> Clone for InterfaceRc<T> {
     fn clone(&self) -> Self {
-        let new_ptr = InterfaceRc {
-            ptr: self.ptr.clone(),
-        };
-        unsafe { new_ptr.add_ref() };
-        new_ptr
+        self.ptr.clone().upgrade()
     }
 }

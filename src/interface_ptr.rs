@@ -1,5 +1,7 @@
-use crate::ComInterface;
+use crate::sys::{E_NOINTERFACE, E_POINTER, FAILED};
+use crate::{interfaces::IUnknown, ComInterface, InterfaceRc, IID};
 
+use std::ffi::c_void;
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 
@@ -25,16 +27,31 @@ impl<T: ?Sized + ComInterface> InterfacePtr<T> {
     /// interface is itself trivial castable to a `*mut T::VTable`. In other words,
     /// `ptr` should also be equal to `*mut *mut T::VTable`
     ///
-    /// `ptr` must live for at least as long as the `InterfacePtr`
+    /// `ptr` must live for at least as long as the `InterfacePtr`. The underlying
+    /// COM interface is assumed to correctly implement AddRef and Release such that
+    /// the interface will be valid as long as AddRef has been called more times than
+    /// Release.
+    ///
+    /// AddRef must have been called on the underlying COM interface that `ptr` is pointing
+    /// to such that the reference count must be at least 1. It is expected that Release
+    /// will eventually be called on this pointer either manually or by passing it into
+    /// `InterfaceRc::new` which will cause Release to be called on drop of the rc.
+    ///
+    /// When this struct is dropped, `release` will be called on the underlying interface.
     ///
     /// # Panics
     ///
     /// Panics if `ptr` is null
     pub unsafe fn new(ptr: *mut *mut <T as ComInterface>::VTable) -> InterfacePtr<T> {
         InterfacePtr {
-            ptr: NonNull::new(ptr).expect("ptr was null"),
+            ptr: NonNull::new(ptr).expect("InterfacePtr's ptr was null"),
             phantom: PhantomData,
         }
+    }
+
+    /// Upgrade the `InterfacePtr` to an `InterfaceRc`
+    pub fn upgrade(self) -> InterfaceRc<T> {
+        InterfaceRc::new(self)
     }
 
     /// Gets the underlying interface ptr. This ptr is only guarnteed to live for
@@ -42,13 +59,44 @@ impl<T: ?Sized + ComInterface> InterfacePtr<T> {
     pub fn as_raw(&self) -> *mut *mut <T as ComInterface>::VTable {
         self.ptr.as_ptr()
     }
+
+    /// A safe version of `QueryInterface`. If the backing CoClass implements the
+    /// interface `I` then a `Some` containing an `InterfaceRc` pointing to that
+    /// interface will be returned otherwise `None` will be returned.
+    pub fn get_interface<I: ComInterface + ?Sized>(&self) -> Option<InterfacePtr<I>> {
+        let mut ppv = std::ptr::null_mut::<c_void>();
+        let hr = unsafe { self.query_interface(&I::IID as *const IID, &mut ppv) };
+        if FAILED(hr) {
+            assert!(
+                hr == E_NOINTERFACE || hr == E_POINTER,
+                "QueryInterface returned non-standard error"
+            );
+            return None;
+        }
+        assert!(!ppv.is_null(), "The pointer to the interface returned from a successful call to QueryInterface was null");
+        Some(unsafe { InterfacePtr::new(ppv as *mut *mut _) })
+    }
 }
 
+impl<T: ComInterface> std::convert::From<InterfaceRc<T>> for InterfacePtr<T> {
+    /// Convert from an `InterfaceRc` to an `InterfacePtr`
+    ///
+    /// Note that this does not call the release on the underlying interface
+    /// which gurantees that the InterfacePtr will still point to a valid
+    /// interface. If Release is never called on this pointer, than memory
+    /// may be leaked.
+    fn from(rc: crate::InterfaceRc<T>) -> Self {
+        let result = unsafe { InterfacePtr::new(rc.as_raw()) };
+        // for get the rc so that its drop impl which calls release is not called
+        std::mem::forget(rc);
+        result
+    }
+}
 impl<T: ComInterface> Clone for InterfacePtr<T> {
     fn clone(&self) -> Self {
-        InterfacePtr {
-            ptr: self.ptr,
-            phantom: PhantomData,
+        unsafe {
+            self.add_ref();
+            InterfacePtr::new(self.ptr.as_ptr())
         }
     }
 }
