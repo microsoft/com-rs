@@ -1,7 +1,7 @@
 use crate::interfaces::iunknown::IUnknown;
 use crate::sys::{
     GetModuleFileNameA, GetModuleHandleA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA,
-    RegSetValueExA, ERROR_SUCCESS, HRESULT, IID, LSTATUS, SELFREG_E_CLASS, S_OK,
+    RegSetValueExA, ERROR_SUCCESS, HKEY, HRESULT, IID, LSTATUS, SELFREG_E_CLASS, S_OK,
 };
 
 use std::convert::TryInto;
@@ -47,11 +47,11 @@ pub fn unregister_keys(registry_keys_to_remove: Vec<RegistryKeyInfo>) -> HRESULT
     hr
 }
 
-const HKEY_CLASSES_ROOT: *mut c_void = 0x8000_0000 as *mut c_void;
+const HKEY_CLASSES_ROOT: HKEY = 0x8000_0000 as HKEY;
 const KEY_ALL_ACCESS: u32 = 0x000F_003F;
 const REG_OPTION_NON_VOLATILE: u32 = 0x00000000;
-fn create_class_key(key_info: &RegistryKeyInfo) -> Result<*mut c_void, LSTATUS> {
-    let hk_result = std::ptr::null_mut::<c_void>();
+fn create_class_key(key_info: &RegistryKeyInfo) -> Result<HKEY, LSTATUS> {
+    let mut hk_result = std::ptr::null_mut::<c_void>();
     let lp_class = std::ptr::null_mut::<u8>();
     let lp_security_attributes = std::ptr::null_mut::<c_void>();
     let lpdw_disposition = std::ptr::null_mut::<u32>();
@@ -64,7 +64,7 @@ fn create_class_key(key_info: &RegistryKeyInfo) -> Result<*mut c_void, LSTATUS> 
             REG_OPTION_NON_VOLATILE,
             KEY_ALL_ACCESS,
             lp_security_attributes,
-            &hk_result as *const _ as *mut _,
+            &mut hk_result as *mut _,
             lpdw_disposition,
         )
     };
@@ -76,10 +76,7 @@ fn create_class_key(key_info: &RegistryKeyInfo) -> Result<*mut c_void, LSTATUS> 
 }
 
 const REG_SZ: u32 = 1;
-fn set_class_key(
-    key_handle: *mut c_void,
-    key_info: &RegistryKeyInfo,
-) -> Result<*mut c_void, LSTATUS> {
+fn set_class_key(key_handle: HKEY, key_info: &RegistryKeyInfo) -> Result<HKEY, LSTATUS> {
     let result = unsafe {
         RegSetValueExA(
             key_handle,
