@@ -79,7 +79,7 @@ impl<T: ComInterface + ?Sized> InterfacePtr<T> {
     }
 }
 
-impl<T: ComInterface> std::convert::From<InterfaceRc<T>> for InterfacePtr<T> {
+impl<T: ComInterface + ?Sized> std::convert::From<InterfaceRc<T>> for InterfacePtr<T> {
     /// Convert from an `InterfaceRc` to an `InterfacePtr`
     ///
     /// Note that this does not call the release on the underlying interface
@@ -93,7 +93,8 @@ impl<T: ComInterface> std::convert::From<InterfaceRc<T>> for InterfacePtr<T> {
         result
     }
 }
-impl<T: ComInterface> Clone for InterfacePtr<T> {
+
+impl<T: ComInterface + ?Sized> Clone for InterfacePtr<T> {
     fn clone(&self) -> Self {
         unsafe {
             self.add_ref();
