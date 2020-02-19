@@ -13,12 +13,12 @@ use std::ptr::NonNull;
 ///
 /// [`InterfaceRc`]: struct.InterfaceRc.html
 #[repr(transparent)]
-pub struct InterfacePtr<T: ?Sized + ComInterface> {
+pub struct InterfacePtr<T: ComInterface + ?Sized> {
     ptr: NonNull<*mut <T as ComInterface>::VTable>,
     phantom: PhantomData<T>,
 }
 
-impl<T: ?Sized + ComInterface> InterfacePtr<T> {
+impl<T: ComInterface + ?Sized> InterfacePtr<T> {
     /// Creates a new `InterfacePtr` that comforms to the interface T
     ///
     /// # Safety

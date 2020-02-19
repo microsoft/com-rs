@@ -9,7 +9,7 @@ pub mod sys;
 pub use interface_ptr::InterfacePtr;
 pub use interface_rc::InterfaceRc;
 use interfaces::iunknown::IUnknown;
-use sys::IID;
+pub use sys::IID;
 
 /// A COM compliant interface
 ///
@@ -19,7 +19,7 @@ use sys::IID;
 /// associated VTable type. A vtable is valid if:
 /// * it is `#[repr(C)]`
 /// * the type only contains `extern "stdcall" fn" definitions
-pub unsafe trait ComInterface: IUnknown {
+pub unsafe trait ComInterface: IUnknown + 'static {
     type VTable;
     const IID: IID;
 
