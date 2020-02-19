@@ -9,11 +9,11 @@ use crate::{interfaces::IUnknown, ComInterface, InterfacePtr};
 /// type.
 ///
 /// [`InterfacePtr`]: struct.InterfacePtr.html
-pub struct InterfaceRc<T: ?Sized + ComInterface> {
+pub struct InterfaceRc<T: ComInterface + ?Sized> {
     ptr: InterfacePtr<T>,
 }
 
-impl<T: ?Sized + ComInterface> InterfaceRc<T> {
+impl<T: ComInterface + ?Sized> InterfaceRc<T> {
     /// Creates a new `InterfaceRc` that comforms to the interface T.
     pub fn new(ptr: InterfacePtr<T>) -> InterfaceRc<T> {
         InterfaceRc { ptr }
