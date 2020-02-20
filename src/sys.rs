@@ -31,6 +31,26 @@ pub struct IID {
     pub data4: [u8; 8],
 }
 
+impl std::fmt::Debug for IID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:08X?}-{:04X?}-{:04X?}-{:02X?}{:02X?}-{:02X?}{:02X?}{:02X?}{:02X?}{:02X?}{:02X?}",
+            self.data1,
+            self.data2,
+            self.data3,
+            self.data4[0],
+            self.data4[1],
+            self.data4[2],
+            self.data4[3],
+            self.data4[4],
+            self.data4[5],
+            self.data4[6],
+            self.data4[7]
+        )
+    }
+}
+
 #[link(name = "ole32")]
 extern "system" {
     pub fn RegCreateKeyExA(
