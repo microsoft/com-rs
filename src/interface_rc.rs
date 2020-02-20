@@ -51,7 +51,7 @@ impl<T: ComInterface + ?Sized> Drop for InterfaceRc<T> {
     }
 }
 
-impl<T: ComInterface> Clone for InterfaceRc<T> {
+impl<T: ComInterface + ?Sized> Clone for InterfaceRc<T> {
     fn clone(&self) -> Self {
         self.ptr.clone().upgrade()
     }
