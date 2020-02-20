@@ -28,7 +28,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     quote! {
         #struct_definition
 
-        impl com::interfaces::iclass_factory::IClassFactory for #class_factory_ident {
+        impl com::interfaces::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
                 &self,
                 aggr: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,

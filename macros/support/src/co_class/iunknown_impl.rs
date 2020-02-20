@@ -18,7 +18,7 @@ pub fn generate(
     let release = gen_release(base_interface_idents, aggr_map, struct_ident);
 
     quote!(
-        impl com::interfaces::iunknown::IUnknown for #struct_ident {
+        impl com::interfaces::IUnknown for #struct_ident {
             #query_interface
             #add_ref
             #release
