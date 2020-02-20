@@ -54,16 +54,16 @@ pub mod ianimal {
 
     pub type IAnimalVPtr = *const IAnimalVTable;
 
-    // Allowing `eat` to be called on on an `InterfaceRc<dyn IAnimal>`
-    impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::InterfaceRc<T> {
+    // Allowing `eat` to be called on on an `ComRc<dyn IAnimal>`
+    impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::ComRc<T> {
         unsafe fn eat(&self) -> HRESULT {
             let interface_ptr = self.as_raw() as *mut IAnimalVPtr;
             ((**interface_ptr).Eat)(interface_ptr)
         }
     }
 
-    // Allowing `eat` to be called on on an `InterfacePtr<dyn IAnimal>`
-    impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::InterfacePtr<T> {
+    // Allowing `eat` to be called on on an `ComPtr<dyn IAnimal>`
+    impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::ComPtr<T> {
         unsafe fn eat(&self) -> HRESULT {
             let interface_ptr = self.as_raw() as *mut IAnimalVPtr;
             ((**interface_ptr).Eat)(interface_ptr)
@@ -115,18 +115,18 @@ pub mod ianimal {
 There's a few occasions where we're going outside of the Rust type system and relying that the 
 programmer has verified everything will be ok. 
 
-The first we should look at is where we implement `IAnimal` for `InterfaceRc<dyn IAnimal>` and `InterfacePtr<dyn IAnimal>`:
+The first we should look at is where we implement `IAnimal` for `ComRc<dyn IAnimal>` and `ComPtr<dyn IAnimal>`:
 
 ```rust
-impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::InterfaceRc<T> {
+impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::ComRc<T> {
         unsafe fn eat(&self) -> HRESULT {
             let interface_ptr = self.as_raw() as *mut IAnimalVPtr;
             ((**interface_ptr).Eat)(interface_ptr)
         }
     }
 
-    // Allowing `eat` to be called on on an `InterfacePtr<dyn IAnimal>`
-    impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::InterfacePtr<T> {
+    // Allowing `eat` to be called on on an `ComPtr<dyn IAnimal>`
+    impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::ComPtr<T> {
         unsafe fn eat(&self) -> HRESULT {
             let interface_ptr = self.as_raw() as *mut IAnimalVPtr;
             ((**interface_ptr).Eat)(interface_ptr)
@@ -134,7 +134,7 @@ impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::InterfaceRc<T> {
     }
 ```
 
-Here we are casting whatever pointer the `InterfaceRc` or `InterfacePtr` is holding on to
+Here we are casting whatever pointer the `ComRc` or `ComPtr` is holding on to
 as an `*mut IAnimalVPtr` or in other words a `*mut *const IAnimalVTable`. When working 
 with raw pointers there are several things we need to sure in order to verify it's safe usage
 within Rust:
@@ -144,11 +144,11 @@ within Rust:
 the pointer but only for as long as `&self` lives. 
 * The contents pointed are not mutated if there are other readers of `&self`. In other words, because we have non-exclusive access, we are not allowed to mutate the contents the pointer is pointing to. If we cannot be sure about this at compile time we should wrap this interface in an `Rc`.
 
-The first two points should be verified in other parts of the code. The `InterfaceRc` and `InterfacePtr` 
+The first two points should be verified in other parts of the code. The `ComRc` and `ComPtr` 
 types should only be constructed if the first two points hold. If they do not hold, then some code 
 somewhere else is incorrect.
 
-The last two points cannot really be known until the point we call `InterfaceRc<dyn IAnimal>::eat`. It 
+The last two points cannot really be known until the point we call `ComRc<dyn IAnimal>::eat`. It 
 is up to the programmer at the time of calling to ensure that these two points will hold. This is why
 it the method is marked as `unsafe`. Only the programmer who is writing the code where the interface method
 can be called has any possibility of verifying these rules. If they cannot be verified than the programmer

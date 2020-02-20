@@ -6,8 +6,8 @@ pub mod offset;
 pub mod runtime;
 pub mod sys;
 
-pub use interface_ptr::InterfacePtr;
-pub use interface_rc::InterfaceRc;
+pub use interface_ptr::ComPtr;
+pub use interface_rc::ComRc;
 use interfaces::iunknown::IUnknown;
 pub use sys::IID;
 

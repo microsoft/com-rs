@@ -17,17 +17,17 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
                 riid: *const com::sys::IID,
                 ppv: *mut *mut std::ffi::c_void
             ) -> com::sys::HRESULT {
-                let iunknown_to_use = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting);
+                let iunknown_to_use = com::ComPtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting);
                 iunknown_to_use.query_interface(riid, ppv)
             }
 
             unsafe fn add_ref(&self) -> u32 {
-                let iunknown_to_use  = unsafe { com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting) };
+                let iunknown_to_use  = unsafe { com::ComPtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting) };
                 iunknown_to_use.add_ref()
             }
 
             unsafe fn release(&self) -> u32 {
-                let iunknown_to_use = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting);
+                let iunknown_to_use = com::ComPtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting);
                 iunknown_to_use.release()
             }
         }

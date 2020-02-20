@@ -17,18 +17,18 @@ pub trait IUnknown {
     /// The COM [`AddRef` Method]
     ///
     /// This method normally should not be called directly. This method is used by
-    /// [`InterfaceRc`] to implement the reference counting mechanism.
+    /// [`ComRc`] to implement the reference counting mechanism.
     ///
     /// [`AddRef` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
-    /// [`InterfaceRc`]: struct.InterfaceRc.html
+    /// [`ComRc`]: struct.ComRc.html
     unsafe fn add_ref(&self) -> u32;
 
     /// The COM [`Release` Method]
     ///
     /// This method normally should not be called directly. This method is used by
-    /// [`InterfaceRc`] to implement the reference counting mechanism.
+    /// [`ComRc`] to implement the reference counting mechanism.
     ///
     /// [`Release` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
-    /// [`InterfaceRc`]: struct.InterfaceRc.html
+    /// [`ComRc`]: struct.ComRc.html
     unsafe fn release(&self) -> u32;
 }

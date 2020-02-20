@@ -6,7 +6,7 @@ use std::ffi::c_void;
 
 use crate::{
     interfaces::iclass_factory::{IClassFactory, IID_ICLASS_FACTORY},
-    CoClass, ComInterface, InterfacePtr, InterfaceRc,
+    CoClass, ComInterface, ComPtr, ComRc,
 };
 
 pub struct ApartmentThreadedRuntime {
@@ -35,7 +35,7 @@ impl ApartmentThreadedRuntime {
         }
     }
 
-    pub fn get_class_object(&self, iid: &IID) -> Result<InterfaceRc<dyn IClassFactory>, HRESULT> {
+    pub fn get_class_object(&self, iid: &IID) -> Result<ComRc<dyn IClassFactory>, HRESULT> {
         let mut class_factory = std::ptr::null_mut::<c_void>();
         let hr = unsafe {
             CoGetClassObject(
@@ -50,15 +50,15 @@ impl ApartmentThreadedRuntime {
             return Err(hr);
         }
 
-        Ok(unsafe { InterfaceRc::from_raw(class_factory as *mut *mut _) })
+        Ok(unsafe { ComRc::from_raw(class_factory as *mut *mut _) })
     }
 
     pub fn create_instance<T: ComInterface + ?Sized>(
         &self,
         clsid: &IID,
-    ) -> Result<InterfaceRc<T>, HRESULT> {
+    ) -> Result<ComRc<T>, HRESULT> {
         unsafe {
-            Ok(InterfaceRc::new(
+            Ok(ComRc::new(
                 self.create_raw_instance::<T>(clsid, std::ptr::null_mut())?,
             ))
         }
@@ -68,7 +68,7 @@ impl ApartmentThreadedRuntime {
         &self,
         clsid: &IID,
         outer: &mut U,
-    ) -> Result<InterfacePtr<T>, HRESULT> {
+    ) -> Result<ComPtr<T>, HRESULT> {
         unsafe { self.create_raw_instance::<T>(clsid, outer as *mut U as *mut c_void) }
     }
 
@@ -76,7 +76,7 @@ impl ApartmentThreadedRuntime {
         &self,
         clsid: &IID,
         outer: *mut c_void,
-    ) -> Result<InterfacePtr<T>, HRESULT> {
+    ) -> Result<ComPtr<T>, HRESULT> {
         let mut instance = std::ptr::null_mut::<c_void>();
         let hr = CoCreateInstance(
             clsid as *const IID,
@@ -89,7 +89,7 @@ impl ApartmentThreadedRuntime {
             return Err(hr);
         }
 
-        Ok(InterfacePtr::new(instance as *mut _))
+        Ok(ComPtr::new(instance as *mut _))
     }
 }
 

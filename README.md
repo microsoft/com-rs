@@ -42,11 +42,11 @@ pub trait IAnimal: IUnknown {
 
 ```
 
-Short explanation: This generates the VTable layout for IUnknown and implements the trait on `com::InterfaceRc` so that it dereferences the correct function pointer entry within the VTable.
+Short explanation: This generates the VTable layout for IUnknown and implements the trait on `com::ComRc` so that it dereferences the correct function pointer entry within the VTable.
 
 ### Consuming a COM component
 
-Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::InterfaceRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
+Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::ComRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
 
 ```rust
 use com::runtime::ApartmentThreadedRuntime as Runtime;
@@ -57,10 +57,10 @@ let runtime = Runtime::new().expect("Failed to initialize COM Library");
 // Get a COM instance's interface pointer, by specifying
 // - The CLSID of the COM component
 // - The interface of the COM component that you want
-// runtime.create_instance returns a InterfaceRc<dyn IAnimal> in this case.
+// runtime.create_instance returns a ComRc<dyn IAnimal> in this case.
 let mut cat = runtime.create_instance::<dyn IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
 
-// All IAnimal methods will be defined on InterfaceRc<T: IAnimal>
+// All IAnimal methods will be defined on ComRc<T: IAnimal>
 cat.eat();
 ```
 
