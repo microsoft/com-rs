@@ -73,11 +73,9 @@ pub mod ianimal {
     // Declaration that IAnimal is a COM Interface
     unsafe impl com::ComInterface for dyn IAnimal {
         type VTable = IAnimalVTable;
+        type Super = IUnknown;
         const IID: com::sys::IID = IID_IANIMAL;
-        fn is_iid_in_inheritance_chain(riid: &com::sys::IID) -> bool {
-            riid == &Self::IID
-                || <dyn IUnknown as com::ComInterface>::is_iid_in_inheritance_chain(riid)
-        }
+        
     }
 
     impl<C: IAnimal> com::ProductionComInterface<C> for dyn IAnimal {
