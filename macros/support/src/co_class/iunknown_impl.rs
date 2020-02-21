@@ -18,7 +18,7 @@ pub fn generate(
     let release = gen_release(base_interface_idents, aggr_map, struct_ident);
 
     quote!(
-        impl com::interfaces::iunknown::IUnknown for #struct_ident {
+        impl com::interfaces::IUnknown for #struct_ident {
             #query_interface
             #add_ref
             #release
@@ -91,7 +91,7 @@ fn gen_aggregate_drops(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStre
     let aggregate_drops = aggr_map.iter().map(|(aggr_field_ident, _)| {
         quote!(
             if !self.#aggr_field_ident.is_null() {
-                let mut aggr_interface_ptr = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut _);
+                let mut aggr_interface_ptr = com::ComPtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut _);
                 aggr_interface_ptr.release();
             }
         )
@@ -208,7 +208,7 @@ pub fn gen_aggregate_match_arms(aggr_map: &HashMap<Ident, Vec<Ident>>) -> Helper
                     return com::sys::E_NOINTERFACE;
                 }
 
-                let mut aggr_interface_ptr = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut _);
+                let mut aggr_interface_ptr = com::ComPtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#aggr_field_ident as *mut _);
                 let hr = aggr_interface_ptr.query_interface(riid, ppv);
                 if com::sys::FAILED(hr) {
                     *ppv = std::ptr::null_mut::<std::ffi::c_void>();

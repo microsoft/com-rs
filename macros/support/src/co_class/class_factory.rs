@@ -35,7 +35,7 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     quote! {
         #struct_definition
 
-        impl com::interfaces::iclass_factory::IClassFactory for #class_factory_ident {
+        impl com::interfaces::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
                 &self,
                 aggr: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
@@ -99,7 +99,7 @@ pub fn gen_iunknown_impl(
     let add_ref = super::iunknown_impl::gen_add_ref();
     let release = gen_release(&base_interface_idents, &aggr_map, class_factory_ident);
     quote! {
-        impl com::interfaces::iunknown::IUnknown for #class_factory_ident {
+        impl com::interfaces::IUnknown for #class_factory_ident {
             #query_interface
             #add_ref
             #release

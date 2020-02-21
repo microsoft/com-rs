@@ -150,7 +150,7 @@ pub fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTok
         for base in aggr_base_interface_idents {
             let set_aggregate_fn_ident = crate::utils::set_aggregate_fn_ident(&base);
             fns.push(quote!(
-                fn #set_aggregate_fn_ident(&mut self, aggr: com::InterfacePtr<dyn com::interfaces::iunknown::IUnknown>) {
+                fn #set_aggregate_fn_ident(&mut self, aggr: com::ComPtr<dyn com::interfaces::iunknown::IUnknown>) {
                     // FaTODO: What happens if we are overwriting an existing aggregate?
                     self.#aggr_field_ident = aggr.as_raw() as *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable;
                 }

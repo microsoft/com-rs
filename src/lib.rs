@@ -1,14 +1,14 @@
 pub mod inproc;
-mod interface_ptr;
-mod interface_rc;
 pub mod interfaces;
 pub mod offset;
+mod ptr;
+mod rc;
 pub mod runtime;
 pub mod sys;
 
-pub use interface_ptr::InterfacePtr;
-pub use interface_rc::InterfaceRc;
 use interfaces::iunknown::IUnknown;
+pub use ptr::ComPtr;
+pub use rc::ComRc;
 pub use sys::IID;
 
 /// A COM compliant interface
@@ -21,9 +21,14 @@ pub use sys::IID;
 /// * the type only contains `extern "stdcall" fn" definitions
 pub unsafe trait ComInterface: IUnknown + 'static {
     type VTable;
+    type Super: ComInterface + ?Sized;
     const IID: IID;
 
-    fn is_iid_in_inheritance_chain(riid: &IID) -> bool;
+    fn is_iid_in_inheritance_chain(riid: &com::IID) -> bool {
+        riid == &Self::IID
+            || (Self::IID != <dyn IUnknown as ComInterface>::IID
+                && <Self::Super as ComInterface>::is_iid_in_inheritance_chain(riid))
+    }
 }
 
 /// A COM compliant class
