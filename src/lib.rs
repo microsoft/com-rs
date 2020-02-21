@@ -1,14 +1,14 @@
 pub mod inproc;
-mod interface_ptr;
-mod interface_rc;
 pub mod interfaces;
 pub mod offset;
+mod ptr;
+mod rc;
 pub mod runtime;
 pub mod sys;
 
-pub use interface_ptr::ComPtr;
-pub use interface_rc::ComRc;
 use interfaces::iunknown::IUnknown;
+pub use ptr::ComPtr;
+pub use rc::ComRc;
 pub use sys::IID;
 
 /// A COM compliant interface
