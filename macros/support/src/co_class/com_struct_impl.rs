@@ -88,7 +88,7 @@ pub fn gen_allocate_user_fields(struct_item: &ItemStruct) -> HelperTokenStream {
         quote!(#field_ident)
     });
 
-    quote!(#(#field_idents)*)
+    quote!(#(#field_idents,)*)
 }
 
 // Reference count field initialisation.
