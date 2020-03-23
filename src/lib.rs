@@ -52,6 +52,12 @@ macro_rules! vtable {
             $crate::offset::$offset,
         >();
     };
+    ($class:ident: $interface:ident, 4usize) => {
+        $crate::vtable!($class: $interface, Four)
+    };
+    ($class:ident: $interface:ident, 3usize) => {
+        $crate::vtable!($class: $interface, Three)
+    };
     ($class:ident: $interface:ident, 2usize) => {
         $crate::vtable!($class: $interface, Two)
     };
