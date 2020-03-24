@@ -14,4 +14,4 @@ macro_rules! declare_offset {
     };
 }
 
-declare_offset!(Zero => 0, One => 1, Two => 2);
+declare_offset!(Zero => 0, One => 1, Two => 2, Three => 3, Four => 4);
