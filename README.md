@@ -39,7 +39,6 @@ pub trait IUnknown {
 pub trait IAnimal: IUnknown {
     unsafe fn eat(&self) -> HRESULT;
 }
-
 ```
 
 Short explanation: This generates the VTable layout for IUnknown and implements the trait on `com::ComRc` so that it dereferences the correct function pointer entry within the VTable.
@@ -49,8 +48,10 @@ Short explanation: This generates the VTable layout for IUnknown and implements 
 Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::ComRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
 
 ```rust
+use com::run_time::{create_instance, new_runtime, ThreadingModel};
+
 // Initialises the COM library
-new_runtime::new(ApartmentThreaded).expect("Failed to initialize COM Library");
+new_runtime(ThreadingModel::ApartmentThreaded).expect("Failed to initialize COM Library");
 
 // Get a COM instance's interface pointer, by specifying
 // - The CLSID of the COM component
