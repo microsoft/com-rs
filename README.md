@@ -49,16 +49,14 @@ Short explanation: This generates the VTable layout for IUnknown and implements 
 Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::ComRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
 
 ```rust
-use com::runtime::ApartmentThreadedRuntime as Runtime;
-
 // Initialises the COM library
-let runtime = Runtime::new().expect("Failed to initialize COM Library");
+new_runtime::new(ApartmentThreaded).expect("Failed to initialize COM Library");
 
 // Get a COM instance's interface pointer, by specifying
 // - The CLSID of the COM component
 // - The interface of the COM component that you want
-// runtime.create_instance returns a ComRc<dyn IAnimal> in this case.
-let mut cat = runtime.create_instance::<dyn IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
+// create_instance returns a ComRc<dyn IAnimal> in this case.
+let mut cat = create_instance::<dyn IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
 
 // All IAnimal methods will be defined on ComRc<T: IAnimal>
 cat.eat();

@@ -1,4 +1,7 @@
-#![allow(missing_docs)]
+//! COM runtime facilities
+//!
+//! This includes initializing and uninitializing the COM runtime as well
+//! as creating instances of CoClasses
 use crate::sys::{
     CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize, CLSCTX_INPROC_SERVER,
     COINIT_APARTMENTTHREADED, FAILED, HRESULT, IID, S_FALSE, S_OK,
@@ -10,92 +13,100 @@ use crate::{
     CoClass, ComInterface, ComPtr, ComRc,
 };
 
-pub struct ApartmentThreadedRuntime {
-    _not_send: *const (),
+/// The threading model for the COM runtime
+#[repr(u32)]
+#[non_exhaustive]
+pub enum ThreadingModel {
+    /// COINIT_APARTMENTTHREADED
+    ApartmentThreaded = COINIT_APARTMENTTHREADED,
 }
 
-impl ApartmentThreadedRuntime {
-    pub fn new() -> Result<ApartmentThreadedRuntime, HRESULT> {
-        // Attempt to initialize the runtime first. `CoUninitialize` should be called only if this
-        // is successful. Since the `CoUninitialize` call is made through the `Drop` implementation
-        // of `ApartmentThreadedRuntime`, we need to be careful to not instantiate the runtime in
-        // case the `CoInitializeEx` fails.
-        //
-        // https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
-        unsafe {
-            match CoInitializeEx(std::ptr::null_mut::<c_void>(), COINIT_APARTMENTTHREADED) {
-                // S_OK indicates the runtime was initialized, S_FALSE means it was initialized
-                // previously. In both cases we need to invoke `CoUninitialize` later.
-                S_OK | S_FALSE => Ok(ApartmentThreadedRuntime {
-                    _not_send: std::ptr::null(),
-                }),
+/// Initialize a new apartment threaded runtime.
+///
+/// This calls `CoInitializeEx` with `COINIT_APARTMENTTHREADED`
+///
+/// On success, it is up to the user to call [`uninitialize`] when the COM runtime is no longer need.
+/// On error, the user should not call [`uninitialize`].
+pub fn new_runtime(threading_model: ThreadingModel) -> Result<(), HRESULT> {
+    unsafe {
+        match CoInitializeEx(std::ptr::null_mut::<c_void>(), threading_model as u32) {
+            // S_OK indicates the runtime was initialized, S_FALSE means it was initialized
+            // previously. In both cases we need to invoke `CoUninitialize` later.
+            S_OK | S_FALSE => Ok(()),
 
-                // Any other result is considered an error here.
-                hr => Err(hr),
-            }
+            // Any other result is considered an error here.
+            hr => Err(hr),
         }
     }
+}
 
-    pub fn get_class_object(&self, iid: &IID) -> Result<ComRc<dyn IClassFactory>, HRESULT> {
-        let mut class_factory = std::ptr::null_mut::<c_void>();
-        let hr = unsafe {
-            CoGetClassObject(
-                iid as *const IID,
-                CLSCTX_INPROC_SERVER,
-                std::ptr::null_mut::<c_void>(),
-                &IID_ICLASS_FACTORY as *const IID,
-                &mut class_factory as *mut *mut c_void,
-            )
-        };
-        if FAILED(hr) {
-            return Err(hr);
-        }
-
-        Ok(unsafe { ComRc::from_raw(class_factory as *mut *mut _) })
-    }
-
-    pub fn create_instance<T: ComInterface + ?Sized>(
-        &self,
-        clsid: &IID,
-    ) -> Result<ComRc<T>, HRESULT> {
-        unsafe {
-            Ok(ComRc::new(
-                self.create_raw_instance::<T>(clsid, std::ptr::null_mut())?,
-            ))
-        }
-    }
-
-    pub fn create_aggregated_instance<T: ComInterface + ?Sized, U: CoClass>(
-        &self,
-        clsid: &IID,
-        outer: &mut U,
-    ) -> Result<ComPtr<T>, HRESULT> {
-        unsafe { self.create_raw_instance::<T>(clsid, outer as *mut U as *mut c_void) }
-    }
-
-    pub unsafe fn create_raw_instance<T: ComInterface + ?Sized>(
-        &self,
-        clsid: &IID,
-        outer: *mut c_void,
-    ) -> Result<ComPtr<T>, HRESULT> {
-        let mut instance = std::ptr::null_mut::<c_void>();
-        let hr = CoCreateInstance(
-            clsid as *const IID,
-            outer,
+/// Get the class object with the associated [`IID`]
+///
+/// Calls `CoGetClassObject` internally
+pub fn get_class_object(iid: &IID) -> Result<ComRc<dyn IClassFactory>, HRESULT> {
+    let mut class_factory = std::ptr::null_mut::<c_void>();
+    let hr = unsafe {
+        CoGetClassObject(
+            iid as *const IID,
             CLSCTX_INPROC_SERVER,
-            &T::IID as *const IID,
-            &mut instance as *mut *mut c_void,
-        );
-        if FAILED(hr) {
-            return Err(hr);
-        }
+            std::ptr::null_mut::<c_void>(),
+            &IID_ICLASS_FACTORY as *const IID,
+            &mut class_factory as *mut *mut c_void,
+        )
+    };
+    if FAILED(hr) {
+        return Err(hr);
+    }
 
-        Ok(ComPtr::new(instance as *mut _))
+    Ok(unsafe { ComRc::from_raw(class_factory as *mut *mut _) })
+}
+
+/// Create an instance of a CoClass with the associated class id
+///
+/// Calls `CoCreateInstance` internally
+pub fn create_instance<T: ComInterface + ?Sized>(clsid: &IID) -> Result<ComRc<T>, HRESULT> {
+    unsafe {
+        Ok(ComRc::new(create_raw_instance::<T>(
+            clsid,
+            std::ptr::null_mut(),
+        )?))
     }
 }
 
-impl std::ops::Drop for ApartmentThreadedRuntime {
-    fn drop(&mut self) {
-        unsafe { CoUninitialize() }
+/// Created an aggreated instance
+///
+/// Calls `CoCreateInstance` internally
+pub fn create_aggregated_instance<T: ComInterface + ?Sized, U: CoClass>(
+    clsid: &IID,
+    outer: &mut U,
+) -> Result<ComPtr<T>, HRESULT> {
+    unsafe { create_raw_instance::<T>(clsid, outer as *mut U as *mut c_void) }
+}
+
+unsafe fn create_raw_instance<T: ComInterface + ?Sized>(
+    clsid: &IID,
+    outer: *mut c_void,
+) -> Result<ComPtr<T>, HRESULT> {
+    let mut instance = std::ptr::null_mut::<c_void>();
+    let hr = CoCreateInstance(
+        clsid as *const IID,
+        outer,
+        CLSCTX_INPROC_SERVER,
+        &T::IID as *const IID,
+        &mut instance as *mut *mut c_void,
+    );
+    if FAILED(hr) {
+        return Err(hr);
     }
+
+    Ok(ComPtr::new(instance as *mut _))
+}
+
+/// Uninitialize the COM runtime.
+///
+/// This should only be called if the COM runtime is already running (usually started through
+/// [`new_apartment_threaded_runtime`])
+/// https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
+pub unsafe fn uninitialize() {
+    CoUninitialize()
 }

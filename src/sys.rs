@@ -37,7 +37,7 @@ pub const CLASS_E_CLASSNOTAVAILABLE: HRESULT = -0x7FFB_FEEF;
 pub const ERROR_SUCCESS: u32 = 0;
 /// Registration error
 pub const SELFREG_E_CLASS: HRESULT = -0x7FFB_FDFF;
-/// A threaded apartment
+/// An apartment threaded runtime
 pub const COINIT_APARTMENTTHREADED: u32 = 0x2;
 /// A in process server
 pub const CLSCTX_INPROC_SERVER: u32 = 0x1;

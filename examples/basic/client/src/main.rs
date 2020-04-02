@@ -1,12 +1,14 @@
-use com::{interfaces::iunknown::IUnknown, runtime::ApartmentThreadedRuntime as Runtime};
+use com::{
+    interfaces::iunknown::IUnknown,
+    runtime::{create_instance, get_class_object, new_runtime, ThreadingModel},
+};
 use interface::{IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS};
 
 fn main() {
-    let runtime =
-        Runtime::new().unwrap_or_else(|hr| panic!("Failed to initialize COM Library{:x}", hr));
+    new_runtime(ThreadingModel::ApartmentThreaded)
+        .unwrap_or_else(|hr| panic!("Failed to initialize COM Library{:x}", hr));
 
-    let factory = runtime
-        .get_class_object(&CLSID_CAT_CLASS)
+    let factory = get_class_object(&CLSID_CAT_CLASS)
         .unwrap_or_else(|hr| panic!("Failed to get cat class object 0x{:x}", hr));
     println!("Got cat class object");
 
@@ -43,8 +45,7 @@ fn main() {
     println!("Got IDomesticAnimal");
     unsafe { domestic_animal_two.train() };
 
-    let cat = runtime
-        .create_instance::<dyn ICat>(&CLSID_CAT_CLASS)
+    let cat = create_instance::<dyn ICat>(&CLSID_CAT_CLASS)
         .unwrap_or_else(|hr| panic!("Failed to get a cat {:x}", hr));
     println!("Got another cat");
 
