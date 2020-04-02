@@ -1,6 +1,6 @@
 use com::{
     interfaces::iunknown::IUnknown,
-    runtime::{create_aggregated_instance, new_runtime, ThreadingModel},
+    runtime::{create_aggregated_instance, init_runtime},
 };
 
 use interface::{
@@ -27,7 +27,7 @@ impl IFileManager for WindowsFileManager {
 impl WindowsFileManager {
     pub(crate) fn new() -> Box<WindowsFileManager> {
         let mut wfm = WindowsFileManager::allocate(20);
-        new_runtime(ThreadingModel::ApartmentThreaded).expect("Failed to get runtime!");
+        init_runtime().expect("Failed to get runtime!");
         let iunknown = create_aggregated_instance::<dyn IUnknown, WindowsFileManager>(
             &CLSID_LOCAL_FILE_MANAGER_CLASS,
             &mut *wfm,

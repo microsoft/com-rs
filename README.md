@@ -48,10 +48,10 @@ Short explanation: This generates the VTable layout for IUnknown and implements 
 Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::ComRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
 
 ```rust
-use com::run_time::{create_instance, new_runtime, ThreadingModel};
+use com::run_time::{create_instance, init_runtime};
 
 // Initialises the COM library
-new_runtime(ThreadingModel::ApartmentThreaded).expect("Failed to initialize COM Library");
+init_runtime().expect("Failed to initialize COM Library");
 
 // Get a COM instance's interface pointer, by specifying
 // - The CLSID of the COM component
@@ -168,10 +168,6 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 **Is there IDL support?**
 
 As a foundation, we are attempting to create a library that doesn't necessarily rely on having an IDL file. However, it is in the pipeline for future improvements. We will have a command-line tool that will parse the IDL into the required macros.
-
-**Which threading models do this library support?**
-
-As of v0.1, this library is only confident of consuming/producing COM components that live in Single-Threaded Apartments (STA). This Threading Model assumption is used in several places, so producing/consuming these COM components in a Multi-Threaded environment will not work.
 
 **Is there out-of-process COM support?**
 

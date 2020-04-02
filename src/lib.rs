@@ -29,7 +29,7 @@ use interfaces::IUnknown;
 pub use ptr::ComPtr;
 pub use rc::ComRc;
 #[doc(inline)]
-pub use sys::IID;
+pub use sys::{CLSID, IID};
 
 /// A COM compliant interface
 ///
@@ -48,7 +48,7 @@ pub unsafe trait ComInterface: IUnknown + 'static {
     const IID: IID;
 
     /// Check whether a given IID is in the inheritance hierarchy of this interface
-    fn is_iid_in_inheritance_chain(riid: &com::IID) -> bool {
+    fn is_iid_in_inheritance_chain(riid: &IID) -> bool {
         riid == &Self::IID
             || (Self::IID != <dyn IUnknown as ComInterface>::IID
                 && <Self::Super as ComInterface>::is_iid_in_inheritance_chain(riid))

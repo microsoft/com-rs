@@ -1,12 +1,11 @@
-use com::runtime::{create_instance, new_runtime, ThreadingModel};
+use com::runtime::{create_instance, init_runtime};
 use interface::{
     IFileManager, ILocalFileManager, CLSID_LOCAL_FILE_MANAGER_CLASS,
     CLSID_WINDOWS_FILE_MANAGER_CLASS,
 };
 
 fn main() {
-    new_runtime(ThreadingModel::ApartmentThreaded)
-        .unwrap_or_else(|hr| panic!("Failed to initialize COM Library{:x}", hr));
+    init_runtime().unwrap_or_else(|hr| panic!("Failed to initialize COM Library{:x}", hr));
     println!("Got a runtime");
 
     let file_manager = create_instance::<dyn IFileManager>(&CLSID_WINDOWS_FILE_MANAGER_CLASS)

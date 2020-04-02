@@ -1,7 +1,7 @@
 use crate::interfaces::IUnknown;
 use crate::sys::{
     GetModuleFileNameA, GetModuleHandleA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA,
-    RegSetValueExA, ERROR_SUCCESS, HKEY, HRESULT, IID, LSTATUS, SELFREG_E_CLASS, S_OK,
+    RegSetValueExA, ERROR_SUCCESS, GUID, HKEY, HRESULT, LSTATUS, SELFREG_E_CLASS, S_OK,
 };
 
 use std::convert::TryInto;
@@ -135,15 +135,15 @@ pub fn get_dll_file_path() -> String {
     }
 }
 
-pub fn class_key_path(clsid: IID) -> String {
+pub fn class_key_path(clsid: GUID) -> String {
     format!("CLSID\\{}", guid_to_string(&clsid))
 }
 
-pub fn class_inproc_key_path(clsid: IID) -> String {
+pub fn class_inproc_key_path(clsid: GUID) -> String {
     format!("CLSID\\{}\\InprocServer32", guid_to_string(&clsid))
 }
 
-fn guid_to_string(guid: &IID) -> String {
+fn guid_to_string(guid: &GUID) -> String {
     format!(
         "{{{:04X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
         guid.data1,
@@ -163,7 +163,7 @@ fn guid_to_string(guid: &IID) -> String {
 #[inline]
 pub fn initialize_class_object<T: IUnknown>(
     instance: Box<T>,
-    riid: *const IID,
+    riid: *const GUID,
     ppv: *mut *mut c_void,
 ) -> HRESULT {
     let hr = unsafe {

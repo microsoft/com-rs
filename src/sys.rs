@@ -23,29 +23,35 @@ pub const S_OK: HRESULT = 0;
 pub const NOERROR: HRESULT = 0;
 /// False
 pub const S_FALSE: HRESULT = 1;
+
 /// Argument was invalid
 pub const E_INVALIDARG: HRESULT = -0x7FF8_FFA9;
 /// No interface found
 pub const E_NOINTERFACE: HRESULT = -0x7FFF_BFFE;
 /// Invalid pointer
 pub const E_POINTER: HRESULT = -0x7FFF_BFFD;
+
 /// No aggregation for CoClass
 pub const CLASS_E_NOAGGREGATION: HRESULT = -0x7FFB_FEF0;
 /// Class is not available
 pub const CLASS_E_CLASSNOTAVAILABLE: HRESULT = -0x7FFB_FEEF;
+
 /// No error
 pub const ERROR_SUCCESS: u32 = 0;
 /// Registration error
 pub const SELFREG_E_CLASS: HRESULT = -0x7FFB_FDFF;
-/// An apartment threaded runtime
-pub const COINIT_APARTMENTTHREADED: u32 = 0x2;
 /// A in process server
 pub const CLSCTX_INPROC_SERVER: u32 = 0x1;
 
-/// A unique identifier
+/// An single threaded apartment (STA)
+pub const COINIT_APARTMENTTHREADED: u32 = 0x2;
+/// An multi threaded apartment (STA)
+pub const COINIT_MULTITHREADED: u32 = 0x0;
+
+/// A globally unique identifier
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq)]
-pub struct IID {
+pub struct GUID {
     #[allow(missing_docs)]
     pub data1: u32,
     #[allow(missing_docs)]
@@ -56,7 +62,12 @@ pub struct IID {
     pub data4: [u8; 8],
 }
 
-impl std::fmt::Debug for IID {
+/// An interface ID
+pub type IID = GUID;
+/// A class ID
+pub type CLSID = GUID;
+
+impl std::fmt::Debug for GUID {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -78,6 +89,7 @@ impl std::fmt::Debug for IID {
 
 #[link(name = "ole32")]
 extern "system" {
+    pub fn CoIncrementMTAUsage(cookie: *mut c_void) -> HRESULT;
     pub fn RegCreateKeyExA(
         hKey: HKEY,
         lpSubKey: *const i8,

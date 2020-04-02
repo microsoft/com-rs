@@ -1,6 +1,6 @@
 //! Everything related to the [IClassFactory](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iclassfactory) COM interface
 use crate::com_interface;
-use crate::sys::{BOOL, FAILED, HRESULT, IID};
+use crate::sys::{BOOL, FAILED, GUID, HRESULT};
 use std::ffi::c_void;
 
 use crate::{
@@ -15,7 +15,7 @@ pub trait IClassFactory: IUnknown {
     unsafe fn create_instance(
         &self,
         aggr: *mut IUnknownVPtr,
-        riid: *const IID,
+        riid: *const GUID,
         ppv: *mut *mut c_void,
     ) -> HRESULT;
     /// the [LockServer](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iclassfactory-lockserver) COM method
@@ -27,7 +27,7 @@ impl ComRc<dyn IClassFactory> {
     pub fn get_instance<T: ComInterface + ?Sized>(&self) -> Option<ComRc<T>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
         let aggr = std::ptr::null_mut();
-        let hr = unsafe { self.create_instance(aggr, &T::IID as *const IID, &mut ppv) };
+        let hr = unsafe { self.create_instance(aggr, &T::IID as *const GUID, &mut ppv) };
         if FAILED(hr) {
             // TODO: decide what failures are possible
             return None;
