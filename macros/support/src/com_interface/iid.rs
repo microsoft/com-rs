@@ -72,7 +72,7 @@ pub fn generate(macro_attr: &TokenStream, interface_ident: &Ident) -> HelperToke
     let data4_8 = LitInt::new(format!("0x{}", data4_8).as_str(), Span::call_site());
 
     quote!(
-        #[allow(non_upper_case_globals)]
+        #[allow(non_upper_case_globals, missing_docs)]
         pub const #iid_ident: com::sys::IID = com::sys::IID {
             data1: #data1,
             data2: #data2,

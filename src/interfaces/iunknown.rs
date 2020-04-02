@@ -1,7 +1,10 @@
+//! Everything related to the [IUnknown](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown) COM interface
+
 use crate::com_interface;
 use crate::sys::{HRESULT, IID};
 use std::ffi::c_void;
 
+/// [IUnknown](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown) COM interface
 #[com_interface("00000000-0000-0000-C000-000000000046")]
 pub trait IUnknown {
     /// The COM [`QueryInterface` Method]

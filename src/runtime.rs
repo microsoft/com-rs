@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use crate::sys::{
     CoCreateInstance, CoGetClassObject, CoInitializeEx, CoUninitialize, CLSCTX_INPROC_SERVER,
     COINIT_APARTMENTTHREADED, FAILED, HRESULT, IID, S_FALSE, S_OK,

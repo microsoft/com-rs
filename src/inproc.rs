@@ -1,4 +1,4 @@
-use crate::interfaces::iunknown::IUnknown;
+use crate::interfaces::IUnknown;
 use crate::sys::{
     GetModuleFileNameA, GetModuleHandleA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA,
     RegSetValueExA, ERROR_SUCCESS, HKEY, HRESULT, IID, LSTATUS, SELFREG_E_CLASS, S_OK,
@@ -178,6 +178,7 @@ pub fn initialize_class_object<T: IUnknown>(
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! inproc_dll_module {
     (($clsid_one:ident, $classtype_one:ty), $(($clsid:ident, $classtype:ty)),*) => {
         #[no_mangle]
@@ -212,7 +213,6 @@ macro_rules! inproc_dll_module {
             $crate::inproc::unregister_keys(registry_keys_to_remove)
         }
 
-
         fn get_relevant_registry_keys() -> Vec<com::inproc::RegistryKeyInfo> {
             let file_path = com::inproc::get_dll_file_path();
             vec![
@@ -238,5 +238,5 @@ macro_rules! inproc_dll_module {
                 )),*
             ]
         }
-    }
+    };
 }

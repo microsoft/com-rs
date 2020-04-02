@@ -1,33 +1,58 @@
+//! Types for interacting with COM related system APIs
 use std::ffi::c_void;
 
+/// A Windows result code
 pub type HRESULT = i32;
+
+/// Equivalent of the [FAILED macro](https://docs.microsoft.com/en-us/windows/win32/api/winerror/nf-winerror-failed)
 #[allow(non_snake_case)]
 pub fn FAILED(result: HRESULT) -> bool {
     result < 0
 }
+
+/// BOOL type
 pub type BOOL = i32;
+/// LSTATUS type
 pub type LSTATUS = i32;
+/// HKEY type
 pub type HKEY = *mut c_void;
 
+/// No error
 pub const S_OK: HRESULT = 0;
+/// No error
 pub const NOERROR: HRESULT = 0;
+/// False
 pub const S_FALSE: HRESULT = 1;
+/// Argument was invalid
 pub const E_INVALIDARG: HRESULT = -0x7FF8_FFA9;
+/// No interface found
 pub const E_NOINTERFACE: HRESULT = -0x7FFF_BFFE;
+/// Invalid pointer
 pub const E_POINTER: HRESULT = -0x7FFF_BFFD;
+/// No aggregation for CoClass
 pub const CLASS_E_NOAGGREGATION: HRESULT = -0x7FFB_FEF0;
+/// Class is not available
 pub const CLASS_E_CLASSNOTAVAILABLE: HRESULT = -0x7FFB_FEEF;
+/// No error
 pub const ERROR_SUCCESS: u32 = 0;
+/// Registration error
 pub const SELFREG_E_CLASS: HRESULT = -0x7FFB_FDFF;
+/// A threaded apartment
 pub const COINIT_APARTMENTTHREADED: u32 = 0x2;
+/// A in process server
 pub const CLSCTX_INPROC_SERVER: u32 = 0x1;
 
+/// A unique identifier
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq)]
 pub struct IID {
+    #[allow(missing_docs)]
     pub data1: u32,
+    #[allow(missing_docs)]
     pub data2: u16,
+    #[allow(missing_docs)]
     pub data3: u16,
+    #[allow(missing_docs)]
     pub data4: [u8; 8],
 }
 

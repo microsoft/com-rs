@@ -1,14 +1,34 @@
+//! A helper crate for consuming and producing COM interfaces.
+//!
+//! # Example
+//!
+//! To work with a COM interface it must first be declared:
+//!
+//! ```rust
+//! /// Define an IAnimal interface wit
+//! #[com_interface("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
+//! pub trait IAnimal: IUnknown {
+//!     unsafe fn eat(&self) -> HRESULT;
+//! }
+//! ```
+//!
+
+#![deny(missing_docs)]
+
+#[doc(hidden)]
 pub mod inproc;
 pub mod interfaces;
+#[doc(hidden)]
 pub mod offset;
 mod ptr;
 mod rc;
 pub mod runtime;
 pub mod sys;
 
-use interfaces::iunknown::IUnknown;
+use interfaces::IUnknown;
 pub use ptr::ComPtr;
 pub use rc::ComRc;
+#[doc(inline)]
 pub use sys::IID;
 
 /// A COM compliant interface
@@ -20,10 +40,14 @@ pub use sys::IID;
 /// * it is `#[repr(C)]`
 /// * the type only contains `extern "stdcall" fn" definitions
 pub unsafe trait ComInterface: IUnknown + 'static {
+    /// A COM compatible V-Table
     type VTable;
+    /// The interface that this interface inherits from
     type Super: ComInterface + ?Sized;
+    /// The associated id for this interface
     const IID: IID;
 
+    /// Check whether a given IID is in the inheritance hierarchy of this interface
     fn is_iid_in_inheritance_chain(riid: &com::IID) -> bool {
         riid == &Self::IID
             || (Self::IID != <dyn IUnknown as ComInterface>::IID
@@ -41,10 +65,13 @@ pub unsafe trait ComInterface: IUnknown + 'static {
 /// each of the COM Interfaces the class implements
 pub unsafe trait CoClass: IUnknown {}
 
+/// A COM interface that will be exposed in a COM server
 pub trait ProductionComInterface<T: IUnknown>: ComInterface {
+    /// Get the vtable for a particular COM interface
     fn vtable<O: offset::Offset>() -> Self::VTable;
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! vtable {
     ($class:ident: $interface:ident, $offset:ident) => {

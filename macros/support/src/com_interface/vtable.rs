@@ -46,7 +46,7 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
     let methods = gen_vtable_methods(&interface);
 
     quote!(
-        #[allow(non_snake_case)]
+        #[allow(non_snake_case, missing_docs)]
         #[repr(C)]
         #[derive(com::VTable)]
         pub struct #vtable_ident {

@@ -37,7 +37,7 @@ pub trait IUnknown {
 
 #[com_interface("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
 pub trait IAnimal: IUnknown {
-    fn eat(&self) -> HRESULT;
+    unsafe fn eat(&self) -> HRESULT;
 }
 
 ```
@@ -85,21 +85,21 @@ pub struct BritishShortHairCat {
 
 ```rust
 impl IDomesticAnimal for BritishShortHairCat {
-    fn train(&self) -> HRESULT {
+    unsafe fn train(&self) -> HRESULT {
         println!("Training...");
         NOERROR
     }
 }
 
 impl ICat for BritishShortHairCat {
-    fn ignore_humans(&self) -> HRESULT {
+    unsafe fn ignore_humans(&self) -> HRESULT {
         println!("Ignoring Humans...");
         NOERROR
     }
 }
 
 impl IAnimal for BritishShortHairCat {
-    fn eat(&self) -> HRESULT {
+    unsafe fn eat(&self) -> HRESULT {
         println!("Eating...");
         NOERROR
     }

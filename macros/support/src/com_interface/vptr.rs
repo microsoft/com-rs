@@ -7,6 +7,7 @@ pub fn generate(interface_ident: &Ident) -> HelperTokenStream {
     let vtable_ident = vtable::ident(&interface_ident.to_string());
 
     quote!(
+        #[allow(missing_docs)]
         pub type #vptr_ident = *const #vtable_ident;
     )
 }
