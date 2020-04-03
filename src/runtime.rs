@@ -40,7 +40,9 @@ pub enum ApartmentType {
 /// Establish an apartment type for the current thread.
 ///
 /// This can only be called once per thread and will return an error if
-/// it is called more than once
+/// it is called more than once.
+///
+/// In  general this should only be called on threads created by the user.
 ///
 /// This wraps `CoInitializeEx`. The user is still responsible for establishing
 /// a message pump in the case of an STA
@@ -53,6 +55,40 @@ pub fn init_apartment(apartment_type: ApartmentType) -> Result<(), HRESULT> {
         S_OK | S_FALSE => Ok(()),
         // Any other result is considered an error here.
         hr => Err(hr),
+    }
+}
+
+/// Uninitialize a COM apartment thread.
+///
+/// This uses `CoUninitialize`
+///
+/// This should only be called if the user already initialized the thread as a specific apartment type
+/// (usually started through [`init_apartment`]).
+/// https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
+pub fn deinit_apartment() {
+    unsafe { CoUninitialize() }
+}
+
+/// An apartment runtime configuration.
+///
+/// This initializes a thread as a certain [`ApartmentType`] and uninitializes on `drop`
+pub struct ApartmentRuntime {
+    _priv: *const (), // Ensure that this struct is !Send
+}
+
+impl ApartmentRuntime {
+    /// Initialize the thread as an [`ApartmentType`]
+    pub fn new(apartment_type: ApartmentType) -> Result<Self, HRESULT> {
+        init_apartment(apartment_type)?;
+        Ok(Self {
+            _priv: std::ptr::null(),
+        })
+    }
+}
+
+impl Drop for ApartmentRuntime {
+    fn drop(&mut self) {
+        deinit_apartment()
     }
 }
 
@@ -99,6 +135,7 @@ pub fn create_aggregated_instance<T: ComInterface + ?Sized, U: CoClass>(
     unsafe { create_raw_instance::<T>(class_id, outer as *mut U as *mut c_void) }
 }
 
+/// A helper  for creating both regular and aggregated instances
 unsafe fn create_raw_instance<T: ComInterface + ?Sized>(
     class_id: &CLSID,
     outer: *mut c_void,
@@ -116,13 +153,4 @@ unsafe fn create_raw_instance<T: ComInterface + ?Sized>(
     }
 
     Ok(ComPtr::new(instance as *mut _))
-}
-
-/// Uninitialize the COM runtime.
-///
-/// This should only be called if the COM runtime is already running (usually started through
-/// [`new_apartment_threaded_runtime`])
-/// https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
-pub fn uninitialize() {
-    unsafe { CoUninitialize() }
 }
