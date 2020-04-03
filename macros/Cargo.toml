@@ -1,6 +1,6 @@
 [package]
 name = "com_macros"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Microsoft Corp."]
 edition = "2018"
 description = """
@@ -20,9 +20,9 @@ path = "tests/progress.rs"
 
 [dev-dependencies]
 trybuild = "1.0.13"
-com = { version = "0.1", path = ".." }
+com = { version = "0.2", path = ".." }
 
 [dependencies]
 syn = { version = "1.0.5", features = ["full"] }
 proc-macro2 = "1.0.1"
-com_macros_support = { version = "0.1", path = "support" }
+com_macros_support = { version = "0.2", path = "support" }
