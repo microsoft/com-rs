@@ -37,9 +37,8 @@ pub trait IUnknown {
 
 #[com_interface("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
 pub trait IAnimal: IUnknown {
-    fn eat(&self) -> HRESULT;
+    unsafe fn eat(&self) -> HRESULT;
 }
-
 ```
 
 Short explanation: This generates the VTable layout for IUnknown and implements the trait on `com::ComRc` so that it dereferences the correct function pointer entry within the VTable.
@@ -49,16 +48,16 @@ Short explanation: This generates the VTable layout for IUnknown and implements 
 Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::ComRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
 
 ```rust
-use com::runtime::ApartmentThreadedRuntime as Runtime;
+use com::run_time::{create_instance, init_runtime};
 
 // Initialises the COM library
-let runtime = Runtime::new().expect("Failed to initialize COM Library");
+init_runtime().expect("Failed to initialize COM Library");
 
 // Get a COM instance's interface pointer, by specifying
 // - The CLSID of the COM component
 // - The interface of the COM component that you want
-// runtime.create_instance returns a ComRc<dyn IAnimal> in this case.
-let mut cat = runtime.create_instance::<dyn IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
+// create_instance returns a ComRc<dyn IAnimal> in this case.
+let mut cat = create_instance::<dyn IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
 
 // All IAnimal methods will be defined on ComRc<T: IAnimal>
 cat.eat();
@@ -85,21 +84,21 @@ pub struct BritishShortHairCat {
 
 ```rust
 impl IDomesticAnimal for BritishShortHairCat {
-    fn train(&self) -> HRESULT {
+    unsafe fn train(&self) -> HRESULT {
         println!("Training...");
         NOERROR
     }
 }
 
 impl ICat for BritishShortHairCat {
-    fn ignore_humans(&self) -> HRESULT {
+    unsafe fn ignore_humans(&self) -> HRESULT {
         println!("Ignoring Humans...");
         NOERROR
     }
 }
 
 impl IAnimal for BritishShortHairCat {
-    fn eat(&self) -> HRESULT {
+    unsafe fn eat(&self) -> HRESULT {
         println!("Eating...");
         NOERROR
     }
@@ -169,10 +168,6 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 **Is there IDL support?**
 
 As a foundation, we are attempting to create a library that doesn't necessarily rely on having an IDL file. However, it is in the pipeline for future improvements. We will have a command-line tool that will parse the IDL into the required macros.
-
-**Which threading models do this library support?**
-
-As of v0.1, this library is only confident of consuming/producing COM components that live in Single-Threaded Apartments (STA). This Threading Model assumption is used in several places, so producing/consuming these COM components in a Multi-Threaded environment will not work.
 
 **Is there out-of-process COM support?**
 

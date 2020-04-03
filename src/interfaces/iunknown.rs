@@ -1,7 +1,10 @@
+//! Everything related to the [IUnknown](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown) COM interface
+
 use crate::com_interface;
-use crate::sys::{HRESULT, IID};
+use crate::sys::{GUID, HRESULT};
 use std::ffi::c_void;
 
+/// [IUnknown](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown) COM interface
 #[com_interface("00000000-0000-0000-C000-000000000046")]
 pub trait IUnknown {
     /// The COM [`QueryInterface` Method]
@@ -12,7 +15,7 @@ pub trait IUnknown {
     ///
     /// [`QueryInterface` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
     /// [`IUnknown::get_interface`]: trait.IUnknown.html#method.get_interface
-    unsafe fn query_interface(&self, riid: *const IID, ppv: *mut *mut c_void) -> HRESULT;
+    unsafe fn query_interface(&self, riid: *const GUID, ppv: *mut *mut c_void) -> HRESULT;
 
     /// The COM [`AddRef` Method]
     ///

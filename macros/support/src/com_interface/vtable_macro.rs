@@ -8,6 +8,7 @@ pub fn generate(item: &ItemStruct) -> HelperTokenStream {
     let vtable_functions = gen_vtable_functions(item);
     let initialized_vtable = gen_initialized_vtable(item);
     quote! {
+        #[doc(hidden)]
         #[macro_export]
         macro_rules! #vtable_macro {
             ($class:ty, $offset:ty) => {{
@@ -100,6 +101,7 @@ fn gen_vtable_function(
     });
     let return_type = &fun.output;
     quote! {
+        #[allow(missing_docs)]
         unsafe extern "stdcall" fn #function_ident<C: #interface_ident, O: com::offset::Offset>(#(#params)*) #return_type {
             let this = arg0.sub(O::VALUE) as *const C as *mut C;
             (*this).#method_name(#(#args)*)
@@ -111,6 +113,7 @@ fn gen_initialized_vtable(item: &ItemStruct) -> HelperTokenStream {
     let name = &item.ident;
     let methods = gen_vtable_method_initialization(item);
     quote! {
+        #[allow(missing_docs)]
         #name {
             #methods
         }

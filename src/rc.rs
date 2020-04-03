@@ -1,7 +1,9 @@
 use crate::{interfaces::IUnknown, ComInterface, ComPtr};
 
-/// A reference counted COM interface. This smart pointer type automatically
-/// calls `AddRef` when cloned and `Release` when dropped.
+/// A reference counted COM interface.
+///
+/// This smart pointer type automatically calls `AddRef` when cloned
+/// and `Release` when dropped.
 ///
 /// This is normally the correct way to interact with an interface. If for some
 /// (usually unsafe) reason, you need to interact with an interface without
