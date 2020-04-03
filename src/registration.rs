@@ -1,19 +1,24 @@
+//! Helpers for registering COM servers
+
 use crate::interfaces::IUnknown;
 use crate::sys::{
     GetModuleFileNameA, GetModuleHandleA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA,
-    RegSetValueExA, ERROR_SUCCESS, GUID, HKEY, HRESULT, LSTATUS, SELFREG_E_CLASS, S_OK,
+    RegSetValueExA, CLSID, ERROR_SUCCESS, FAILED, GUID, HKEY, HRESULT, IID, LSTATUS,
+    SELFREG_E_CLASS, S_OK,
 };
 
 use std::convert::TryInto;
 use std::ffi::c_void;
 use std::ffi::CString;
 
+#[doc(hidden)]
 pub struct RegistryKeyInfo {
     key_path: CString,
     key_value_name: CString,
     key_value_data: CString,
 }
 
+#[doc(hidden)]
 impl RegistryKeyInfo {
     pub fn new(key_path: &str, key_value_name: &str, key_value_data: &str) -> RegistryKeyInfo {
         RegistryKeyInfo {
@@ -24,7 +29,8 @@ impl RegistryKeyInfo {
     }
 }
 
-pub fn register_keys(registry_keys_to_add: Vec<RegistryKeyInfo>) -> HRESULT {
+#[doc(hidden)]
+pub fn register_keys(registry_keys_to_add: &Vec<RegistryKeyInfo>) -> HRESULT {
     for key_info in registry_keys_to_add.iter() {
         let result = add_class_key(&key_info);
         if result as u32 != ERROR_SUCCESS {
@@ -35,7 +41,8 @@ pub fn register_keys(registry_keys_to_add: Vec<RegistryKeyInfo>) -> HRESULT {
     S_OK
 }
 
-pub fn unregister_keys(registry_keys_to_remove: Vec<RegistryKeyInfo>) -> HRESULT {
+#[doc(hidden)]
+pub fn unregister_keys(registry_keys_to_remove: &Vec<RegistryKeyInfo>) -> HRESULT {
     let mut hr = S_OK;
     for key_info in registry_keys_to_remove.iter() {
         let result = remove_class_key(&key_info);
@@ -121,6 +128,7 @@ fn remove_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
     unsafe { RegDeleteKeyA(HKEY_CLASSES_ROOT, key_info.key_path.as_ptr()) }
 }
 
+#[doc(hidden)]
 pub fn get_dll_file_path() -> String {
     unsafe {
         const MAX_FILE_PATH_LENGTH: usize = 260;
@@ -135,11 +143,13 @@ pub fn get_dll_file_path() -> String {
     }
 }
 
-pub fn class_key_path(clsid: GUID) -> String {
+#[doc(hidden)]
+pub fn class_key_path(clsid: CLSID) -> String {
     format!("CLSID\\{}", guid_to_string(&clsid))
 }
 
-pub fn class_inproc_key_path(clsid: GUID) -> String {
+#[doc(hidden)]
+pub fn class_inproc_key_path(clsid: CLSID) -> String {
     format!("CLSID\\{}\\InprocServer32", guid_to_string(&clsid))
 }
 
@@ -160,15 +170,16 @@ fn guid_to_string(guid: &GUID) -> String {
     )
 }
 
+#[doc(hidden)]
 #[inline]
 pub fn initialize_class_object<T: IUnknown>(
     instance: Box<T>,
-    riid: *const GUID,
-    ppv: *mut *mut c_void,
+    riid: *const IID,
+    result: *mut *mut c_void,
 ) -> HRESULT {
     let hr = unsafe {
         instance.add_ref();
-        let hr = instance.query_interface(riid, ppv);
+        let hr = instance.query_interface(riid, result);
         instance.release();
         hr
     };
@@ -177,62 +188,82 @@ pub fn initialize_class_object<T: IUnknown>(
     hr
 }
 
-#[macro_export]
+/// Register the supplied keys with the registry
 #[doc(hidden)]
+#[inline]
+pub fn dll_register_server(relevant_keys: &mut Vec<RegistryKeyInfo>) -> HRESULT {
+    let hr = register_keys(relevant_keys);
+    if FAILED(hr) {
+        dll_unregister_server(relevant_keys);
+    }
+
+    hr
+}
+
+/// Unregister the supplied keys with the registry
+#[doc(hidden)]
+#[inline]
+pub fn dll_unregister_server(relevant_keys: &mut Vec<RegistryKeyInfo>) -> HRESULT {
+    relevant_keys.reverse();
+    unregister_keys(relevant_keys)
+}
+
+/// A macro for declaring a COM server to the COM runtime
+///
+/// This implements the `DllGetClassObject`, `DllRegisterServer`, and `DllUnregisterServer`
+/// functions on behalf of the user.
+#[macro_export]
 macro_rules! inproc_dll_module {
-    (($clsid_one:ident, $classtype_one:ty), $(($clsid:ident, $classtype:ty)),*) => {
+    (($class_id_one:ident, $class_type_one:ty), $(($class_id:ident, $class_type:ty)),*) => {
         #[no_mangle]
-        extern "stdcall" fn DllGetClassObject(rclsid: *const $crate::sys::IID, riid: *const $crate::sys::IID, ppv: *mut *mut std::ffi::c_void) -> $crate::sys::HRESULT {
-            use com::interfaces::iunknown::IUnknown;
-            let rclsid = unsafe{ &*rclsid };
-            if rclsid == &$clsid_one {
-                let mut instance = <$classtype_one>::get_class_object();
-                com::inproc::initialize_class_object(instance, riid, ppv)
-            } $(else if rclsid == &$clsid {
-                let mut instance = <$classtype>::get_class_object();
-                com::inproc::initialize_class_object(instance, riid, ppv)
-            })* else  {
-                $crate::sys::CLASS_E_CLASSNOTAVAILABLE
+        extern "stdcall" fn DllGetClassObject(class_id: *const com::sys::CLSID, iid: *const com::sys::IID, result: *mut *mut std::ffi::c_void) -> com::sys::HRESULT {
+            use com::interfaces::IUnknown;
+            use com::registration::initialize_class_object;
+            assert!(!class_id.is_null(), "class id passed to DllGetClassObject should never be null");
+
+            let class_id = unsafe { &*class_id };
+            if class_id == &$class_id_one {
+                let mut instance = <$class_type_one>::get_class_object();
+                initialize_class_object(instance, iid, result)
+            } $(else if class_id == &$class_id {
+                let mut instance = <$class_type>::get_class_object();
+                initialize_class_object(instance, iid, result)
+            })* else {
+                com::sys::CLASS_E_CLASSNOTAVAILABLE
             }
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllRegisterServer() -> $crate::sys::HRESULT {
-            let hr = com::inproc::register_keys(get_relevant_registry_keys());
-            if $crate::sys::FAILED(hr) {
-                DllUnregisterServer();
-            }
-
-            hr
+        extern "stdcall" fn DllRegisterServer() -> com::sys::HRESULT {
+            com::registration::dll_register_server(&mut get_relevant_registry_keys())
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllUnregisterServer() -> $crate::sys::HRESULT {
-            let mut registry_keys_to_remove = get_relevant_registry_keys();
-            registry_keys_to_remove.reverse();
-            $crate::inproc::unregister_keys(registry_keys_to_remove)
+        extern "stdcall" fn DllUnregisterServer() -> com::sys::HRESULT {
+            com::registration::dll_unregister_server(&mut get_relevant_registry_keys())
         }
 
-        fn get_relevant_registry_keys() -> Vec<com::inproc::RegistryKeyInfo> {
-            let file_path = com::inproc::get_dll_file_path();
+        fn get_relevant_registry_keys() -> Vec<com::registration::RegistryKeyInfo> {
+            use com::registration::RegistryKeyInfo;
+            let file_path = com::registration::get_dll_file_path();
             vec![
-                com::inproc::RegistryKeyInfo::new(
-                    &com::inproc::class_key_path($clsid_one),
+                RegistryKeyInfo::new(
+                    &com::registration::class_key_path($class_id_one),
                     "",
-                    stringify!($classtype_one),
+                    stringify!($class_type_one),
                 ),
-                com::inproc::RegistryKeyInfo::new(
-                    &com::inproc::class_inproc_key_path($clsid_one),
+                RegistryKeyInfo::new(
+                    &com::registration::class_inproc_key_path($class_id_one),
                     "",
                     &file_path,
                 ),
-                $(com::inproc::RegistryKeyInfo::new(
-                    &com::inproc::class_key_path($clsid),
+                $(RegistryKeyInfo::new(
+                    &com::registration::class_key_path($class_id),
                     "",
-                    stringify!($classtype),
+                    stringify!($class_type),
                 ),
-                com::inproc::RegistryKeyInfo::new(
-                    &com::inproc::class_inproc_key_path($clsid),
+                RegistryKeyInfo::new(
+                    &com::registration::class_inproc_key_path($class_id),
                     "",
                     &file_path,
                 )),*

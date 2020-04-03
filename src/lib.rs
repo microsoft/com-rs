@@ -15,13 +15,13 @@
 
 #![deny(missing_docs)]
 
-#[doc(hidden)]
-pub mod inproc;
 pub mod interfaces;
 #[doc(hidden)]
 pub mod offset;
 mod ptr;
 mod rc;
+#[doc(hidden)]
+pub mod registration;
 pub mod runtime;
 pub mod sys;
 
