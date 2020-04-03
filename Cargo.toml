@@ -1,6 +1,6 @@
 [package]
 name = "com"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Microsoft Corp."]
 description = """
 Utilities for implementing COM Client and Servers
@@ -13,7 +13,7 @@ license = "MIT"
 readme = "./README.md"
 
 [dependencies]
-com_macros = { version = "0.1", path = "macros" }
+com_macros = { version = "0.2", path = "macros" }
 
 [package.metadata.docs.rs]
 default-target = "x86_64-pc-windows-msvc"
