@@ -10,6 +10,7 @@ use crate::sys::{
 use std::convert::TryInto;
 use std::ffi::c_void;
 use std::ffi::CString;
+use std::str;
 
 #[doc(hidden)]
 pub struct RegistryKeyInfo {
@@ -130,17 +131,19 @@ fn remove_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
 
 #[doc(hidden)]
 pub fn get_dll_file_path() -> String {
-    unsafe {
-        const MAX_FILE_PATH_LENGTH: usize = 260;
-        let h_module = GetModuleHandleA(CString::new("server.dll").unwrap().as_ptr());
-        let raw_ptr = CString::new(Vec::with_capacity(MAX_FILE_PATH_LENGTH))
-            .expect("Failed to create empty string!")
-            .into_raw();
+    const MAX_FILE_PATH_LENGTH: usize = 260;
 
-        GetModuleFileNameA(h_module, raw_ptr, MAX_FILE_PATH_LENGTH.try_into().unwrap());
+    let mut path = [0u8; MAX_FILE_PATH_LENGTH];
 
-        CString::from_raw(raw_ptr).into_string().unwrap()
-    }
+    let len = unsafe {
+        GetModuleFileNameA(
+            GetModuleHandleA(b"server.dll\0".as_ptr() as *const _),
+            path.as_mut_ptr() as *mut _,
+            MAX_FILE_PATH_LENGTH as _,
+        )
+    };
+
+    String::from_utf8(path[..len as usize].to_vec()).unwrap()
 }
 
 #[doc(hidden)]
