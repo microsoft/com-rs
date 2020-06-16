@@ -62,7 +62,7 @@ impl<T: ComInterface + ?Sized> ComPtr<T> {
     }
 
     /// A safe version of `QueryInterface`. If the backing CoClass implements the
-    /// interface `I` then a `Some` containing an `ComRc` pointing to that
+    /// interface `I` then a `Some` containing an `ComPtr` pointing to that
     /// interface will be returned otherwise `None` will be returned.
     pub fn get_interface<I: ComInterface + ?Sized>(&self) -> Option<ComPtr<I>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
