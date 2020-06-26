@@ -1,6 +1,6 @@
 # COM
 
-[![Build Status](https://dev.azure.com/microsoft-rust/com-rs/_apis/build/status/microsoft.com-rs?branchName=master)](https://dev.azure.com/microsoft-rust/com-rs/_build/latest?definitionId=1&branchName=master)
+[![Build Status](https://github.com/microsoft/com-rs/workflows/Build%20and%20Test/badge.svg?event=push)](https://github.com/microsoft/com-rs/actions)
 [![Gitter](https://badges.gitter.im/com-rs/community.svg)](https://gitter.im/com-rs/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Docs.rs](https://docs.rs/com/badge.svg)](https://docs.rs/crate/com/)
 
