@@ -1,7 +1,7 @@
 # COM
 
 [![Build Status](https://github.com/microsoft/com-rs/workflows/Build%20and%20Test/badge.svg?event=push)](https://github.com/microsoft/com-rs/actions)
-[![Gitter](https://badges.gitter.im/com-rs/community.svg)](https://gitter.im/com-rs/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![crates.io](https://img.shields.io/crates/v/com.svg)](https://crates.io/crates/com)
 [![Docs.rs](https://docs.rs/com/badge.svg)](https://docs.rs/crate/com/)
 
 A one stop shop for all things related to [COM](https://docs.microsoft.com/en-us/windows/win32/com/component-object-model--com--portal) programming in Rust.
