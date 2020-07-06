@@ -8,7 +8,7 @@ use crate::sys::{
 };
 use std::ffi::c_void;
 
-use crate::{CoClass, ComInterface, ComPtr, ComRc};
+use crate::{ComInterface, ComPtr, ComRc};
 
 /// Initialize a new multithreaded apartment (MTA) runtime. This will ensure
 /// that an MTA is running for the process. Every new thread will implicitly
@@ -125,17 +125,7 @@ pub fn create_instance<T: ComInterface + ?Sized>(class_id: &CLSID) -> Result<Com
     }
 }
 
-/// Created an aggreated instance
-///
-/// Calls `CoCreateInstance` internally
-pub fn create_aggregated_instance<T: ComInterface + ?Sized, U: CoClass>(
-    class_id: &CLSID,
-    outer: &mut U,
-) -> Result<ComPtr<T>, HRESULT> {
-    unsafe { create_raw_instance::<T>(class_id, outer as *mut U as *mut c_void) }
-}
-
-/// A helper  for creating both regular and aggregated instances
+/// A helper for creating both regular and aggregated instances
 unsafe fn create_raw_instance<T: ComInterface + ?Sized>(
     class_id: &CLSID,
     outer: *mut c_void,

@@ -1,31 +1,23 @@
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::{format_ident, quote};
-use std::collections::HashMap;
 use syn::{Fields, Ident, ItemStruct};
 
-pub fn generate(
-    aggr_map: &HashMap<Ident, Vec<Ident>>,
-    base_interface_idents: &[Ident],
-    struct_item: &ItemStruct,
-) -> HelperTokenStream {
+pub fn generate(base_interface_idents: &[Ident], struct_item: &ItemStruct) -> HelperTokenStream {
+    let allocate_fn = gen_allocate_fn(base_interface_idents, struct_item);
     let struct_ident = &struct_item.ident;
 
-    let allocate_fn = gen_allocate_fn(aggr_map, base_interface_idents, struct_item);
-    let set_aggregate_fns = gen_set_aggregate_fns(aggr_map);
     let get_class_object_fn = gen_get_class_object_fn(struct_item);
 
     quote!(
         impl #struct_ident {
             #allocate_fn
             #get_class_object_fn
-            #set_aggregate_fns
         }
     )
 }
 
 /// Function used to instantiate the COM fields, such as vpointers for the COM object.
 pub fn gen_allocate_fn(
-    aggr_map: &HashMap<Ident, Vec<Ident>>,
     base_interface_idents: &[Ident],
     struct_item: &ItemStruct,
 ) -> HelperTokenStream {
@@ -40,9 +32,7 @@ pub fn gen_allocate_fn(
     let base_fields = gen_allocate_base_fields(base_interface_idents);
     let ref_count_field = gen_allocate_ref_count_field();
     let user_fields = gen_allocate_user_fields(struct_item);
-    let aggregate_fields = gen_allocate_aggregate_fields(aggr_map);
 
-    // Initialise all aggregated objects as NULL.
     quote!(
         fn allocate(#allocate_parameters) -> Box<#struct_ident> {
             #base_inits
@@ -50,7 +40,6 @@ pub fn gen_allocate_fn(
             let out = #struct_ident {
                 #base_fields
                 #ref_count_field
-                #aggregate_fields
                 #user_fields
             };
             Box::new(out)
@@ -65,16 +54,6 @@ pub fn gen_allocate_function_parameters_signature(struct_item: &ItemStruct) -> H
     };
 
     quote!(#fields)
-}
-
-pub fn gen_allocate_aggregate_fields(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStream {
-    let aggregate_inits = aggr_map.iter().map(|(aggr_field_ident, _)| {
-        quote!(
-            #aggr_field_ident: std::ptr::null_mut()
-        )
-    });
-
-    quote!(#(#aggregate_inits,)*)
 }
 
 // User field input as parameters to the allocate function.
@@ -142,21 +121,4 @@ pub fn gen_get_class_object_fn(struct_item: &ItemStruct) -> HelperTokenStream {
             <#class_factory_ident>::new()
         }
     )
-}
-
-pub fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTokenStream {
-    let mut fns = Vec::new();
-    for (aggr_field_ident, aggr_base_interface_idents) in aggr_map.iter() {
-        for base in aggr_base_interface_idents {
-            let set_aggregate_fn_ident = crate::utils::set_aggregate_fn_ident(&base);
-            fns.push(quote!(
-                fn #set_aggregate_fn_ident(&mut self, aggr: com::ComPtr<dyn com::interfaces::iunknown::IUnknown>) {
-                    // FaTODO: What happens if we are overwriting an existing aggregate?
-                    self.#aggr_field_ident = aggr.as_raw() as *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable;
-                }
-            ));
-        }
-    }
-
-    quote!(#(#fns)*)
 }

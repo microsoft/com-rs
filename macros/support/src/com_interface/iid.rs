@@ -1,11 +1,8 @@
-use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span, TokenStream as HelperTokenStream};
 use quote::{format_ident, quote};
-use syn::LitInt;
+use syn::{LitInt, LitStr};
 
-pub fn generate(macro_attr: &TokenStream, interface_ident: &Ident) -> HelperTokenStream {
-    let iid_string: syn::LitStr =
-        syn::parse(macro_attr.clone()).expect("[com_interface] parameter must be a GUID string");
+pub fn generate(iid_string: &LitStr, interface_ident: &Ident) -> HelperTokenStream {
     let iid_value = iid_string.value();
     assert!(
         iid_value.len() == 36,
