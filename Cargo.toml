@@ -15,6 +15,13 @@ readme = "./README.md"
 [dependencies]
 com_macros = { version = "0.2", path = "macros" }
 
+[[test]]
+name = "tests"
+path = "tests/progress.rs"
+
+[dev-dependencies]
+trybuild = "1.0.13"
+
 [package.metadata.docs.rs]
 default-target = "x86_64-pc-windows-msvc"
 

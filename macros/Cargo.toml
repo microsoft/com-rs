@@ -14,15 +14,7 @@ autotests = false
 [lib]
 proc-macro = true
 
-[[test]]
-name = "tests"
-path = "tests/progress.rs"
-
-[dev-dependencies]
-trybuild = "1.0.13"
-com = { version = "0.2", path = ".." }
-
 [dependencies]
-syn = { version = "1.0.5", features = ["full"] }
-proc-macro2 = "1.0.1"
+syn = { version = "1.0", features = ["full"] }
+proc-macro2 = "1.0"
 com_macros_support = { version = "0.2", path = "support" }
