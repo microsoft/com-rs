@@ -1,11 +1,12 @@
 use com::{
     interfaces::iunknown::IUnknown,
-    runtime::{create_instance, get_class_object, init_runtime},
+    runtime::{create_instance, get_class_object, init_apartment, ApartmentType},
 };
 use interface::{IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS};
 
 fn main() {
-    init_runtime().unwrap_or_else(|hr| panic!("Failed to initialize COM Library{:x}", hr));
+    init_apartment(ApartmentType::SingleThreaded)
+        .unwrap_or_else(|hr| panic!("Failed to initialize COM Library{:x}", hr));
 
     let factory = get_class_object(&CLSID_CAT_CLASS)
         .unwrap_or_else(|hr| panic!("Failed to get cat class object 0x{:x}", hr));
