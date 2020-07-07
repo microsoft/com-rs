@@ -1,6 +1,5 @@
 use proc_macro2::{Ident, TokenStream as HelperTokenStream};
 use quote::{format_ident, quote};
-use std::collections::HashMap;
 use syn::ItemStruct;
 
 fn get_iclass_factory_interface_ident() -> Ident {
@@ -11,10 +10,6 @@ pub fn get_class_factory_base_interface_idents() -> Vec<Ident> {
     vec![get_iclass_factory_interface_ident()]
 }
 
-pub fn get_class_factory_aggr_map() -> HashMap<Ident, Vec<Ident>> {
-    HashMap::new()
-}
-
 // We manually generate a ClassFactory without macros, otherwise
 // it leads to an infinite loop.
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
@@ -22,14 +17,13 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     // parsing attributes.
 
     let base_interface_idents = get_class_factory_base_interface_idents();
-    let aggr_map = get_class_factory_aggr_map();
 
     let struct_ident = &struct_item.ident;
     let class_factory_ident = crate::utils::class_factory_ident(&struct_ident);
 
     let struct_definition = gen_class_factory_struct_definition(&class_factory_ident);
     let lock_server = gen_lock_server();
-    let iunknown_impl = gen_iunknown_impl(&base_interface_idents, &aggr_map, &class_factory_ident);
+    let iunknown_impl = gen_iunknown_impl(&base_interface_idents, &class_factory_ident);
     let class_factory_impl = gen_class_factory_impl(&base_interface_idents, &class_factory_ident);
 
     quote! {
@@ -92,12 +86,11 @@ pub fn gen_lock_server() -> HelperTokenStream {
 
 pub fn gen_iunknown_impl(
     base_interface_idents: &[Ident],
-    aggr_map: &HashMap<Ident, Vec<Ident>>,
     class_factory_ident: &Ident,
 ) -> HelperTokenStream {
     let query_interface = gen_query_interface();
     let add_ref = super::iunknown_impl::gen_add_ref();
-    let release = gen_release(&base_interface_idents, &aggr_map, class_factory_ident);
+    let release = gen_release(&base_interface_idents, class_factory_ident);
     quote! {
         impl com::interfaces::IUnknown for #class_factory_ident {
             #query_interface
@@ -107,11 +100,7 @@ pub fn gen_iunknown_impl(
     }
 }
 
-pub fn gen_release(
-    base_interface_idents: &[Ident],
-    aggr_map: &HashMap<Ident, Vec<Ident>>,
-    struct_ident: &Ident,
-) -> HelperTokenStream {
+pub fn gen_release(base_interface_idents: &[Ident], struct_ident: &Ident) -> HelperTokenStream {
     let ref_count_ident = crate::utils::ref_count_ident();
 
     let release_decrement = super::iunknown_impl::gen_release_decrement(&ref_count_ident);
@@ -122,7 +111,7 @@ pub fn gen_release(
     let release_new_count_var_zero_check =
         super::iunknown_impl::gen_new_count_var_zero_check(&ref_count_ident);
     let release_drops =
-        super::iunknown_impl::gen_release_drops(base_interface_idents, aggr_map, struct_ident);
+        super::iunknown_impl::gen_release_drops(base_interface_idents, struct_ident);
 
     quote! {
         unsafe fn release(&self) -> u32 {

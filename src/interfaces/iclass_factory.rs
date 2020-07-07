@@ -26,8 +26,8 @@ impl ComRc<dyn IClassFactory> {
     /// Get an instance of the associated Co Class
     pub fn get_instance<T: ComInterface + ?Sized>(&self) -> Option<ComRc<T>> {
         let mut ppv = std::ptr::null_mut::<c_void>();
-        let aggr = std::ptr::null_mut();
-        let hr = unsafe { self.create_instance(aggr, &T::IID as *const GUID, &mut ppv) };
+        let hr =
+            unsafe { self.create_instance(std::ptr::null_mut(), &T::IID as *const GUID, &mut ppv) };
         if FAILED(hr) {
             // TODO: decide what failures are possible
             return None;
