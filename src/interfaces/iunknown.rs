@@ -1,7 +1,9 @@
 //! Everything related to the [IUnknown](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown) COM interface
 
-use crate::com_interface;
+use crate::sys::{E_NOINTERFACE, E_POINTER, FAILED};
 use crate::sys::{GUID, HRESULT};
+use crate::{com_interface, ComInterface, IID};
+
 use std::ffi::c_void;
 
 com_interface! {
@@ -37,4 +39,23 @@ com_interface! {
         unsafe fn release(&self) -> u32;
     }
 
+}
+
+impl IUnknown {
+    /// A safe version of `QueryInterface`. If the backing CoClass implements the
+    /// interface `I` then a `Some` containing an `ComPtr` pointing to that
+    /// interface will be returned otherwise `None` will be returned.
+    pub fn get_interface<I: ComInterface>(&self) -> Option<I> {
+        let mut ppv = None;
+        let hr = unsafe { self.query_interface(&I::IID as *const IID, &mut ppv as *mut _ as _) };
+        if FAILED(hr) {
+            assert!(
+                hr == E_NOINTERFACE || hr == E_POINTER,
+                "QueryInterface returned non-standard error"
+            );
+            return None;
+        }
+        debug_assert!(ppv.is_some());
+        ppv
+    }
 }

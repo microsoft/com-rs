@@ -1,47 +1,27 @@
 use super::vptr;
-use proc_macro2::{Ident, TokenStream as HelperTokenStream};
+use super::Interface;
+use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use std::iter::FromIterator;
-use syn::{FnArg, ItemTrait, TraitItem, TraitItemMethod, Type, TypeParamBound};
+use syn::{FnArg, TraitItemMethod, Type};
 
-/// Generate an VTable for an interface trait
-///
-/// * `interface` is a trait representing a COM interface. This trait must either be
-/// IUnknown and have no super traits or some other trait that has a parent trait
-pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
-    let interface_ident = &interface.ident;
+/// Generate an VTable for an interface
+pub fn generate(interface: &Interface) -> TokenStream {
+    let interface_ident = &interface.name;
     let vtable_ident = ident(&interface_ident.to_string());
-    let base_field = if interface_ident.to_string().to_uppercase() == "IUNKNOWN" {
-        assert!(
-            interface.supertraits.len() == 0,
-            "IUnknown is a reserved interface"
-        );
-        quote! {}
-    } else {
-        assert!(
-            !(interface.supertraits.len() > 1),
-            "Multiple inheritance is not supported in COM interfaces"
-        );
-        assert!(
-            interface.supertraits.len() != 0,
-            "All interfaces must inherit from another COM interface"
-        );
-
-        let base_interface_path = match interface.supertraits.first().expect("No supertraits") {
-            TypeParamBound::Trait(path) => path,
-            _ => panic!("Unhandled super trait typeparambound"),
-        };
-
-        let last_ident = &base_interface_path
-            .path
-            .segments
-            .last()
-            .expect("Supertrait has empty path")
-            .ident;
-        let base_field_ident = base_field_ident(&last_ident.to_string());
-        quote! {
-            pub #base_field_ident: <dyn #base_interface_path as com::ComInterface>::VTable,
+    let base_field = match interface.parent {
+        Some(ref parent) => {
+            let last_ident = &parent
+                .segments
+                .last()
+                .expect("Supertrait has empty path")
+                .ident;
+            let base_field_ident = base_field_ident(&last_ident.to_string());
+            quote! {
+                pub #base_field_ident: <#parent as com::ComInterface>::VTable,
+            }
         }
+        None => quote! {},
     };
     let methods = gen_vtable_methods(&interface);
 
@@ -64,13 +44,10 @@ fn base_field_ident(base_interface_name: &str) -> Ident {
     format_ident!("{}_base", crate::utils::camel_to_snake(base_interface_name))
 }
 
-fn gen_vtable_methods(interface: &ItemTrait) -> HelperTokenStream {
-    let mut methods: Vec<HelperTokenStream> = Vec::new();
-    for trait_item in &interface.items {
-        match trait_item {
-            TraitItem::Method(m) => methods.push(gen_vtable_method(&interface.ident, m)),
-            _ => panic!("Interface traits currently only support methods"),
-        };
+fn gen_vtable_methods(interface: &Interface) -> TokenStream {
+    let mut methods: Vec<TokenStream> = Vec::new();
+    for m in &interface.items {
+        methods.push(gen_vtable_method(&interface.name, m));
     }
 
     quote!(
@@ -78,7 +55,7 @@ fn gen_vtable_methods(interface: &ItemTrait) -> HelperTokenStream {
     )
 }
 
-fn gen_vtable_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
+fn gen_vtable_method(interface_ident: &Ident, method: &TraitItemMethod) -> TokenStream {
     assert!(
         method.sig.unsafety.is_some(),
         "COM Interface methods must be declared unsafe"
@@ -94,10 +71,7 @@ fn gen_vtable_method(interface_ident: &Ident, method: &TraitItemMethod) -> Helpe
     )
 }
 
-fn gen_vtable_function_signature(
-    interface_ident: &Ident,
-    method: &TraitItemMethod,
-) -> HelperTokenStream {
+fn gen_vtable_function_signature(interface_ident: &Ident, method: &TraitItemMethod) -> TokenStream {
     let params = gen_raw_params(interface_ident, method);
     let return_type = &method.sig.output;
 
@@ -106,9 +80,9 @@ fn gen_vtable_function_signature(
     )
 }
 
-fn gen_raw_params(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
+fn gen_raw_params(interface_ident: &Ident, method: &TraitItemMethod) -> TokenStream {
     let mut params = Vec::new();
-    let vptr_ident = vptr::ident(&interface_ident.to_string());
+    let vptr_ident = vptr::ident(&interface_ident);
 
     for param in method.sig.inputs.iter() {
         match param {
@@ -122,7 +96,7 @@ fn gen_raw_params(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTo
                     "COM interface methods cannot take mutable reference to self"
                 );
                 params.push(quote!(
-                    *mut #vptr_ident,
+                    ::std::ptr::NonNull<#vptr_ident>,
                 ));
             }
             FnArg::Typed(t) => {
@@ -131,10 +105,10 @@ fn gen_raw_params(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTo
         }
     }
 
-    HelperTokenStream::from_iter(params)
+    TokenStream::from_iter(params)
 }
 
-fn gen_raw_type(t: &Type) -> HelperTokenStream {
+fn gen_raw_type(t: &Type) -> TokenStream {
     match t {
         Type::Array(_n) => panic!("Array type unhandled!"),
         Type::BareFn(_n) => panic!("BareFn type unhandled!"),

@@ -1,11 +1,11 @@
 //! Helpers for registering COM servers
 
-use crate::interfaces::IUnknown;
 use crate::sys::{
     GetModuleFileNameA, GetModuleHandleA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA,
     RegSetValueExA, CLSID, ERROR_SUCCESS, FAILED, GUID, HKEY, HRESULT, IID, LSTATUS,
     SELFREG_E_CLASS, S_OK,
 };
+use crate::ComInterface;
 
 use std::convert::TryInto;
 use std::ffi::c_void;
@@ -175,15 +175,15 @@ fn guid_to_string(guid: &GUID) -> String {
 
 #[doc(hidden)]
 #[inline]
-pub fn initialize_class_object<T: IUnknown>(
+pub fn initialize_class_object<T: ComInterface>(
     instance: Box<T>,
     riid: *const IID,
     result: *mut *mut c_void,
 ) -> HRESULT {
     let hr = unsafe {
-        instance.add_ref();
-        let hr = instance.query_interface(riid, result);
-        instance.release();
+        instance.as_iunknown().add_ref();
+        let hr = instance.as_iunknown().query_interface(riid, result);
+        instance.as_iunknown().release();
         hr
     };
     Box::into_raw(instance);

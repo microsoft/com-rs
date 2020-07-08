@@ -16,10 +16,10 @@ use std::iter::FromIterator;
 pub fn expand_com_interface(interface: Interface) -> TokenStream {
     let mut out: Vec<TokenStream> = Vec::new();
     out.push(interface.to_struct_tokens());
-    // out.push(vtable::generate(&input));
-    // out.push(vptr::generate(&input.ident));
-    // out.push(interface_impl::generate(&input));
-    // out.push(com_interface_impl::generate(&input));
+    out.push(vtable::generate(&interface));
+    out.push(vptr::generate(&interface));
+    out.push(interface_impl::generate(&interface));
+    out.push(com_interface_impl::generate(&interface));
     out.push(interface.to_iid_tokens());
 
     TokenStream::from_iter(out)

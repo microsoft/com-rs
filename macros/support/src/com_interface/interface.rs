@@ -1,24 +1,31 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
-use syn::{Attribute, Ident, TraitItemMethod, Visibility};
+use syn::{Attribute, Ident, Path, TraitItemMethod, Visibility};
 
 use super::iid::IID;
 
 pub struct Interface {
-    iid: IID,
-    visibility: Visibility,
-    name: Ident,
-    parent: Option<Ident>,
-    items: Vec<TraitItemMethod>,
+    pub iid: IID,
+    pub visibility: Visibility,
+    pub name: Ident,
+    pub parent: Option<Path>,
+    pub items: Vec<TraitItemMethod>,
+    docs: Vec<Attribute>,
 }
 
 impl Interface {
     pub fn to_struct_tokens(&self) -> TokenStream {
         let vis = &self.visibility;
         let name = &self.name;
+        let vptr = super::vptr::ident(&name);
+        let docs = &self.docs;
         quote! {
-            #vis struct #name {}
+            #(#docs)*
+            #[repr(transparent)]
+            #vis struct #name {
+                inner: ::std::ptr::NonNull<#vptr>,
+            }
         }
     }
 
@@ -32,7 +39,7 @@ impl syn::parse::Parse for Interface {
         let attributes = input.call(Attribute::parse_outer)?;
         let mut iid = None;
         let mut docs = Vec::new();
-        for attr in attributes.iter() {
+        for attr in attributes.into_iter() {
             let path = &attr.path;
             let tokens = &attr.tokens;
             if path.is_ident("doc") {
@@ -65,7 +72,7 @@ impl syn::parse::Parse for Interface {
         let mut parent = None;
         if name.to_string() != "IUnknown" {
             let _ = input.parse::<syn::Token![:]>()?;
-            parent = Some(input.parse::<Ident>()?);
+            parent = Some(input.parse::<Path>()?);
         }
         let content;
         syn::braced!(content in input);
@@ -79,6 +86,7 @@ impl syn::parse::Parse for Interface {
             items,
             name,
             parent,
+            docs,
         })
     }
 }

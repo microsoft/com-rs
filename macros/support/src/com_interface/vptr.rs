@@ -1,10 +1,11 @@
 use super::vtable;
-use proc_macro2::{Ident, TokenStream as HelperTokenStream};
+use super::Interface;
+use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 
-pub fn generate(interface_ident: &Ident) -> HelperTokenStream {
-    let vptr_ident = ident(&interface_ident.to_string());
-    let vtable_ident = vtable::ident(&interface_ident.to_string());
+pub fn generate(interface: &Interface) -> TokenStream {
+    let vptr_ident = ident(&interface.name);
+    let vtable_ident = vtable::ident(&interface.name.to_string());
 
     quote!(
         #[allow(missing_docs)]
@@ -12,6 +13,6 @@ pub fn generate(interface_ident: &Ident) -> HelperTokenStream {
     )
 }
 
-pub fn ident(interface_name: &str) -> Ident {
+pub fn ident(interface_name: &Ident) -> Ident {
     format_ident!("{}VPtr", interface_name)
 }

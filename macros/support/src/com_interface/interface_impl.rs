@@ -1,36 +1,26 @@
-use super::vptr;
+use super::Interface;
 
-use proc_macro2::{Ident, TokenStream as HelperTokenStream};
+use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::{FnArg, ItemTrait, TraitItem, TraitItemMethod};
+use syn::{FnArg, TraitItemMethod};
 
-pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
-    let interface_ident = &interface.ident;
+pub fn generate(interface: &Interface) -> TokenStream {
+    let interface_name = &interface.name;
     let mut impl_methods = Vec::new();
 
-    for trait_item in &interface.items {
-        match trait_item {
-            TraitItem::Method(n) => {
-                impl_methods.push(gen_impl_method(&interface.ident, n));
-            }
-            _ => panic!("COM interfaces may only contain methods"),
-        }
+    for m in &interface.items {
+        impl_methods.push(gen_impl_method(m, interface_name));
     }
 
     quote! {
-        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::ComRc<T> {
-            #(#impl_methods)*
-        }
-
-        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::ComPtr<T> {
+        impl #interface_name {
             #(#impl_methods)*
         }
     }
 }
 
-fn gen_impl_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
+fn gen_impl_method(method: &TraitItemMethod, interface_name: &Ident) -> TokenStream {
     let method_sig = &method.sig;
-    let vptr_ident = vptr::ident(&interface_ident.to_string());
     let method_ident = format_ident!(
         "{}",
         crate::utils::snake_to_camel(&method.sig.ident.to_string())
@@ -41,16 +31,15 @@ fn gen_impl_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperT
     for param in method.sig.inputs.iter() {
         match param {
             FnArg::Receiver(_n) => params.push(quote!(#interface_ptr_ident)),
-            // TODO: This may go wrong, I am using everything on the LHS.
             FnArg::Typed(n) => params.push(n.pat.to_token_stream()),
         }
     }
 
     quote!(
         #[allow(missing_docs)]
-        #method_sig {
-            let #interface_ptr_ident = self.as_raw() as *mut #vptr_ident;
-            ((**#interface_ptr_ident).#method_ident)(#(#params),*)
+        pub #method_sig {
+            let #interface_ptr_ident = <Self as ::com::ComInterface>::as_raw(self);
+            ((**#interface_ptr_ident.as_ref()).#method_ident)(#(#params),*)
         }
     )
 }
