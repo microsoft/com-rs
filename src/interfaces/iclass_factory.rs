@@ -5,7 +5,7 @@ use std::ffi::c_void;
 
 use crate::{
     interfaces::iunknown::{IUnknown, IUnknownVPtr},
-    ComInterface, ComRc,
+    ComInterface,
 };
 
 com_interface! {
@@ -24,9 +24,9 @@ com_interface! {
     }
 }
 
-impl ComRc<IClassFactory> {
+impl IClassFactory {
     /// Get an instance of the associated Co Class
-    pub fn get_instance<T: ComInterface>(&self) -> Option<ComRc<T>> {
+    pub fn get_instance<T: ComInterface>(&self) -> Option<T> {
         let mut ppv = None;
         let hr = unsafe {
             self.create_instance(
@@ -39,6 +39,6 @@ impl ComRc<IClassFactory> {
             // TODO: decide what failures are possible
             return None;
         }
-        Some(ComRc::new(ppv.unwrap()))
+        Some(ppv.unwrap())
     }
 }

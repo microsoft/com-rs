@@ -1,6 +1,6 @@
 use super::Interface;
 
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{FnArg, TraitItemMethod};
 
@@ -9,17 +9,55 @@ pub fn generate(interface: &Interface) -> TokenStream {
     let mut impl_methods = Vec::new();
 
     for m in &interface.items {
-        impl_methods.push(gen_impl_method(m, interface_name));
+        impl_methods.push(gen_impl_method(m));
     }
+
+    let deref = deref_impl(interface);
+    let convert = convert_impl(interface);
 
     quote! {
         impl #interface_name {
             #(#impl_methods)*
         }
+        #deref
+        #convert
     }
 }
 
-fn gen_impl_method(method: &TraitItemMethod, interface_name: &Ident) -> TokenStream {
+fn deref_impl(interface: &Interface) -> TokenStream {
+    if interface.is_iunknown() {
+        return quote! {};
+    }
+
+    let name = &interface.name;
+
+    quote! {
+        impl ::std::ops::Deref for #name {
+            type Target = <#name as ::com::ComInterface>::Super;
+            fn deref(&self) -> &Self::Target {
+                unsafe { ::std::mem::transmute_copy(self) }
+            }
+        }
+    }
+}
+
+fn convert_impl(interface: &Interface) -> TokenStream {
+    if interface.is_iunknown() {
+        return quote! {};
+    }
+
+    let name = &interface.name;
+
+    quote! {
+        impl ::std::convert::From<#name> for <#name as ::com::ComInterface>::Super {
+            fn from(this: #name) -> Self {
+                unsafe { ::std::mem::transmute(this) }
+            }
+        }
+    }
+}
+
+fn gen_impl_method(method: &TraitItemMethod) -> TokenStream {
     let method_sig = &method.sig;
     let method_ident = format_ident!(
         "{}",

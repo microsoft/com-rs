@@ -32,6 +32,10 @@ impl Interface {
     pub fn to_iid_tokens(&self) -> TokenStream {
         self.iid.to_tokens(&self.name)
     }
+
+    pub fn is_iunknown(&self) -> bool {
+        self.parent.is_none()
+    }
 }
 
 impl syn::parse::Parse for Interface {
