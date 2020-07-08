@@ -1,26 +1,26 @@
 mod com_interface_impl;
 mod iid;
+mod interface;
 mod interface_impl;
 mod vptr;
 mod vtable;
 mod vtable_macro;
 
+pub use interface::Interface;
 use proc_macro2::TokenStream;
-
-use quote::ToTokens;
-use syn::{ItemStruct, ItemTrait};
+use syn::ItemStruct;
 
 use std::iter::FromIterator;
 
 // Expansion entry point
-pub fn expand_com_interface(iid_string: syn::LitStr, input: ItemTrait) -> TokenStream {
+pub fn expand_com_interface(interface: Interface) -> TokenStream {
     let mut out: Vec<TokenStream> = Vec::new();
-    out.push(input.to_token_stream().into());
-    out.push(vtable::generate(&input).into());
-    out.push(vptr::generate(&input.ident).into());
-    out.push(interface_impl::generate(&input).into());
-    out.push(com_interface_impl::generate(&input).into());
-    out.push(iid::generate(&iid_string, &input.ident).into());
+    out.push(interface.to_struct_tokens());
+    // out.push(vtable::generate(&input));
+    // out.push(vptr::generate(&input.ident));
+    // out.push(interface_impl::generate(&input));
+    // out.push(com_interface_impl::generate(&input));
+    out.push(interface.to_iid_tokens());
 
     TokenStream::from_iter(out)
 }

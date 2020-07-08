@@ -1,18 +1,19 @@
 use com_macros_support::co_class::expand_co_class;
 use com_macros_support::com_interface::{expand_com_interface, expand_derive};
+use com_macros_support::Interface;
 
 extern crate proc_macro;
 use proc_macro::TokenStream;
-use syn::{AttributeArgs, ItemStruct, ItemTrait};
+use syn::{AttributeArgs, ItemStruct};
 
 // All the Macro exports declared here. Delegates to respective crate for expansion.
-#[proc_macro_attribute]
-pub fn com_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let iid_string: syn::LitStr =
-        syn::parse(attr.clone()).expect("[com_interface] parameter must be a GUID string");
-    let input = syn::parse_macro_input!(item as ItemTrait);
+#[proc_macro]
+pub fn com_interface(item: TokenStream) -> TokenStream {
+    // let iid_string: syn::LitStr =
+    //     syn::parse(attr.clone()).expect("[com_interface] parameter must be a GUID string");
+    let input = syn::parse_macro_input!(item as Interface);
 
-    expand_com_interface(iid_string, input).into()
+    expand_com_interface(input).into()
 }
 
 #[proc_macro_derive(VTable)]
