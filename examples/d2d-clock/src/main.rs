@@ -150,10 +150,6 @@ impl Default for DesktopWindow {
     }
 }
 
-// extern "C" {
-//     __ImageBase: winapi::um::winnt::IMAGE_DOS_HEADER ;
-// }
-
 impl DesktopWindow {
     fn new(dpix: f32) -> Self {
         Self {
@@ -767,7 +763,6 @@ fn create_factory() -> ID2D1Factory1 {
 }
 
 com_interface! {
-
     #[uuid("06152247-6f50-465a-9245-118bfd3b6007")]
     pub unsafe interface ID2D1Factory: IUnknown {
         unsafe fn reload_system_metrics(&self) -> HRESULT;

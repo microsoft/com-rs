@@ -47,7 +47,12 @@ impl IUnknown {
     /// interface will be returned otherwise `None` will be returned.
     pub fn get_interface<I: ComInterface>(&self) -> Option<I> {
         let mut ppv = None;
-        let hr = unsafe { self.query_interface(&I::IID as *const IID, &mut ppv as *mut _ as _) };
+        let hr = unsafe {
+            self.query_interface(
+                &I::IID as *const IID,
+                &mut ppv as *mut _ as *mut *mut c_void,
+            )
+        };
         if FAILED(hr) {
             assert!(
                 hr == E_NOINTERFACE || hr == E_POINTER,

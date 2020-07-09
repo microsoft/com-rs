@@ -44,14 +44,14 @@ fn convert_impls(parents: HashMap<Ident, Path>) -> Vec<TokenStream> {
         let mut current = &name;
         while let Some(p) = parents.get(current) {
             result.push(quote::quote! {
-                impl ::std::convert::Into<#p> for #name {
-                    fn into(self) -> #p {
-                        unsafe { ::std::mem::transmute(self) }
+                impl ::std::convert::From<#name> for #p {
+                    fn from(this: #name) -> Self {
+                        unsafe { ::std::mem::transmute(this) }
                     }
                 }
-                impl <'a> ::std::convert::Into<&'a #p> for &'a #name {
-                    fn into(self) -> &'a #p {
-                        unsafe { ::std::mem::transmute_copy(self) }
+                impl <'a> ::std::convert::From<&'a #name> for &'a #p {
+                    fn from(this: &'a #name) -> Self {
+                        unsafe { ::std::mem::transmute(this) }
                     }
                 }
             });

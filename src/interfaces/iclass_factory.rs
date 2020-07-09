@@ -32,7 +32,7 @@ impl IClassFactory {
             self.create_instance(
                 std::ptr::null_mut(),
                 &T::IID as *const GUID,
-                &mut ppv as *mut _ as _,
+                &mut ppv as *mut _ as *mut *mut c_void,
             )
         };
         if FAILED(hr) {

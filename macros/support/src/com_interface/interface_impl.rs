@@ -41,25 +41,32 @@ fn deref_impl(interface: &Interface) -> TokenStream {
 
 fn gen_impl_method(method: &TraitItemMethod) -> TokenStream {
     let method_sig = &method.sig;
-    let method_ident = format_ident!(
+    let inner_method_ident = format_ident!(
         "{}",
         crate::utils::snake_to_camel(&method.sig.ident.to_string())
     );
     let interface_ptr_ident = format_ident!("interface_ptr");
 
     let mut params = Vec::new();
+    let mut args = Vec::new();
     for param in method.sig.inputs.iter() {
         match param {
             FnArg::Receiver(_n) => params.push(quote!(#interface_ptr_ident)),
-            FnArg::Typed(n) => params.push(n.pat.to_token_stream()),
+            FnArg::Typed(syn::PatType { pat, ty, .. }) => {
+                args.push(quote! { #pat: #ty });
+                params.push(pat.to_token_stream());
+            }
         }
     }
 
+    let outer_method_ident = &method_sig.ident;
+    let return_type = &method_sig.output;
+
     quote!(
         #[allow(missing_docs)]
-        pub #method_sig {
+        pub unsafe fn #outer_method_ident(&self, #(#args),*) #return_type {
             let #interface_ptr_ident = <Self as ::com::ComInterface>::as_raw(self);
-            ((**#interface_ptr_ident.as_ref()).#method_ident)(#(#params),*)
+            ((**#interface_ptr_ident.as_ref()).#inner_method_ident)(#(#params),*)
         }
     )
 }

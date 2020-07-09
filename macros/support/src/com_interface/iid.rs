@@ -26,7 +26,7 @@ impl IID {
         let data1 = hex_lit(&self.parts[0]);
         let data2 = hex_lit(&self.parts[1]);
         let data3 = hex_lit(&self.parts[2]);
-        let (data4_1, data4_2) = self.parts[4].split_at(2);
+        let (data4_1, data4_2) = self.parts[3].split_at(2);
         let data4_1 = hex_lit(data4_1);
         let data4_2 = hex_lit(data4_2);
         let (data4_3, rest) = self.parts[4].split_at(2);
