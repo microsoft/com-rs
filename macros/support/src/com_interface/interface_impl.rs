@@ -13,14 +13,12 @@ pub fn generate(interface: &Interface) -> TokenStream {
     }
 
     let deref = deref_impl(interface);
-    let convert = convert_impl(interface);
 
     quote! {
         impl #interface_name {
             #(#impl_methods)*
         }
         #deref
-        #convert
     }
 }
 
@@ -36,22 +34,6 @@ fn deref_impl(interface: &Interface) -> TokenStream {
             type Target = <#name as ::com::ComInterface>::Super;
             fn deref(&self) -> &Self::Target {
                 unsafe { ::std::mem::transmute_copy(self) }
-            }
-        }
-    }
-}
-
-fn convert_impl(interface: &Interface) -> TokenStream {
-    if interface.is_iunknown() {
-        return quote! {};
-    }
-
-    let name = &interface.name;
-
-    quote! {
-        impl ::std::convert::From<#name> for <#name as ::com::ComInterface>::Super {
-            fn from(this: #name) -> Self {
-                unsafe { ::std::mem::transmute(this) }
             }
         }
     }

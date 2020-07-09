@@ -23,6 +23,7 @@ impl Interface {
         quote! {
             #(#docs)*
             #[repr(transparent)]
+            #[derive(Copy, Clone)]
             #vis struct #name {
                 inner: ::std::ptr::NonNull<#vptr>,
             }

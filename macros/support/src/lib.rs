@@ -3,3 +3,4 @@ pub mod com_interface;
 mod utils;
 
 pub use com_interface::Interface;
+pub use com_interface::Interfaces;

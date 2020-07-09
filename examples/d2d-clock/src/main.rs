@@ -339,7 +339,7 @@ impl DesktopWindow {
             // target.set_transform(Matrix3x2F::Identity);
 
             target.draw_image(
-                *clock,
+                (*clock).into(),
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
                 winapi::um::d2d1_1::D2D1_INTERPOLATION_MODE::default(),
@@ -371,13 +371,14 @@ impl DesktopWindow {
 
             target.set_transform(&translation);
 
-            let brush = self.brush.unwrap();
+            let brush = self.brush.as_ref().unwrap();
             let ellipse = winapi::um::d2d1::D2D1_ELLIPSE {
                 point: winapi::um::d2d1::D2D1_POINT_2F::default(),
                 radiusX: radius,
                 radiusY: radius,
             };
-            target.draw_ellipse(&ellipse, (*brush).into(), radius / 20.0, None);
+
+            target.draw_ellipse(&ellipse, (**brush).into(), radius / 20.0, None);
 
             let mut time = winapi::um::minwinbase::SYSTEMTIME::default();
             winapi::um::sysinfoapi::GetLocalTime(&mut time);
@@ -492,7 +493,11 @@ impl DesktopWindow {
 
             let variable = self.variable.as_ref().unwrap();
 
-            HR!(manager.schedule_transition(**variable, *transition.unwrap(), self.get_time()));
+            HR!(manager.schedule_transition(
+                **variable,
+                transition.unwrap().into(),
+                self.get_time()
+            ));
         }
     }
 
@@ -579,7 +584,7 @@ fn create_swapchain_bitmap(
         let mut bitmap: Option<ID2D1Bitmap1> = None;
 
         HR!(target.create_bitmap_from_dxgi_surface(surface.unwrap(), &props, &mut bitmap));
-        target.set_target(bitmap.unwrap());
+        target.set_target(bitmap.unwrap().into());
     }
 }
 
