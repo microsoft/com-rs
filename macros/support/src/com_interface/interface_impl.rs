@@ -33,7 +33,7 @@ fn deref_impl(interface: &Interface) -> TokenStream {
         impl ::std::ops::Deref for #name {
             type Target = <#name as ::com::ComInterface>::Super;
             fn deref(&self) -> &Self::Target {
-                unsafe { ::std::mem::transmute_copy(self) }
+                unsafe { ::std::mem::transmute(self) }
             }
         }
     }
