@@ -5,11 +5,14 @@
 //! To work with a COM interface it must first be declared:
 //!
 //! ```rust,no_run
-//! /// Define an IAnimal interface wit
-//! #[com::com_interface("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
-//! pub trait IAnimal: com::interfaces::IUnknown {
-//!     unsafe fn eat(&self) -> com::sys::HRESULT;
+//! /// Define an IAnimal interface
+//! com::com_interface! {
+//!     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
+//!     pub unsafe interface IAnimal: com::interfaces::IUnknown {
+//!         unsafe fn eat(&self) -> com::sys::HRESULT;
+//!     }
 //! }
+//! # fn main() {}
 //! ```
 //!
 

@@ -76,7 +76,12 @@ impl syn::parse::Parse for Interface {
         let name = input.parse::<Ident>()?;
         let mut parent = None;
         if name.to_string() != "IUnknown" {
-            let _ = input.parse::<syn::Token![:]>()?;
+            let _ = input.parse::<syn::Token![:]>().map_err(|_| {
+                syn::Error::new(
+                    name.span(),
+                    format!("Interfaces must inherit from another interface like so: `interface {}: IParentInterface`", name),
+                )
+            })?;
             parent = Some(input.parse::<Path>()?);
         }
         let content;
@@ -108,7 +113,10 @@ impl syn::parse::Parse for ParenthsizedStr {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let lit;
         syn::parenthesized!(lit in input);
-        let lit = lit.parse()?;
+        let lit = lit
+            .parse()
+            .map_err(|e| syn::Error::new(e.span(), format!("uuids must be string literals")))?;
+
         Ok(Self { lit })
     }
 }

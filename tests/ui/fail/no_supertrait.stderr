@@ -1,7 +1,5 @@
-error: custom attribute panicked
- --> $DIR/no_supertrait.rs:3:1
+error: Interfaces must inherit from another interface like so: `interface LoneInterface: IParentInterface`
+ --> $DIR/no_supertrait.rs:5:26
   |
-3 | #[com_interface("cc2d05c7-7d20-4ccb-ad75-1e7fb7c77254")]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = help: message: All interfaces must inherit from another COM interface
+5 |     pub unsafe interface LoneInterface {
+  |                          ^^^^^^^^^^^^^
