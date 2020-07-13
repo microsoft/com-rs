@@ -373,10 +373,8 @@ impl DesktopWindow {
             translation.matrix[1][1] = 1.0;
             translation.matrix[2][0] = size.width / offset.width;
             translation.matrix[2][1] = size.height / offset.height;
-            println!("Going to set: {:?}", translation.matrix);
             target.set_transform(&translation);
             target.get_transform(&mut translation);
-            println!("Got: {:?}", translation.matrix);
 
             let brush = self.brush.as_ref().unwrap();
             let ellipse = winapi::um::d2d1::D2D1_ELLIPSE {
@@ -965,9 +963,9 @@ com_interface! {
         unsafe fn rt23(&self);
         unsafe fn rt24(&self);
         unsafe fn rt25(&self);
-        unsafe fn rt26(&self);
         unsafe fn set_transform(&self, transform: *const winapi::um::d2d1::D2D1_MATRIX_3X2_F);
         unsafe fn get_transform(&self, transform: *mut winapi::um::d2d1::D2D1_MATRIX_3X2_F);
+        unsafe fn rt28(&self);
         unsafe fn rt29(&self);
         unsafe fn rt30(&self);
         unsafe fn rt31(&self);
