@@ -66,7 +66,7 @@ fn gen_impl_method(method: &TraitItemMethod) -> TokenStream {
         #[allow(missing_docs)]
         pub unsafe fn #outer_method_ident(&self, #(#args),*) #return_type {
             let #interface_ptr_ident = <Self as ::com::ComInterface>::as_raw(self);
-            ((**#interface_ptr_ident.as_ref()).#inner_method_ident)(#(#params),*)
+            ((**#interface_ptr_ident.as_ptr()).#inner_method_ident)(#(#params),*)
         }
     )
 }

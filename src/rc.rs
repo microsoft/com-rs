@@ -13,6 +13,7 @@ use std::ops::Deref;
 ///
 /// [`ComPtr`]: struct.ComPtr.html
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct ComRc<T: ComInterface> {
     ptr: T,
 }

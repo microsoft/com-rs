@@ -347,11 +347,8 @@ impl DesktopWindow {
     fn draw_clock(&mut self) {
         let target = self.target.as_ref().unwrap();
         unsafe {
-            // let size = target.get_size();
-            let size = winapi::um::d2d1::D2D1_SIZE_F {
-                width: 1096.0,
-                height: 1096.0,
-            };
+            let mut size = std::mem::zeroed();
+            target.get_size(&mut size);
             let radius = 200.0f32.max(size.width.min(size.height) / 2.0 - 50.0);
             let offset = winapi::um::d2d1::D2D1_SIZE_F {
                 width: 2.0,
@@ -370,8 +367,8 @@ impl DesktopWindow {
             let brush = self.brush.as_ref().unwrap();
             let ellipse = winapi::um::d2d1::D2D1_ELLIPSE {
                 point: winapi::um::d2d1::D2D1_POINT_2F::default(),
-                radiusX: radius,
-                radiusY: radius,
+                radiusX: 50.0,
+                radiusY: 50.0,
             };
 
             target.draw_ellipse(&ellipse, (**brush).into(), radius / 20.0, None);
@@ -522,10 +519,11 @@ impl DesktopWindow {
     fn create_device_size_resources(&mut self) {
         let target = self.target.as_ref().unwrap();
         unsafe {
-            // let size = target.get_size();
-            let size = winapi::um::d2d1::D2D1_SIZE_U {
-                width: (96.0 * self.dpix / 96.0) as u32,
-                height: (96.0 * self.dpix / 96.0) as u32,
+            let mut size = std::mem::zeroed();
+            target.get_size(&mut size);
+            let size = winapi::um::dcommon::D2D_SIZE_U {
+                width: size.width as u32,
+                height: size.height as u32,
             };
 
             let props = winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1 {
@@ -831,9 +829,9 @@ com_interface! {
         unsafe fn create_bitmap(
             &self,
             size: winapi::um::d2d1::D2D1_SIZE_U,
-            sourceData: *const std::ffi::c_void,
+            source_data: *const std::ffi::c_void,
             pitch: u32,
-            bitmapProperties: *const winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1,
+            bitmap_properties: *const winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
         unsafe fn createbitmapfromwicbitmap(&self);
@@ -912,8 +910,8 @@ com_interface! {
             &self,
             ellipse: *const winapi::um::d2d1::D2D1_ELLIPSE,
             brush: ID2D1Brush,
-            strokeWidth: f32,
-            strokeStyle: Option<ID2D1StrokeStyle>,
+            stroke_width: f32,
+            stroke_style: Option<ID2D1StrokeStyle>,
         );
         unsafe fn rt17(&self);
         unsafe fn rt18(&self);
@@ -951,7 +949,7 @@ com_interface! {
         unsafe fn rt46(&self);
         unsafe fn set_dpi(&self, dpix: f32, dpiy: f32);
         unsafe fn rt48(&self);
-        unsafe fn get_size(&self) -> winapi::um::d2d1::D2D1_SIZE_F;
+        unsafe fn get_size(&self, ret: *mut winapi::um::d2d1::D2D1_SIZE_F) ;
         unsafe fn rt50(&self);
         unsafe fn get_maximum_bitmap_size(&self) -> u32;
         unsafe fn rt52(&self);
