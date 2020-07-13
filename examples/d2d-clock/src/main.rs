@@ -118,7 +118,7 @@ struct DesktopWindow {
     dpix: f32,
     window: winapi::shared::windef::HWND,
     visible: bool,
-    // orientation: winapi::um::d2d1::D2D1_MATRIX_3X2_F,
+    orientation: winapi::um::d2d1::D2D1_MATRIX_3X2_F,
     frequency: winapi::shared::ntdef::LARGE_INTEGER,
     target: Option<ComRc<ID2D1DeviceContext>>,
     factory: Option<ComRc<ID2D1Factory1>>,
@@ -136,7 +136,7 @@ impl Default for DesktopWindow {
             window: std::ptr::null_mut(),
             dpix: Default::default(),
             visible: false,
-            // orientation: winapi::um::d2d1::D2D1_MATRIX_3X2_F,
+            orientation: winapi::um::d2d1::D2D1_MATRIX_3X2_F::default(),
             frequency: Default::default(),
             target: None,
             factory: None,
@@ -297,9 +297,14 @@ impl DesktopWindow {
     }
 
     fn draw(&mut self) {
-        // TODO: identity
-        // self.orientation = winapi::um::dcommon::D2D_MATRIX_3X2_F::default();
-        // let offset = SizeF(5.0, 5.0);
+        let mut orientation = winapi::um::dcommon::D2D_MATRIX_3X2_F::default();
+        orientation.matrix[0][0] = 1.0;
+        orientation.matrix[1][1] = 1.0;
+        self.orientation = orientation;
+        let offset = winapi::um::d2d1::D2D1_SIZE_F {
+            width: 5.0,
+            height: 5.0,
+        };
         unsafe {
             let time = self.get_time();
             HR!(self
@@ -324,7 +329,13 @@ impl DesktopWindow {
             target.clear(std::ptr::null_mut());
             self.draw_clock();
             target.set_target(previous.unwrap());
-            // target.set_transform(Matrix3x2F::Translation(offset));
+            let mut transform = winapi::um::d2d1::D2D1_MATRIX_3X2_F::default();
+            transform.matrix[0][0] = 1.0;
+            transform.matrix[1][1] = 1.0;
+            transform.matrix[2][0] = offset.width;
+            transform.matrix[2][1] = offset.height;
+
+            target.set_transform(&transform);
 
             // target.draw_image(
             //     self.shadow.get(),
@@ -332,7 +343,10 @@ impl DesktopWindow {
             //     D2D1_COMPOSITE_MODE_SOURCE_OVER,
             // );
 
-            // target.set_transform(Matrix3x2F::Identity);
+            let mut identity = winapi::um::dcommon::D2D_MATRIX_3X2_F::default();
+            identity.matrix[0][0] = 1.0;
+            identity.matrix[1][1] = 1.0;
+            target.set_transform(&identity);
 
             target.draw_image(
                 (*clock).into(),
@@ -356,13 +370,13 @@ impl DesktopWindow {
             };
             let mut translation = winapi::um::d2d1::D2D1_MATRIX_3X2_F::default();
             translation.matrix[0][0] = 1.0;
-            translation.matrix[0][1] = 0.0;
-            translation.matrix[1][0] = 0.0;
             translation.matrix[1][1] = 1.0;
             translation.matrix[2][0] = size.width / offset.width;
-            translation.matrix[2][0] = size.height / offset.height;
-
+            translation.matrix[2][1] = size.height / offset.height;
+            println!("Going to set: {:?}", translation.matrix);
             target.set_transform(&translation);
+            target.get_transform(&mut translation);
+            println!("Got: {:?}", translation.matrix);
 
             let brush = self.brush.as_ref().unwrap();
             let ellipse = winapi::um::d2d1::D2D1_ELLIPSE {
@@ -397,29 +411,51 @@ impl DesktopWindow {
                 // hourAngle *= static_cast<float>(swing);
             }
 
-            // target.set_transform(Matrix3x2F::Rotation(secondAngle) * m_orientation * translation);
+            let mut rotation = winapi::um::d2d1::D2D1_MATRIX_3X2_F::default();
+            winapi::um::d2d1::D2D1MakeRotateMatrix(
+                second_angle as f32,
+                winapi::um::d2d1::D2D1_POINT_2F::default(),
+                &mut rotation,
+            );
+            let transform = rotation; //* self.orientation * translation;
+            target.set_transform(&transform);
 
-            // m_target->DrawLine(Point2F(),
-            //     Point2F(0.0f, -(radius * 0.75f)),
-            //     m_brush.get(),
-            //     radius / 25.f,
-            //     m_style.get());
+            let zero = winapi::um::d2d1::D2D1_POINT_2F { x: 0.0, y: 0.0 };
+            let end = winapi::um::d2d1::D2D1_POINT_2F {
+                x: 0.0,
+                y: -(radius * 0.75),
+            };
+            target.draw_line(
+                zero,
+                end,
+                (**self.brush.as_mut().unwrap()).into(),
+                radius / 25.0,
+                (**self.style.as_mut().unwrap()).into(),
+            );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(minuteAngle) * m_orientation * translation);
 
-            // m_target->DrawLine(Point2F(),
-            //     Point2F(0.0f, -(radius * 0.75f)),
-            //     m_brush.get(),
-            //     radius / 15.0f,
-            //     m_style.get());
+            target.draw_line(
+                zero,
+                end,
+                (**self.brush.as_mut().unwrap()).into(),
+                radius / 15.0,
+                (**self.style.as_mut().unwrap()).into(),
+            );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(hourAngle) * m_orientation * translation);
 
-            // m_target->DrawLine(Point2F(),
-            //     Point2F(0.0f, -(radius * 0.5f)),
-            //     m_brush.get(),
-            //     radius / 10.0f,
-            //     m_style.get());
+            let end = winapi::um::d2d1::D2D1_POINT_2F {
+                x: 0.0,
+                y: -(radius * 0.5),
+            };
+            target.draw_line(
+                zero,
+                end,
+                (**self.brush.as_mut().unwrap()).into(),
+                radius / 10.0,
+                (**self.style.as_mut().unwrap()).into(),
+            );
         }
     }
 
@@ -901,7 +937,14 @@ com_interface! {
         unsafe fn rt8(&self);
         unsafe fn rt9(&self);
         unsafe fn rt10(&self);
-        unsafe fn rt11(&self);
+        unsafe fn draw_line(
+            &self,
+            point0: winapi::um::d2d1::D2D1_POINT_2F,
+            point1: winapi::um::d2d1::D2D1_POINT_2F,
+            brush: ID2D1Brush,
+            stroke_width: f32,
+            stroke_type: ID2D1StrokeStyle
+        );
         unsafe fn rt12(&self);
         unsafe fn rt13(&self);
         unsafe fn rt14(&self);
@@ -924,7 +967,7 @@ com_interface! {
         unsafe fn rt25(&self);
         unsafe fn rt26(&self);
         unsafe fn set_transform(&self, transform: *const winapi::um::d2d1::D2D1_MATRIX_3X2_F);
-        unsafe fn rt28(&self);
+        unsafe fn get_transform(&self, transform: *mut winapi::um::d2d1::D2D1_MATRIX_3X2_F);
         unsafe fn rt29(&self);
         unsafe fn rt30(&self);
         unsafe fn rt31(&self);

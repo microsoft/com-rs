@@ -1,5 +1,5 @@
 use crate::ComInterface;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 /// A reference counted COM interface.
 ///
@@ -69,6 +69,11 @@ impl<T: ComInterface> Deref for ComRc<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         &self.ptr
+    }
+}
+impl<T: ComInterface> DerefMut for ComRc<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.ptr
     }
 }
 
