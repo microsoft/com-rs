@@ -325,7 +325,7 @@ impl DesktopWindow {
             let mut previous: Option<ID2D1Image> = None;
             target.get_target(&mut previous);
             let clock = self.clock.clone().unwrap();
-            target.set_target(*clock);
+            target.set_target(clock.get());
             target.clear(std::ptr::null());
             self.draw_clock();
             target.set_target(previous.unwrap());
@@ -349,7 +349,7 @@ impl DesktopWindow {
             target.set_transform(&identity);
 
             target.draw_image(
-                *clock,
+                clock.get(),
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
                 winapi::um::d2d1_1::D2D1_INTERPOLATION_MODE::default(),
@@ -376,14 +376,19 @@ impl DesktopWindow {
             target.set_transform(&translation);
             target.get_transform(&mut translation);
 
-            let brush = self.brush.as_ref().unwrap();
+            let brush = self.brush.as_ref().map(|b| b.get()).unwrap();
             let ellipse = winapi::um::d2d1::D2D1_ELLIPSE {
                 point: winapi::um::d2d1::D2D1_POINT_2F::default(),
                 radiusX: 50.0,
                 radiusY: 50.0,
             };
 
-            target.draw_ellipse(&ellipse, **brush, radius / 20.0, None);
+            target.draw_ellipse(
+                &ellipse,
+                brush,
+                radius / 20.0,
+                Option::<ID2D1StrokeStyle>::None,
+            );
 
             let mut time = winapi::um::minwinbase::SYSTEMTIME::default();
             winapi::um::sysinfoapi::GetLocalTime(&mut time);
@@ -426,9 +431,9 @@ impl DesktopWindow {
             target.draw_line(
                 zero,
                 end,
-                **self.brush.as_mut().unwrap(),
+                self.brush.as_mut().unwrap().get(),
                 radius / 25.0,
-                **self.style.as_mut().unwrap(),
+                self.style.as_mut().unwrap().get(),
             );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(minuteAngle) * m_orientation * translation);
@@ -436,9 +441,9 @@ impl DesktopWindow {
             target.draw_line(
                 zero,
                 end,
-                **self.brush.as_mut().unwrap(),
+                self.brush.as_mut().unwrap().get(),
                 radius / 15.0,
-                **self.style.as_mut().unwrap(),
+                self.style.as_mut().unwrap().get(),
             );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(hourAngle) * m_orientation * translation);
@@ -450,9 +455,9 @@ impl DesktopWindow {
             target.draw_line(
                 zero,
                 end,
-                **self.brush.as_mut().unwrap(),
+                self.brush.as_mut().unwrap().get(),
                 radius / 10.0,
-                **self.style.as_mut().unwrap(),
+                self.style.as_mut().unwrap().get(),
             );
         }
     }
@@ -628,13 +633,12 @@ fn create_swapchain(
     let mut swap_chain: Option<IDXGISwapChain1> = None;
 
     unsafe {
-        let device = device.as_iunknown();
         HR!(factory.create_swap_chain_for_hwnd(
-            *device,
+            device.get(),
             window,
             &props,
             std::ptr::null_mut(),
-            None,
+            Option::<IDXGIOutput>::None,
             &mut swap_chain
         ))
     };
@@ -664,7 +668,7 @@ fn create_render_target(
 
     let mut d2device: Option<ID2D1Device> = None;
     let target = unsafe {
-        HR!(factory.create_device(dxdevice.map(|c| *c), &mut d2device as *mut _));
+        HR!(factory.create_device(dxdevice, &mut d2device as *mut _));
         let mut target: Option<ID2D1DeviceContext> = None;
 
         HR!(d2device.unwrap().create_device_context(

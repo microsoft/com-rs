@@ -49,10 +49,21 @@ impl<T: ComInterface> ComPtr<T> {
         Self::new(T::from_raw(ptr))
     }
 
-    /// Gets the underlying interface ptr. This ptr is only guarnteed to live for
-    /// as long as the current `ComPtr` is alive.
+    /// Gets the underlying interface ptr as a raw pointer
+    ///
+    /// This ptr is only guarnteed to live for as long as the current `ComPtr` is alive.
     pub fn as_raw(&self) -> std::ptr::NonNull<*const <T as ComInterface>::VTable> {
         self.ptr.as_raw()
+    }
+
+    /// Gets an immutable reference to the underlying interface ptr.
+    pub fn get(&self) -> &T {
+        &self.ptr
+    }
+
+    /// Gets a mutable reference to the underlying interface ptr.
+    pub fn get_mut(&mut self) -> &mut T {
+        &mut self.ptr
     }
 
     /// A safe version of `QueryInterface`. If the backing CoClass implements the

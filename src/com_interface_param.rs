@@ -26,6 +26,12 @@ impl<T> ComInterfaceParam<*const T> for &T {
     }
 }
 
+impl<T: ComInterface> ComInterfaceParam<T> for &T {
+    unsafe fn into(self) -> T {
+        self.alias()
+    }
+}
+
 impl<T> ComInterfaceParam<*const T> for *mut T {
     unsafe fn into(self) -> *const T {
         self
@@ -53,6 +59,12 @@ impl<T: ComInterface> ComInterfaceParam<*mut T> for &mut ComPtr<T> {
 impl<T: ComInterface> ComInterfaceParam<*mut Option<T>> for &mut Option<ComPtr<T>> {
     unsafe fn into(self) -> *mut Option<T> {
         self as *mut Option<ComPtr<T>> as *mut Option<T>
+    }
+}
+
+impl<T: ComInterface> ComInterfaceParam<Option<T>> for Option<ComPtr<T>> {
+    unsafe fn into(self) -> Option<T> {
+        self.as_ref().map(|s| s.get().alias())
     }
 }
 

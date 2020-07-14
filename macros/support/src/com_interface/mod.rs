@@ -7,7 +7,7 @@ mod vptr;
 mod vtable;
 mod vtable_macro;
 
-pub use interface::Interface;
+pub use interface::{Interface, InterfaceMethod};
 pub use interfaces::Interfaces;
 use proc_macro2::{Ident, TokenStream};
 use syn::{ItemStruct, Path};
@@ -20,7 +20,7 @@ pub fn expand_com_interfaces(interfaces: Interfaces) -> TokenStream {
     let mut out: Vec<TokenStream> = Vec::new();
     for interface in interfaces.inner {
         out.push(interface.to_struct_tokens());
-        out.push(vtable::generate(&interface));
+        out.push(vtable::generate(&interface).unwrap_or_else(|e| e.to_compile_error()));
         out.push(vptr::generate(&interface));
         out.push(interface_impl::generate(&interface));
         out.push(com_interface_impl::generate(&interface));
@@ -57,6 +57,11 @@ fn convert_impls(parents: HashMap<Ident, Path>) -> Vec<TokenStream> {
                 impl ::com::ComInterfaceParam<#p> for #name {
                     unsafe fn into(self) -> #p {
                         ::std::mem::transmute(self)
+                    }
+                }
+                impl ::com::ComInterfaceParam<#p> for &#name {
+                    unsafe fn into(self) -> #p {
+                        ::std::mem::transmute_copy(self)
                     }
                 }
             });

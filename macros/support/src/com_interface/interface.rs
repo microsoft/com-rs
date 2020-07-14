@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
-use syn::{Attribute, Ident, Path, TraitItemMethod, Visibility};
+use syn::{Attribute, Ident, Path, Visibility};
 
 use super::iid::IID;
 
@@ -10,7 +10,7 @@ pub struct Interface {
     pub visibility: Visibility,
     pub name: Ident,
     pub parent: Option<Path>,
-    pub items: Vec<TraitItemMethod>,
+    pub methods: Vec<InterfaceMethod>,
     docs: Vec<Attribute>,
 }
 
@@ -23,7 +23,7 @@ impl Interface {
         quote! {
             #(#docs)*
             #[repr(transparent)]
-            #[derive(Copy, Clone, Debug)]
+            #[derive(Debug)]
             #vis struct #name {
                 inner: ::std::ptr::NonNull<#vptr>,
             }
@@ -86,14 +86,14 @@ impl syn::parse::Parse for Interface {
         }
         let content;
         syn::braced!(content in input);
-        let mut items = Vec::new();
+        let mut methods = Vec::new();
         while !content.is_empty() {
-            items.push(content.parse()?);
+            methods.push(content.parse()?);
         }
         Ok(Self {
             iid,
             visibility,
-            items,
+            methods,
             name,
             parent,
             docs,
@@ -118,5 +118,76 @@ impl syn::parse::Parse for ParenthsizedStr {
             .map_err(|e| syn::Error::new(e.span(), format!("uuids must be string literals")))?;
 
         Ok(Self { lit })
+    }
+}
+
+pub struct InterfaceMethod {
+    pub name: Ident,
+    pub args: Vec<syn::PatType>,
+    pub ret: syn::ReturnType,
+    pub docs: Vec<syn::Attribute>,
+}
+
+macro_rules! bail {
+    ($item:expr, $($msg:tt),*) => {
+        return Err(syn::Error::new($item.span(), std::fmt::format(format_args!($($msg),*))));
+    };
+
+}
+
+macro_rules! unexpected_token {
+    ($item:expr, $msg:expr) => {
+        if let Some(i) = $item {
+            bail!(i, "unexpected {}", $msg);
+        }
+    };
+}
+macro_rules! expected_token {
+    ($sig:tt.$item:tt(), $msg:expr) => {
+        if let None = $sig.$item() {
+            bail!($sig, "expected {}", $msg);
+        }
+    };
+}
+
+impl syn::parse::Parse for InterfaceMethod {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let method = input.parse::<syn::TraitItemMethod>()?;
+        unexpected_token!(
+            method.attrs.iter().find(|a| !a.path.is_ident("doc")),
+            "attribute"
+        );
+        let docs = method.attrs;
+        unexpected_token!(method.default, "default method implementation");
+        let sig = method.sig;
+        unexpected_token!(sig.abi, "abi declaration");
+        unexpected_token!(sig.asyncness, "async declaration");
+        unexpected_token!(sig.generics.params.iter().next(), "generics declaration");
+        unexpected_token!(sig.constness, "const declaration");
+        expected_token!(
+            sig.receiver(),
+            "the method to have &self as its first argument"
+        );
+        unexpected_token!(sig.variadic, "variadic args");
+        let args = sig
+            .inputs
+            .into_iter()
+            .filter_map(|a| match a {
+                syn::FnArg::Receiver(_) => None,
+                syn::FnArg::Typed(p) => Some(p),
+            })
+            .map(|p| {
+                unexpected_token!(p.attrs.iter().next(), "function attribute");
+                Ok(p)
+            })
+            .collect::<Result<Vec<syn::PatType>, syn::Error>>()?;
+
+        let ret = sig.output;
+        Ok(InterfaceMethod {
+            name: sig.ident,
+            args,
+            ret,
+            docs,
+        })
     }
 }
