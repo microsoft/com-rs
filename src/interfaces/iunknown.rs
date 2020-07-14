@@ -23,19 +23,19 @@ com_interface! {
         /// The COM [`AddRef` Method]
         ///
         /// This method normally should not be called directly. This method is used by
-        /// [`ComRc`] to implement the reference counting mechanism.
+        /// [`ComPtr`] to implement the reference counting mechanism.
         ///
         /// [`AddRef` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
-        /// [`ComRc`]: struct.ComRc.html
+        /// [`ComPtr`]: struct.ComPtr.html
         unsafe fn add_ref(&self) -> u32;
 
         /// The COM [`Release` Method]
         ///
         /// This method normally should not be called directly. This method is used by
-        /// [`ComRc`] to implement the reference counting mechanism.
+        /// [`ComPtr`] to implement the reference counting mechanism.
         ///
         /// [`Release` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
-        /// [`ComRc`]: struct.ComRc.html
+        /// [`ComPtr`]: struct.ComPtr.html
         unsafe fn release(&self) -> u32;
     }
 

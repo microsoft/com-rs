@@ -22,7 +22,7 @@ mod com_interface_param;
 pub mod interfaces;
 #[doc(hidden)]
 pub mod offset;
-mod rc;
+mod ptr;
 #[doc(hidden)]
 pub mod registration;
 pub mod runtime;
@@ -31,7 +31,7 @@ pub mod sys;
 #[doc(inline)]
 pub use com_interface_param::ComInterfaceParam;
 use interfaces::IUnknown;
-pub use rc::ComRc;
+pub use ptr::ComPtr;
 #[doc(inline)]
 pub use sys::{CLSID, IID};
 
@@ -77,8 +77,8 @@ pub unsafe trait ComInterface: Sized + 'static {
     }
 
     /// Upgrade the interface pointer so that Release gets automatically called on drop
-    fn upgrade(self) -> ComRc<Self> {
-        ComRc::new(self)
+    fn upgrade(self) -> ComPtr<Self> {
+        ComPtr::new(self)
     }
 
     /// Treat `ptr` as a ComInterface

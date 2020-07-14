@@ -1,104 +1,96 @@
-// use crate::sys::{E_NOINTERFACE, E_POINTER, FAILED};
-// use crate::{ComInterface, ComRc, IID};
+use crate::ComInterface;
+use std::ops::{Deref, DerefMut};
 
-// use std::ffi::c_void;
-// use std::marker::PhantomData;
-// use std::ptr::NonNull;
+/// A reference counted COM interface.
+///
+/// This smart pointer type automatically calls `AddRef` when cloned
+/// and `Release` when dropped.
+///
+/// This is normally the correct way to interact with an interface. If for some
+/// (usually unsafe) reason, you need to interact with an interface without
+/// automatically performing `AddRef` and `Release`, you can use the [`ComPtr`]
+/// type.
+///
+/// [`ComPtr`]: struct.ComPtr.html
+#[repr(transparent)]
+#[derive(Debug)]
+pub struct ComPtr<T: ComInterface> {
+    ptr: T,
+}
 
-// /// A transparent ptr to a COM interface.
-// ///
-// /// This is normally _not_ the correct way to interact with an interface. Normally
-// /// you'll want to to interact with an interface through a [`ComRc`] which
-// /// automatically calls `AddRef` and `Release` at the right time .
-// ///
-// /// [`ComRc`]: struct.ComRc.html
-// #[repr(transparent)]
-// pub struct ComPtr<T: ComInterface> {
-//     ptr: NonNull<*mut <T as ComInterface>::VTable>,
-//     phantom: PhantomData<T>,
-// }
+impl<T: ComInterface> ComPtr<T> {
+    /// Creates a new `ComPtr` that comforms to the interface T.
+    pub fn new(ptr: T) -> ComPtr<T> {
+        ComPtr { ptr }
+    }
 
-// impl<T: ComInterface> ComPtr<T> {
-//     /// Creates a new `ComPtr` that comforms to the interface T
-//     ///
-//     /// # Safety
-//     ///
-//     /// `ptr` must be a valid interface pointer for interface `T`. An interface
-//     /// pointer as the name suggests points to an interface struct. A valid
-//     /// interface is itself trivial castable to a `*mut T::VTable`. In other words,
-//     /// `ptr` should also be equal to `*mut *mut T::VTable`
-//     ///
-//     /// `ptr` must live for at least as long as the `ComPtr`. The underlying
-//     /// COM interface is assumed to correctly implement AddRef and Release such that
-//     /// the interface will be valid as long as AddRef has been called more times than
-//     /// Release.
-//     ///
-//     /// AddRef must have been called on the underlying COM interface that `ptr` is pointing
-//     /// to such that the reference count must be at least 1. It is expected that Release
-//     /// will eventually be called on this pointer either manually or by passing it into
-//     /// `ComRc::new` which will cause Release to be called on drop of the rc.
-//     ///
-//     /// When this struct is dropped, `release` will be called on the underlying interface.
-//     ///
-//     /// # Panics
-//     ///
-//     /// Panics if `ptr` is null
-//     pub unsafe fn new(ptr: *mut *mut <T as ComInterface>::VTable) -> ComPtr<T> {
-//         ComPtr {
-//             ptr: NonNull::new(ptr).expect("ComPtr's ptr was null"),
-//             phantom: PhantomData,
-//         }
-//     }
+    /// Construct an `ComPtr` from a raw pointer to a COM interface.
+    ///
+    /// # Safety
+    ///
+    /// `ptr` must be a valid interface pointer for interface `T`. An interface
+    /// pointer as the name suggests points to an interface struct. A valid
+    /// interface is itself trivial castable to a `*mut T::VTable`. In other words,
+    /// `ptr` should also be equal to `*mut *const T::VTable`
+    ///
+    /// `ptr` must live for at least as long as the `ComPtr`. The underlying
+    /// COM interface is assumed to correctly implement AddRef and Release such that
+    /// the interface will be valid as long as AddRef has been called more times than
+    /// Release.
+    ///
+    /// AddRef must have been called on the underlying COM interface that `ptr` is pointing
+    /// to such that the reference count must be at least 1. It is expected that Release
+    /// will eventually be called on this pointer either manually or by the wrapper
+    /// being dropped.
+    ///
+    /// When this struct is dropped, `release` will be called on the underlying interface.
+    pub unsafe fn from_raw(ptr: std::ptr::NonNull<*const <T as ComInterface>::VTable>) -> Self {
+        // SAFETY: ComInterfaces are required to be aliases to *mut *const <T as ComInterface>::VTable
+        Self::new(T::from_raw(ptr))
+    }
 
-//     /// Upgrade the `ComPtr` to an `ComRc`
-//     pub fn upgrade(self) -> ComRc<T> {
-//         ComRc::new(self)
-//     }
+    /// Gets the underlying interface ptr. This ptr is only guarnteed to live for
+    /// as long as the current `ComPtr` is alive.
+    pub fn as_raw(&self) -> std::ptr::NonNull<*const <T as ComInterface>::VTable> {
+        self.ptr.as_raw()
+    }
 
-//     /// Gets the underlying interface ptr. This ptr is only guarnteed to live for
-//     /// as long as the current `ComPtr` is alive.
-//     pub fn as_raw(&self) -> *mut *mut <T as ComInterface>::VTable {
-//         self.ptr.as_ptr()
-//     }
+    /// A safe version of `QueryInterface`. If the backing CoClass implements the
+    /// interface `I` then a `Some` containing an `ComPtr` pointing to that
+    /// interface will be returned otherwise `None` will be returned.
+    pub fn get_interface<I: ComInterface>(&self) -> Option<ComPtr<I>> {
+        self.as_iunknown()
+            .get_interface::<I>()
+            .map(|ptr| ptr.upgrade())
+    }
+}
 
-//     /// A safe version of `QueryInterface`. If the backing CoClass implements the
-//     /// interface `I` then a `Some` containing an `ComPtr` pointing to that
-//     /// interface will be returned otherwise `None` will be returned.
-//     pub fn get_interface<I: ComInterface>(&self) -> Option<ComPtr<I>> {
-//         let mut ppv = std::ptr::null_mut::<c_void>();
-//         let hr = unsafe { self.query_interface(&I::IID as *const IID, &mut ppv) };
-//         if FAILED(hr) {
-//             assert!(
-//                 hr == E_NOINTERFACE || hr == E_POINTER,
-//                 "QueryInterface returned non-standard error"
-//             );
-//             return None;
-//         }
-//         assert!(!ppv.is_null(), "The pointer to the interface returned from a successful call to QueryInterface was null");
-//         Some(unsafe { ComPtr::new(ppv as *mut *mut _) })
-//     }
-// }
+impl<T: ComInterface> Deref for ComPtr<T> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &self.ptr
+    }
+}
+impl<T: ComInterface> DerefMut for ComPtr<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.ptr
+    }
+}
 
-// impl<T: ComInterface> std::convert::From<ComRc<T>> for ComPtr<T> {
-//     /// Convert from an `ComRc` to an `ComPtr`
-//     ///
-//     /// Note that this does not call the release on the underlying interface
-//     /// which gurantees that the ComPtr will still point to a valid
-//     /// interface. If Release is never called on this pointer, than memory
-//     /// may be leaked.
-//     fn from(rc: crate::ComRc<T>) -> Self {
-//         let result = unsafe { ComPtr::new(rc.as_raw()) };
-//         // for get the rc so that its drop impl which calls release is not called
-//         std::mem::forget(rc);
-//         result
-//     }
-// }
+impl<T: ComInterface> Drop for ComPtr<T> {
+    fn drop(&mut self) {
+        unsafe {
+            self.as_iunknown().release();
+        }
+    }
+}
 
-// impl<T: ComInterface> Clone for ComPtr<T> {
-//     fn clone(&self) -> Self {
-//         unsafe {
-//             self.add_ref();
-//             ComPtr::new(self.ptr.as_ptr())
-//         }
-//     }
-// }
+impl<T: ComInterface> Clone for ComPtr<T> {
+    fn clone(&self) -> Self {
+        unsafe { self.ptr.as_iunknown().add_ref() };
+        let raw = self.as_raw();
+        Self {
+            ptr: unsafe { T::from_raw(raw) },
+        }
+    }
+}

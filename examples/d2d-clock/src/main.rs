@@ -1,4 +1,4 @@
-use com::{com_interface, interfaces::IUnknown, ComInterface, ComRc};
+use com::{com_interface, interfaces::IUnknown, ComInterface, ComPtr};
 use winapi::shared::minwindef::FLOAT;
 use winapi::um::winnt::HRESULT;
 
@@ -120,14 +120,14 @@ struct DesktopWindow {
     visible: bool,
     orientation: winapi::um::d2d1::D2D1_MATRIX_3X2_F,
     frequency: winapi::shared::ntdef::LARGE_INTEGER,
-    target: Option<ComRc<ID2D1DeviceContext>>,
-    factory: Option<ComRc<ID2D1Factory1>>,
-    swap_chain: Option<ComRc<IDXGISwapChain1>>,
-    manager: Option<ComRc<IUIAnimationManager>>,
-    clock: Option<ComRc<ID2D1Bitmap1>>,
-    style: Option<ComRc<ID2D1StrokeStyle1>>,
-    brush: Option<ComRc<ID2D1SolidColorBrush>>,
-    variable: Option<ComRc<IUIAnimationVariable>>,
+    target: Option<ComPtr<ID2D1DeviceContext>>,
+    factory: Option<ComPtr<ID2D1Factory1>>,
+    swap_chain: Option<ComPtr<IDXGISwapChain1>>,
+    manager: Option<ComPtr<IUIAnimationManager>>,
+    clock: Option<ComPtr<ID2D1Bitmap1>>,
+    style: Option<ComPtr<ID2D1StrokeStyle1>>,
+    brush: Option<ComPtr<ID2D1SolidColorBrush>>,
+    variable: Option<ComPtr<IUIAnimationVariable>>,
 }
 
 impl Default for DesktopWindow {
@@ -499,7 +499,7 @@ impl DesktopWindow {
             data3: 0x4EF5,
             data4: [0xA8, 0x28, 0x86, 0xD7, 0x10, 0x67, 0xD1, 0x45],
         };
-        let library: ComRc<IUIAnimationTransitionLibrary> =
+        let library: ComPtr<IUIAnimationTransitionLibrary> =
             com::runtime::create_instance(&class_id).unwrap();
         unsafe {
             check_bool!(winapi::um::profileapi::QueryPerformanceFrequency(
@@ -584,8 +584,8 @@ impl DesktopWindow {
 }
 
 fn create_swapchain_bitmap(
-    swap_chain: &ComRc<IDXGISwapChain1>,
-    target: &ComRc<ID2D1DeviceContext>,
+    swap_chain: &ComPtr<IDXGISwapChain1>,
+    target: &ComPtr<ID2D1DeviceContext>,
 ) {
     let mut surface: Option<IDXGISurface> = None;
     unsafe {
@@ -613,9 +613,9 @@ fn create_swapchain_bitmap(
 extern "system" {}
 
 fn create_swapchain(
-    device: &ComRc<ID3D11Device>,
+    device: &ComPtr<ID3D11Device>,
     window: winapi::shared::windef::HWND,
-) -> ComRc<IDXGISwapChain1> {
+) -> ComPtr<IDXGISwapChain1> {
     let factory = get_dxgi_factory(device);
 
     let mut props = winapi::shared::dxgi1_2::DXGI_SWAP_CHAIN_DESC1::default();
@@ -642,7 +642,7 @@ fn create_swapchain(
     swap_chain.unwrap().upgrade()
 }
 
-fn get_dxgi_factory(device: &ComRc<ID3D11Device>) -> ComRc<IDXGIFactory2> {
+fn get_dxgi_factory(device: &ComPtr<ID3D11Device>) -> ComPtr<IDXGIFactory2> {
     let dxdevice = device.get_interface::<IDXGIDevice>().unwrap();
     let mut adapter: Option<IDXGIAdapter> = None;
     unsafe {
@@ -657,9 +657,9 @@ fn get_dxgi_factory(device: &ComRc<ID3D11Device>) -> ComRc<IDXGIFactory2> {
 }
 
 fn create_render_target(
-    factory: &ComRc<ID2D1Factory1>,
-    device: &mut ComRc<ID3D11Device>,
-) -> ComRc<ID2D1DeviceContext> {
+    factory: &ComPtr<ID2D1Factory1>,
+    device: &mut ComPtr<ID3D11Device>,
+) -> ComPtr<ID2D1DeviceContext> {
     let dxdevice = device.get_interface::<IDXGIDevice>();
 
     let mut d2device: Option<ID2D1Device> = None;
@@ -674,13 +674,13 @@ fn create_render_target(
         target
     };
 
-    ComRc::new(target.unwrap())
+    ComPtr::new(target.unwrap())
 }
 
-fn create_device() -> ComRc<ID3D11Device> {
+fn create_device() -> ComPtr<ID3D11Device> {
     fn create_device(
         typ: winapi::um::d3dcommon::D3D_DRIVER_TYPE,
-        device: &mut Option<ComRc<ID3D11Device>>,
+        device: &mut Option<ComPtr<ID3D11Device>>,
     ) -> HRESULT {
         let flags = winapi::um::d3d11::D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 

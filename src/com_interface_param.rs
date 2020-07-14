@@ -1,4 +1,4 @@
-use super::{ComInterface, ComRc};
+use super::{ComInterface, ComPtr};
 
 /// An param for a COM interface method
 ///
@@ -38,32 +38,32 @@ impl<T> ComInterfaceParam<*mut T> for &mut T {
     }
 }
 
-impl<T: ComInterface> ComInterfaceParam<T> for &ComRc<T> {
+impl<T: ComInterface> ComInterfaceParam<T> for &ComPtr<T> {
     unsafe fn into(self) -> T {
         (**self).alias()
     }
 }
 
-impl<T: ComInterface> ComInterfaceParam<*mut T> for &mut ComRc<T> {
+impl<T: ComInterface> ComInterfaceParam<*mut T> for &mut ComPtr<T> {
     unsafe fn into(self) -> *mut T {
-        self as *mut ComRc<T> as *mut T
+        self as *mut ComPtr<T> as *mut T
     }
 }
 
-impl<T: ComInterface> ComInterfaceParam<*mut Option<T>> for &mut Option<ComRc<T>> {
+impl<T: ComInterface> ComInterfaceParam<*mut Option<T>> for &mut Option<ComPtr<T>> {
     unsafe fn into(self) -> *mut Option<T> {
-        self as *mut Option<ComRc<T>> as *mut Option<T>
+        self as *mut Option<ComPtr<T>> as *mut Option<T>
     }
 }
 
-impl<T: ComInterface> ComInterfaceParam<*const T> for &mut ComRc<T> {
+impl<T: ComInterface> ComInterfaceParam<*const T> for &mut ComPtr<T> {
     unsafe fn into(self) -> *const T {
-        self as *const ComRc<T> as *const T
+        self as *const ComPtr<T> as *const T
     }
 }
 
-impl<T: ComInterface> ComInterfaceParam<*const Option<T>> for &mut Option<ComRc<T>> {
+impl<T: ComInterface> ComInterfaceParam<*const Option<T>> for &mut Option<ComPtr<T>> {
     unsafe fn into(self) -> *const Option<T> {
-        self as *const Option<ComRc<T>> as *const Option<T>
+        self as *const Option<ComPtr<T>> as *const Option<T>
     }
 }
