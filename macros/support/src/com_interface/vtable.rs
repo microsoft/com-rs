@@ -56,10 +56,6 @@ fn gen_vtable_methods(interface: &Interface) -> TokenStream {
 }
 
 fn gen_vtable_method(interface_ident: &Ident, method: &TraitItemMethod) -> TokenStream {
-    assert!(
-        method.sig.unsafety.is_some(),
-        "COM Interface methods must be declared unsafe"
-    );
     let method_ident = format_ident!(
         "{}",
         crate::utils::snake_to_camel(&method.sig.ident.to_string())

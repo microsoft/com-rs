@@ -791,30 +791,30 @@ fn create_factory() -> ID2D1Factory1 {
 com_interface! {
     #[uuid("06152247-6f50-465a-9245-118bfd3b6007")]
     pub unsafe interface ID2D1Factory: IUnknown {
-        unsafe fn reload_system_metrics(&self) -> HRESULT;
-        unsafe fn get_desktop_dpi(&self, dpi_x: *mut FLOAT, dpi_y: *mut FLOAT);
-        unsafe fn f2(&self);
-        unsafe fn f3(&self);
-        unsafe fn f4(&self);
-        unsafe fn f5(&self);
-        unsafe fn f6(&self);
-        unsafe fn f7(&self);
-        unsafe fn f8(&self);
-        unsafe fn f9(&self);
-        unsafe fn f10(&self);
-        unsafe fn f11(&self);
-        unsafe fn f12(&self);
-        unsafe fn f13(&self);
+        fn reload_system_metrics(&self) -> HRESULT;
+        fn get_desktop_dpi(&self, dpi_x: *mut FLOAT, dpi_y: *mut FLOAT);
+        fn f2(&self);
+        fn f3(&self);
+        fn f4(&self);
+        fn f5(&self);
+        fn f6(&self);
+        fn f7(&self);
+        fn f8(&self);
+        fn f9(&self);
+        fn f10(&self);
+        fn f11(&self);
+        fn f12(&self);
+        fn f13(&self);
     }
 
     #[uuid("bb12d362-daee-4b9a-aa1d-14ba401cfa1f")]
     pub unsafe interface ID2D1Factory1: ID2D1Factory {
-        unsafe fn create_device(
+        fn create_device(
             &self,
             dxgi_device: Option<IDXGIDevice>,
             d2d_device: *mut Option<ID2D1Device>,
         ) -> HRESULT;
-        unsafe fn create_stroke_style(
+        fn create_stroke_style(
             &self,
             stroke_style_properties: *const winapi::um::d2d1_1::D2D1_STROKE_STYLE_PROPERTIES1,
             dashes: *const FLOAT,
@@ -825,8 +825,8 @@ com_interface! {
 
     #[uuid("50c83a1c-e072-4c48-87b0-3630fa36a6d0")]
     pub unsafe interface IDXGIFactory2: IDXGIFactory1 {
-        unsafe fn gif0(&self);
-        unsafe fn create_swap_chain_for_hwnd(
+        fn gif0(&self);
+        fn create_swap_chain_for_hwnd(
             &self,
             p_device: IUnknown,
             hwnd: winapi::shared::windef::HWND,
@@ -839,22 +839,22 @@ com_interface! {
 
     #[uuid("770aae78-f26f-4dba-a829-253c83d1b387")]
     pub unsafe interface IDXGIFactory1: IDXGIFactory {
-        unsafe fn f10(&self);
-        unsafe fn f11(&self);
+        fn f10(&self);
+        fn f11(&self);
     }
 
     #[uuid("7b7166ec-21c7-44ae-b21a-c9ae321ae369")]
     pub unsafe interface IDXGIFactory: IDXGIObject {
-        unsafe fn f0(&self);
-        unsafe fn f1(&self);
-        unsafe fn f2(&self);
-        unsafe fn f3(&self);
-        unsafe fn f4(&self);
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
+        fn f3(&self);
+        fn f4(&self);
     }
 
     #[uuid("e8f7fe7a-191c-466d-ad95-975678bda998")]
     pub unsafe interface ID2D1DeviceContext: ID2D1RenderTarget {
-        unsafe fn create_bitmap(
+        fn create_bitmap(
             &self,
             size: winapi::um::d2d1::D2D1_SIZE_U,
             source_data: *const std::ffi::c_void,
@@ -862,37 +862,37 @@ com_interface! {
             bitmap_properties: *const winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
-        unsafe fn createbitmapfromwicbitmap(&self);
-        unsafe fn createcolorcontext(&self);
-        unsafe fn createcolorcontextfromfilename(&self);
-        unsafe fn createcolorcontextfromwiccolorcontext(&self);
-        unsafe fn create_bitmap_from_dxgi_surface(
+        fn createbitmapfromwicbitmap(&self);
+        fn createcolorcontext(&self);
+        fn createcolorcontextfromfilename(&self);
+        fn createcolorcontextfromwiccolorcontext(&self);
+        fn create_bitmap_from_dxgi_surface(
             &self,
             surface: IDXGISurface,
             bitmap_properties: *const winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
-        unsafe fn createeffect(&self);
-        unsafe fn creategradientstopcollection(&self);
-        unsafe fn createimagebrush(&self);
-        unsafe fn createbitmapbrush(&self);
-        unsafe fn createcommandlist(&self);
-        unsafe fn isdxgiformatsupported(&self);
-        unsafe fn isbufferprecisionsupported(&self);
-        unsafe fn getimagelocalbounds(&self);
-        unsafe fn getimageworldbounds(&self);
-        unsafe fn getglyphrunworldbounds(&self);
-        unsafe fn getdevice(&self);
-        unsafe fn set_target(&self, image: ID2D1Image);
-        unsafe fn get_target(&self, image: *mut Option<ID2D1Image>);
-        unsafe fn setrenderingcontrols(&self);
-        unsafe fn getrenderingcontrols(&self);
-        unsafe fn setprimitiveblend(&self);
-        unsafe fn getprimitiveblend(&self);
-        unsafe fn set_unit_mode(&self, unit_mode: winapi::um::d2d1_1::D2D1_UNIT_MODE);
-        unsafe fn getunitmode(&self);
-        unsafe fn drawglyphrun(&self);
-        unsafe fn draw_image(
+        fn createeffect(&self);
+        fn creategradientstopcollection(&self);
+        fn createimagebrush(&self);
+        fn createbitmapbrush(&self);
+        fn createcommandlist(&self);
+        fn isdxgiformatsupported(&self);
+        fn isbufferprecisionsupported(&self);
+        fn getimagelocalbounds(&self);
+        fn getimageworldbounds(&self);
+        fn getglyphrunworldbounds(&self);
+        fn getdevice(&self);
+        fn set_target(&self, image: ID2D1Image);
+        fn get_target(&self, image: *mut Option<ID2D1Image>);
+        fn setrenderingcontrols(&self);
+        fn getrenderingcontrols(&self);
+        fn setprimitiveblend(&self);
+        fn getprimitiveblend(&self);
+        fn set_unit_mode(&self, unit_mode: winapi::um::d2d1_1::D2D1_UNIT_MODE);
+        fn getunitmode(&self);
+        fn drawglyphrun(&self);
+        fn draw_image(
             &self,
             image: ID2D1Image,
             target_offset: *const winapi::um::d2d1::D2D1_POINT_2F,
@@ -904,7 +904,7 @@ com_interface! {
 
     #[uuid("47dd575d-ac05-4cdd-8049-9b02cd16f44c")]
     pub unsafe interface ID2D1Device: ID2D1Resource {
-        unsafe fn create_device_context(
+        fn create_device_context(
             &self,
             options: winapi::um::d2d1_1::D2D1_DEVICE_CONTEXT_OPTIONS,
             device_context: *mut Option<ID2D1DeviceContext>,
@@ -913,23 +913,23 @@ com_interface! {
 
     #[uuid("2cd90694-12e2-11dc-9fed-001143a055f9")]
     pub unsafe interface ID2D1RenderTarget: ID2D1Resource {
-        unsafe fn rt0(&self);
-        unsafe fn rt1(&self);
-        unsafe fn rt2(&self);
-        unsafe fn rt3(&self);
-        unsafe fn create_solid_color_brush(
+        fn rt0(&self);
+        fn rt1(&self);
+        fn rt2(&self);
+        fn rt3(&self);
+        fn create_solid_color_brush(
             &self,
             color: *const winapi::um::d2d1::D2D1_COLOR_F,
             brush_props: *const winapi::um::d2d1::D2D1_BRUSH_PROPERTIES,
             brush: *mut Option<ID2D1SolidColorBrush>,
         ) -> HRESULT;
-        unsafe fn rt5(&self);
-        unsafe fn rt6(&self);
-        unsafe fn rt7(&self);
-        unsafe fn rt8(&self);
-        unsafe fn rt9(&self);
-        unsafe fn rt10(&self);
-        unsafe fn draw_line(
+        fn rt5(&self);
+        fn rt6(&self);
+        fn rt7(&self);
+        fn rt8(&self);
+        fn rt9(&self);
+        fn rt10(&self);
+        fn draw_line(
             &self,
             point0: winapi::um::d2d1::D2D1_POINT_2F,
             point1: winapi::um::d2d1::D2D1_POINT_2F,
@@ -937,62 +937,62 @@ com_interface! {
             stroke_width: f32,
             stroke_type: ID2D1StrokeStyle
         );
-        unsafe fn rt12(&self);
-        unsafe fn rt13(&self);
-        unsafe fn rt14(&self);
-        unsafe fn rt15(&self);
-        unsafe fn draw_ellipse(
+        fn rt12(&self);
+        fn rt13(&self);
+        fn rt14(&self);
+        fn rt15(&self);
+        fn draw_ellipse(
             &self,
             ellipse: *const winapi::um::d2d1::D2D1_ELLIPSE,
             brush: ID2D1Brush,
             stroke_width: f32,
             stroke_style: Option<ID2D1StrokeStyle>,
         );
-        unsafe fn rt17(&self);
-        unsafe fn rt18(&self);
-        unsafe fn rt19(&self);
-        unsafe fn rt20(&self);
-        unsafe fn rt21(&self);
-        unsafe fn rt22(&self);
-        unsafe fn rt23(&self);
-        unsafe fn rt24(&self);
-        unsafe fn rt25(&self);
-        unsafe fn set_transform(&self, transform: *const winapi::um::d2d1::D2D1_MATRIX_3X2_F);
-        unsafe fn get_transform(&self, transform: *mut winapi::um::d2d1::D2D1_MATRIX_3X2_F);
-        unsafe fn rt28(&self);
-        unsafe fn rt29(&self);
-        unsafe fn rt30(&self);
-        unsafe fn rt31(&self);
-        unsafe fn rt32(&self);
-        unsafe fn rt33(&self);
-        unsafe fn rt34(&self);
-        unsafe fn rt35(&self);
-        unsafe fn rt36(&self);
-        unsafe fn rt37(&self);
-        unsafe fn rt38(&self);
-        unsafe fn rt39(&self);
-        unsafe fn rt40(&self);
-        unsafe fn rt41(&self);
-        unsafe fn rt42(&self);
-        unsafe fn clear(&self, clear_color: *const winapi::um::d2d1::D2D1_COLOR_F);
-        unsafe fn begin_draw(&self);
-        unsafe fn end_draw(
+        fn rt17(&self);
+        fn rt18(&self);
+        fn rt19(&self);
+        fn rt20(&self);
+        fn rt21(&self);
+        fn rt22(&self);
+        fn rt23(&self);
+        fn rt24(&self);
+        fn rt25(&self);
+        fn set_transform(&self, transform: *const winapi::um::d2d1::D2D1_MATRIX_3X2_F);
+        fn get_transform(&self, transform: *mut winapi::um::d2d1::D2D1_MATRIX_3X2_F);
+        fn rt28(&self);
+        fn rt29(&self);
+        fn rt30(&self);
+        fn rt31(&self);
+        fn rt32(&self);
+        fn rt33(&self);
+        fn rt34(&self);
+        fn rt35(&self);
+        fn rt36(&self);
+        fn rt37(&self);
+        fn rt38(&self);
+        fn rt39(&self);
+        fn rt40(&self);
+        fn rt41(&self);
+        fn rt42(&self);
+        fn clear(&self, clear_color: *const winapi::um::d2d1::D2D1_COLOR_F);
+        fn begin_draw(&self);
+        fn end_draw(
             &self,
             tag1: *mut winapi::um::d2d1::D2D1_TAG,
             tag2: *mut winapi::um::d2d1::D2D1_TAG,
         );
-        unsafe fn rt46(&self);
-        unsafe fn set_dpi(&self, dpix: f32, dpiy: f32);
-        unsafe fn rt48(&self);
-        unsafe fn get_size(&self, ret: *mut winapi::um::d2d1::D2D1_SIZE_F) ;
-        unsafe fn rt50(&self);
-        unsafe fn get_maximum_bitmap_size(&self) -> u32;
-        unsafe fn rt52(&self);
+        fn rt46(&self);
+        fn set_dpi(&self, dpix: f32, dpiy: f32);
+        fn rt48(&self);
+        fn get_size(&self, ret: *mut winapi::um::d2d1::D2D1_SIZE_F) ;
+        fn rt50(&self);
+        fn get_maximum_bitmap_size(&self) -> u32;
+        fn rt52(&self);
     }
 
     #[uuid("2cd90691-12e2-11dc-9fed-001143a055f9")]
     pub unsafe interface ID2D1Resource: IUnknown {
-        unsafe fn r0(&self);
+        fn r0(&self);
     }
 
     #[uuid("db6f6ddb-ac77-4e88-8253-819df9bbf140")]
@@ -1000,18 +1000,18 @@ com_interface! {
 
     #[uuid("54ec77fa-1377-44e6-8c32-88fd5f44c84c")]
     pub unsafe interface IDXGIDevice: IDXGIObject {
-        unsafe fn get_adapter(&self, adapter: *mut Option<IDXGIAdapter>) -> HRESULT;
-        unsafe fn d2(&self);
-        unsafe fn d3(&self);
-        unsafe fn d4(&self);
+        fn get_adapter(&self, adapter: *mut Option<IDXGIAdapter>) -> HRESULT;
+        fn d2(&self);
+        fn d3(&self);
+        fn d4(&self);
     }
 
     #[uuid("aec22fb8-76f3-4639-9be0-28eb43a67a2e")]
     pub unsafe interface IDXGIObject: IUnknown {
-        unsafe fn o0(&self);
-        unsafe fn o1(&self);
-        unsafe fn o2(&self);
-        unsafe fn get_parent(
+        fn o0(&self);
+        fn o1(&self);
+        fn o2(&self);
+        fn get_parent(
             &self,
             refid: winapi::shared::guiddef::REFIID,
             pparent: *mut *mut std::ffi::c_void,
@@ -1023,12 +1023,12 @@ com_interface! {
 
     #[uuid("310d36a0-d2e7-4c0a-aa04-6a9d23b8886a")]
     pub unsafe interface IDXGISwapChain: IDXGIDeviceSubObject {
-        unsafe fn present(
+        fn present(
             &self,
             sync_interval: winapi::shared::minwindef::UINT,
             flags: winapi::shared::minwindef::UINT,
         ) -> HRESULT;
-        unsafe fn get_buffer(
+        fn get_buffer(
             &self,
             buffer: winapi::shared::minwindef::UINT,
             riid: winapi::shared::guiddef::REFIID,
@@ -1038,14 +1038,14 @@ com_interface! {
 
     #[uuid("3d3e0379-f9de-4d58-bb6c-18d62992f1a6")]
     pub unsafe interface IDXGIDeviceSubObject: IDXGIObject {
-        unsafe fn so0(&self);
+        fn so0(&self);
     }
 
     #[uuid("2411e7e1-12ac-4ccf-bd14-9798e8534dc0")]
     pub unsafe interface IDXGIAdapter: IDXGIObject {
-        unsafe fn a0(&self);
-        unsafe fn a1(&self);
-        unsafe fn a2(&self);
+        fn a0(&self);
+        fn a1(&self);
+        fn a2(&self);
     }
 
     #[uuid("ae02eedb-c735-4690-8d52-5a8dc20213aa")]
@@ -1065,21 +1065,21 @@ com_interface! {
 
     #[uuid("9169896C-AC8D-4e7d-94E5-67FA4DC2F2E8")]
     pub unsafe interface IUIAnimationManager: IUnknown {
-        unsafe fn create_animation_variable(
+        fn create_animation_variable(
             &self,
             initial_value: f64,
             out: *mut Option<IUIAnimationVariable>,
         ) -> HRESULT;
-        unsafe fn schedule_transition(
+        fn schedule_transition(
             &self,
             var: IUIAnimationVariable,
             transition: IUIAnimationTransition,
             time_now: UI_ANIMATION_SECONDS,
         ) -> HRESULT;
-        unsafe fn a2(&self);
-        unsafe fn a3(&self);
-        unsafe fn a4(&self);
-        unsafe fn update(&self, time_now: UI_ANIMATION_SECONDS, _ptr: *mut std::ffi::c_void)
+        fn a2(&self);
+        fn a3(&self);
+        fn a4(&self);
+        fn update(&self, time_now: UI_ANIMATION_SECONDS, _ptr: *mut std::ffi::c_void)
             -> HRESULT;
     }
 
@@ -1097,19 +1097,19 @@ com_interface! {
 
     #[uuid("8CEEB155-2849-4ce5-9448-91FF70E1E4D9")]
     pub unsafe interface IUIAnimationVariable: IUnknown {
-        unsafe fn get_value(&self, value: *mut f64) -> HRESULT;
+        fn get_value(&self, value: *mut f64) -> HRESULT;
     }
 
     #[uuid("CA5A14B1-D24F-48b8-8FE4-C78169BA954E")]
     pub unsafe interface IUIAnimationTransitionLibrary: IUnknown {
-        unsafe fn a0(&self);
-        unsafe fn a1(&self);
-        unsafe fn a2(&self);
-        unsafe fn a3(&self);
-        unsafe fn a4(&self);
-        unsafe fn a5(&self);
-        unsafe fn a6(&self);
-        unsafe fn create_accelerate_decelerate_transition(
+        fn a0(&self);
+        fn a1(&self);
+        fn a2(&self);
+        fn a3(&self);
+        fn a4(&self);
+        fn a5(&self);
+        fn a6(&self);
+        fn create_accelerate_decelerate_transition(
             &self,
             duration: UI_ANIMATION_SECONDS,
             fin: f64,

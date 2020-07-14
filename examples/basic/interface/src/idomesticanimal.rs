@@ -6,6 +6,6 @@ use crate::IAnimal;
 com_interface! {
     #[uuid("C22425DF-EFB2-4B85-933E-9CF7B23459E8")]
     pub unsafe interface IDomesticAnimal: IAnimal {
-        unsafe fn train(&self) -> HRESULT;
+        fn train(&self) -> HRESULT;
     }
 }
