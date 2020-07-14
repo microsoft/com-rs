@@ -1,5 +1,5 @@
 use super::vptr;
-use super::{Interface, InterfaceMethod};
+use super::{interface::MethodDecl, Interface, InterfaceMethod};
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use std::iter::FromIterator;
@@ -47,8 +47,8 @@ fn base_field_ident(base_interface_name: &str) -> Ident {
 
 fn gen_vtable_methods(interface: &Interface) -> syn::Result<TokenStream> {
     let mut methods: Vec<TokenStream> = Vec::new();
-    for m in &interface.methods {
-        methods.push(gen_vtable_method(&interface.name, m)?);
+    for (i, m) in interface.methods.iter().enumerate() {
+        methods.push(gen_vtable_method(&interface.name, m, i)?);
     }
 
     Ok(quote!(
@@ -58,14 +58,30 @@ fn gen_vtable_methods(interface: &Interface) -> syn::Result<TokenStream> {
 
 fn gen_vtable_method(
     interface_ident: &Ident,
-    method: &InterfaceMethod,
+    method: &MethodDecl,
+    offset: usize,
 ) -> syn::Result<TokenStream> {
-    let method_ident = format_ident!("{}", crate::utils::snake_to_camel(&method.name.to_string()));
-    let vtable_function_signature = gen_vtable_function_signature(interface_ident, method)?;
+    match method {
+        MethodDecl::Method(method) => {
+            let method_ident =
+                format_ident!("{}", crate::utils::snake_to_camel(&method.name.to_string()));
+            let vtable_function_signature = gen_vtable_function_signature(interface_ident, method)?;
 
-    Ok(quote!(
-        pub #method_ident: #vtable_function_signature,
-    ))
+            Ok(quote!(
+                pub #method_ident: #vtable_function_signature,
+            ))
+        }
+        MethodDecl::PlaceHolder(n) => {
+            let mut placeholders = Vec::with_capacity(*n as usize);
+            for n in 0..*n {
+                let n = quote::format_ident!("fn{}{}", offset, n);
+                placeholders.push(quote! {
+                    #n: unsafe extern "stdcall" fn(),
+                })
+            }
+            Ok(quote! { #(#placeholders)* })
+        }
+    }
 }
 
 fn gen_vtable_function_signature(

@@ -917,22 +917,14 @@ com_interface! {
 
     #[uuid("2cd90694-12e2-11dc-9fed-001143a055f9")]
     pub unsafe interface ID2D1RenderTarget: ID2D1Resource {
-        fn rt0(&self);
-        fn rt1(&self);
-        fn rt2(&self);
-        fn rt3(&self);
+        ...4
         fn create_solid_color_brush(
             &self,
             color: *const winapi::um::d2d1::D2D1_COLOR_F,
             brush_props: *const winapi::um::d2d1::D2D1_BRUSH_PROPERTIES,
             brush: *mut Option<ID2D1SolidColorBrush>,
         ) -> HRESULT;
-        fn rt5(&self);
-        fn rt6(&self);
-        fn rt7(&self);
-        fn rt8(&self);
-        fn rt9(&self);
-        fn rt10(&self);
+        ...6
         fn draw_line(
             &self,
             point0: winapi::um::d2d1::D2D1_POINT_2F,
@@ -941,10 +933,7 @@ com_interface! {
             stroke_width: f32,
             stroke_type: ID2D1StrokeStyle
         );
-        fn rt12(&self);
-        fn rt13(&self);
-        fn rt14(&self);
-        fn rt15(&self);
+        ...4
         fn draw_ellipse(
             &self,
             ellipse: *const winapi::um::d2d1::D2D1_ELLIPSE,
@@ -952,32 +941,10 @@ com_interface! {
             stroke_width: f32,
             stroke_style: Option<ID2D1StrokeStyle>,
         );
-        fn rt17(&self);
-        fn rt18(&self);
-        fn rt19(&self);
-        fn rt20(&self);
-        fn rt21(&self);
-        fn rt22(&self);
-        fn rt23(&self);
-        fn rt24(&self);
-        fn rt25(&self);
+        ...9
         fn set_transform(&self, transform: *const winapi::um::d2d1::D2D1_MATRIX_3X2_F);
         fn get_transform(&self, transform: *mut winapi::um::d2d1::D2D1_MATRIX_3X2_F);
-        fn rt28(&self);
-        fn rt29(&self);
-        fn rt30(&self);
-        fn rt31(&self);
-        fn rt32(&self);
-        fn rt33(&self);
-        fn rt34(&self);
-        fn rt35(&self);
-        fn rt36(&self);
-        fn rt37(&self);
-        fn rt38(&self);
-        fn rt39(&self);
-        fn rt40(&self);
-        fn rt41(&self);
-        fn rt42(&self);
+        ...15
         fn clear(&self, clear_color: *const winapi::um::d2d1::D2D1_COLOR_F);
         fn begin_draw(&self);
         fn end_draw(
@@ -985,13 +952,11 @@ com_interface! {
             tag1: *mut winapi::um::d2d1::D2D1_TAG,
             tag2: *mut winapi::um::d2d1::D2D1_TAG,
         );
-        fn rt46(&self);
+        ...1
         fn set_dpi(&self, dpix: f32, dpiy: f32);
-        fn rt48(&self);
+        ...1
         fn get_size(&self, ret: *mut winapi::um::d2d1::D2D1_SIZE_F) ;
-        fn rt50(&self);
-        fn get_maximum_bitmap_size(&self) -> u32;
-        fn rt52(&self);
+        ...3
     }
 
     #[uuid("2cd90691-12e2-11dc-9fed-001143a055f9")]

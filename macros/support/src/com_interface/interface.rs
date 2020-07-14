@@ -10,7 +10,7 @@ pub struct Interface {
     pub visibility: Visibility,
     pub name: Ident,
     pub parent: Option<Path>,
-    pub methods: Vec<InterfaceMethod>,
+    pub methods: Vec<MethodDecl>,
     docs: Vec<Attribute>,
 }
 
@@ -88,7 +88,15 @@ impl syn::parse::Parse for Interface {
         syn::braced!(content in input);
         let mut methods = Vec::new();
         while !content.is_empty() {
-            methods.push(content.parse()?);
+            let decl = if content.peek(syn::Token!(...)) {
+                content.parse::<syn::Token!(...)>().unwrap();
+                let int = content.parse::<syn::LitInt>()?;
+                let int = int.base10_parse::<u16>()?;
+                MethodDecl::PlaceHolder(int)
+            } else {
+                MethodDecl::Method(content.parse::<InterfaceMethod>()?)
+            };
+            methods.push(decl);
         }
         Ok(Self {
             iid,
@@ -190,4 +198,9 @@ impl syn::parse::Parse for InterfaceMethod {
             docs,
         })
     }
+}
+
+pub enum MethodDecl {
+    Method(InterfaceMethod),
+    PlaceHolder(u16),
 }

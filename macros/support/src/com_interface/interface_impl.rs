@@ -1,4 +1,4 @@
-use super::{Interface, InterfaceMethod};
+use super::{interface::MethodDecl, Interface, InterfaceMethod};
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
@@ -8,7 +8,9 @@ pub fn generate(interface: &Interface) -> TokenStream {
     let mut impl_methods = Vec::new();
 
     for m in &interface.methods {
-        impl_methods.push(gen_impl_method(m));
+        if let MethodDecl::Method(m) = m {
+            impl_methods.push(gen_impl_method(m));
+        }
     }
 
     let deref = deref_impl(interface);
