@@ -325,8 +325,8 @@ impl DesktopWindow {
             let mut previous: Option<ID2D1Image> = None;
             target.get_target(&mut previous);
             let clock = self.clock.clone().unwrap();
-            target.set_target((*clock).into());
-            target.clear(std::ptr::null_mut());
+            target.set_target(*clock);
+            target.clear(std::ptr::null());
             self.draw_clock();
             target.set_target(previous.unwrap());
             let mut transform = winapi::um::d2d1::D2D1_MATRIX_3X2_F::default();
@@ -349,7 +349,7 @@ impl DesktopWindow {
             target.set_transform(&identity);
 
             target.draw_image(
-                (*clock).into(),
+                *clock,
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
                 winapi::um::d2d1_1::D2D1_INTERPOLATION_MODE::default(),
@@ -383,7 +383,7 @@ impl DesktopWindow {
                 radiusY: 50.0,
             };
 
-            target.draw_ellipse(&ellipse, (**brush).into(), radius / 20.0, None);
+            target.draw_ellipse(&ellipse, **brush, radius / 20.0, None);
 
             let mut time = winapi::um::minwinbase::SYSTEMTIME::default();
             winapi::um::sysinfoapi::GetLocalTime(&mut time);
@@ -426,9 +426,9 @@ impl DesktopWindow {
             target.draw_line(
                 zero,
                 end,
-                (**self.brush.as_mut().unwrap()).into(),
+                **self.brush.as_mut().unwrap(),
                 radius / 25.0,
-                (**self.style.as_mut().unwrap()).into(),
+                **self.style.as_mut().unwrap(),
             );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(minuteAngle) * m_orientation * translation);
@@ -436,9 +436,9 @@ impl DesktopWindow {
             target.draw_line(
                 zero,
                 end,
-                (**self.brush.as_mut().unwrap()).into(),
+                **self.brush.as_mut().unwrap(),
                 radius / 15.0,
-                (**self.style.as_mut().unwrap()).into(),
+                **self.style.as_mut().unwrap(),
             );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(hourAngle) * m_orientation * translation);
@@ -450,9 +450,9 @@ impl DesktopWindow {
             target.draw_line(
                 zero,
                 end,
-                (**self.brush.as_mut().unwrap()).into(),
+                **self.brush.as_mut().unwrap(),
                 radius / 10.0,
-                (**self.style.as_mut().unwrap()).into(),
+                **self.style.as_mut().unwrap(),
             );
         }
     }
@@ -475,7 +475,7 @@ impl DesktopWindow {
                 &style,
                 std::ptr::null_mut(),
                 0,
-                &mut self.style as *mut _ as _
+                &mut self.style
             ));
         }
 
@@ -506,7 +506,7 @@ impl DesktopWindow {
                 &mut self.frequency
             ));
 
-            let mut transition = None;
+            let mut transition: Option<IUIAnimationTransition> = None;
 
             HR!(library.create_accelerate_decelerate_transition(
                 5.0,
@@ -516,15 +516,11 @@ impl DesktopWindow {
                 &mut transition,
             ));
 
-            HR!(manager.create_animation_variable(0.0, &mut self.variable as *mut _ as _));
+            HR!(manager.create_animation_variable(0.0, &mut self.variable));
 
             let variable = self.variable.as_ref().unwrap();
 
-            HR!(manager.schedule_transition(
-                **variable,
-                transition.unwrap().into(),
-                self.get_time()
-            ));
+            HR!(manager.schedule_transition(variable, transition.unwrap(), self.get_time()));
         }
     }
 
@@ -545,7 +541,7 @@ impl DesktopWindow {
             HR!(self.target.as_ref().unwrap().create_solid_color_brush(
                 &color_orange,
                 &props,
-                brush as *mut _ as _,
+                brush
             ));
         }
     }
@@ -573,9 +569,7 @@ impl DesktopWindow {
 
             self.clock = None;
 
-            let clock = &mut self.clock;
-
-            HR!(target.create_bitmap(size, std::ptr::null_mut(), 0, &props, clock as *mut _ as _));
+            HR!(target.create_bitmap(size, std::ptr::null(), 0, &props, &mut self.clock));
         }
 
         // m_shadow = nullptr;
@@ -593,12 +587,12 @@ fn create_swapchain_bitmap(
     swap_chain: &ComRc<IDXGISwapChain1>,
     target: &ComRc<ID2D1DeviceContext>,
 ) {
-    let mut surface = None;
+    let mut surface: Option<IDXGISurface> = None;
     unsafe {
         HR!(swap_chain.get_buffer(
             0,
-            &IDXGISurface::IID as *const _ as _,
-            &mut surface as *mut _ as _,
+            &IDXGISurface::IID as *const _ as *const winapi::shared::guiddef::GUID,
+            &mut surface as *mut _ as *mut *mut std::ffi::c_void,
         ));
 
         let mut props = winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1::default();
@@ -612,7 +606,7 @@ fn create_swapchain_bitmap(
         let mut bitmap: Option<ID2D1Bitmap1> = None;
 
         HR!(target.create_bitmap_from_dxgi_surface(surface.unwrap(), &props, &mut bitmap));
-        target.set_target(bitmap.unwrap().into());
+        target.set_target(bitmap.unwrap());
     }
 }
 
@@ -655,8 +649,8 @@ fn get_dxgi_factory(device: &ComRc<ID3D11Device>) -> ComRc<IDXGIFactory2> {
         HR!(dxdevice.get_adapter(&mut adapter as *mut _));
         let mut parent: Option<IDXGIFactory2> = None;
         HR!(adapter.unwrap().get_parent(
-            &IDXGIFactory2::IID as *const _ as _,
-            &mut parent as *mut _ as _
+            &IDXGIFactory2::IID as *const _ as *const winapi::shared::guiddef::GUID,
+            &mut parent as *mut _ as *mut *mut std::ffi::c_void
         ));
         parent.unwrap().upgrade()
     }

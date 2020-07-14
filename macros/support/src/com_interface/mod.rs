@@ -54,6 +54,11 @@ fn convert_impls(parents: HashMap<Ident, Path>) -> Vec<TokenStream> {
                         unsafe { ::std::mem::transmute(this) }
                     }
                 }
+                impl ::com::ComInterfaceParam<#p> for #name {
+                    unsafe fn into(self) -> #p {
+                        ::std::mem::transmute(self)
+                    }
+                }
             });
             match p.get_ident() {
                 Some(n) => current = n,

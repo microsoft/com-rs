@@ -18,6 +18,7 @@
 
 #![deny(missing_docs)]
 
+mod com_interface_param;
 pub mod interfaces;
 #[doc(hidden)]
 pub mod offset;
@@ -27,6 +28,8 @@ pub mod registration;
 pub mod runtime;
 pub mod sys;
 
+#[doc(inline)]
+pub use com_interface_param::ComInterfaceParam;
 use interfaces::IUnknown;
 pub use rc::ComRc;
 #[doc(inline)]
@@ -86,6 +89,15 @@ pub unsafe trait ComInterface: Sized + 'static {
     /// reference count of at least one.
     unsafe fn from_raw(ptr: std::ptr::NonNull<*const Self::VTable>) -> Self {
         std::mem::transmute_copy(&ptr.as_ptr())
+    }
+
+    /// aliases the ComInterface
+    ///
+    /// # Safety
+    /// The aliased copy of the interface must only live for at most as long
+    /// as `self` otherwise a use-after-free is possible
+    unsafe fn alias(&self) -> Self {
+        std::mem::transmute_copy(self)
     }
 }
 

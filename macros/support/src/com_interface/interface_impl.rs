@@ -47,26 +47,32 @@ fn gen_impl_method(method: &TraitItemMethod) -> TokenStream {
     );
     let interface_ptr_ident = format_ident!("interface_ptr");
 
+    let outer_method_ident = &method_sig.ident;
+    let return_type = &method_sig.output;
+
+    let mut generics = Vec::new();
     let mut params = Vec::new();
     let mut args = Vec::new();
-    for param in method.sig.inputs.iter() {
+    let mut into = Vec::new();
+    for (index, param) in method.sig.inputs.iter().enumerate() {
         match param {
             FnArg::Receiver(_n) => params.push(quote!(#interface_ptr_ident)),
             FnArg::Typed(syn::PatType { pat, ty, .. }) => {
-                args.push(quote! { #pat: #ty });
+                let generic = quote::format_ident!("__{}", index);
+                args.push(quote! { #pat: #generic });
+                generics.push(quote! { #generic: ::com::ComInterfaceParam<#ty> });
+                into.push(quote! { let #pat = unsafe { #pat.into() }; });
                 params.push(pat.to_token_stream());
             }
         }
     }
-
-    let outer_method_ident = &method_sig.ident;
-    let return_type = &method_sig.output;
-
-    quote!(
+    return quote! {
         #[allow(missing_docs)]
-        pub unsafe fn #outer_method_ident(&self, #(#args),*) #return_type {
+        pub unsafe fn #outer_method_ident<#(#generics),*>(&self, #(#args),*) #return_type {
+            #(#into)*
             let #interface_ptr_ident = <Self as ::com::ComInterface>::as_raw(self);
             ((**#interface_ptr_ident.as_ptr()).#inner_method_ident)(#(#params),*)
         }
-    )
+
+    };
 }
