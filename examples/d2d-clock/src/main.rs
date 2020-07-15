@@ -797,18 +797,7 @@ com_interface! {
     pub unsafe interface ID2D1Factory: IUnknown {
         fn reload_system_metrics(&self) -> HRESULT;
         fn get_desktop_dpi(&self, dpi_x: *mut FLOAT, dpi_y: *mut FLOAT);
-        fn f2(&self);
-        fn f3(&self);
-        fn f4(&self);
-        fn f5(&self);
-        fn f6(&self);
-        fn f7(&self);
-        fn f8(&self);
-        fn f9(&self);
-        fn f10(&self);
-        fn f11(&self);
-        fn f12(&self);
-        fn f13(&self);
+        ...12
     }
 
     #[uuid("bb12d362-daee-4b9a-aa1d-14ba401cfa1f")]
@@ -829,7 +818,7 @@ com_interface! {
 
     #[uuid("50c83a1c-e072-4c48-87b0-3630fa36a6d0")]
     pub unsafe interface IDXGIFactory2: IDXGIFactory1 {
-        fn gif0(&self);
+        ...1
         fn create_swap_chain_for_hwnd(
             &self,
             p_device: IUnknown,
@@ -843,17 +832,12 @@ com_interface! {
 
     #[uuid("770aae78-f26f-4dba-a829-253c83d1b387")]
     pub unsafe interface IDXGIFactory1: IDXGIFactory {
-        fn f10(&self);
-        fn f11(&self);
+        ...2
     }
 
     #[uuid("7b7166ec-21c7-44ae-b21a-c9ae321ae369")]
     pub unsafe interface IDXGIFactory: IDXGIObject {
-        fn f0(&self);
-        fn f1(&self);
-        fn f2(&self);
-        fn f3(&self);
-        fn f4(&self);
+        ...5
     }
 
     #[uuid("e8f7fe7a-191c-466d-ad95-975678bda998")]
@@ -866,36 +850,19 @@ com_interface! {
             bitmap_properties: *const winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
-        fn createbitmapfromwicbitmap(&self);
-        fn createcolorcontext(&self);
-        fn createcolorcontextfromfilename(&self);
-        fn createcolorcontextfromwiccolorcontext(&self);
+        ...4
         fn create_bitmap_from_dxgi_surface(
             &self,
             surface: IDXGISurface,
             bitmap_properties: *const winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
-        fn createeffect(&self);
-        fn creategradientstopcollection(&self);
-        fn createimagebrush(&self);
-        fn createbitmapbrush(&self);
-        fn createcommandlist(&self);
-        fn isdxgiformatsupported(&self);
-        fn isbufferprecisionsupported(&self);
-        fn getimagelocalbounds(&self);
-        fn getimageworldbounds(&self);
-        fn getglyphrunworldbounds(&self);
-        fn getdevice(&self);
+        ...11
         fn set_target(&self, image: ID2D1Image);
         fn get_target(&self, image: *mut Option<ID2D1Image>);
-        fn setrenderingcontrols(&self);
-        fn getrenderingcontrols(&self);
-        fn setprimitiveblend(&self);
-        fn getprimitiveblend(&self);
+        ...4
         fn set_unit_mode(&self, unit_mode: winapi::um::d2d1_1::D2D1_UNIT_MODE);
-        fn getunitmode(&self);
-        fn drawglyphrun(&self);
+        ...2
         fn draw_image(
             &self,
             image: ID2D1Image,
@@ -961,7 +928,7 @@ com_interface! {
 
     #[uuid("2cd90691-12e2-11dc-9fed-001143a055f9")]
     pub unsafe interface ID2D1Resource: IUnknown {
-        fn r0(&self);
+        ...1
     }
 
     #[uuid("db6f6ddb-ac77-4e88-8253-819df9bbf140")]
@@ -970,16 +937,12 @@ com_interface! {
     #[uuid("54ec77fa-1377-44e6-8c32-88fd5f44c84c")]
     pub unsafe interface IDXGIDevice: IDXGIObject {
         fn get_adapter(&self, adapter: *mut Option<IDXGIAdapter>) -> HRESULT;
-        fn d2(&self);
-        fn d3(&self);
-        fn d4(&self);
+        ...3
     }
 
     #[uuid("aec22fb8-76f3-4639-9be0-28eb43a67a2e")]
     pub unsafe interface IDXGIObject: IUnknown {
-        fn o0(&self);
-        fn o1(&self);
-        fn o2(&self);
+        ...3
         fn get_parent(
             &self,
             refid: winapi::shared::guiddef::REFIID,
@@ -1007,14 +970,12 @@ com_interface! {
 
     #[uuid("3d3e0379-f9de-4d58-bb6c-18d62992f1a6")]
     pub unsafe interface IDXGIDeviceSubObject: IDXGIObject {
-        fn so0(&self);
+        ...1
     }
 
     #[uuid("2411e7e1-12ac-4ccf-bd14-9798e8534dc0")]
     pub unsafe interface IDXGIAdapter: IDXGIObject {
-        fn a0(&self);
-        fn a1(&self);
-        fn a2(&self);
+        ...3
     }
 
     #[uuid("ae02eedb-c735-4690-8d52-5a8dc20213aa")]
@@ -1045,9 +1006,7 @@ com_interface! {
             transition: IUIAnimationTransition,
             time_now: UI_ANIMATION_SECONDS,
         ) -> HRESULT;
-        fn a2(&self);
-        fn a3(&self);
-        fn a4(&self);
+        ...3
         fn update(&self, time_now: UI_ANIMATION_SECONDS, _ptr: *mut std::ffi::c_void)
             -> HRESULT;
     }
@@ -1071,13 +1030,7 @@ com_interface! {
 
     #[uuid("CA5A14B1-D24F-48b8-8FE4-C78169BA954E")]
     pub unsafe interface IUIAnimationTransitionLibrary: IUnknown {
-        fn a0(&self);
-        fn a1(&self);
-        fn a2(&self);
-        fn a3(&self);
-        fn a4(&self);
-        fn a5(&self);
-        fn a6(&self);
+        ...7
         fn create_accelerate_decelerate_transition(
             &self,
             duration: UI_ANIMATION_SECONDS,
