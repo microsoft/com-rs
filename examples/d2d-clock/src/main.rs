@@ -1,10 +1,34 @@
 use com::{com_interface, interfaces::IUnknown, ComInterface, ComPtr};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
-use winapi::shared::minwindef::FLOAT;
-use winapi::shared::windef::HWND;
-use winapi::um::winnt::HRESULT;
+use winapi::shared::{
+    basetsd::UINT32,
+    dxgi::{CreateDXGIFactory1, DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL},
+    dxgi1_2::{DXGI_SWAP_CHAIN_DESC1, DXGI_SWAP_CHAIN_FULLSCREEN_DESC},
+    dxgiformat::DXGI_FORMAT_B8G8R8A8_UNORM,
+    dxgitype::DXGI_USAGE_RENDER_TARGET_OUTPUT,
+    minwindef::{FLOAT, UINT},
+    ntdef::LARGE_INTEGER,
+    windef::HWND,
+    winerror::{DXGI_ERROR_UNSUPPORTED, DXGI_STATUS_OCCLUDED, S_OK},
+};
+use winapi::um::{
+    d2d1::{self, *},
+    d2d1_1::*,
+    d3d11::{D3D11CreateDevice, D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_SDK_VERSION},
+    d3dcommon::{D3D_DRIVER_TYPE, D3D_DRIVER_TYPE_HARDWARE, D3D_DRIVER_TYPE_WARP},
+    dcommon::*,
+    errhandlingapi::GetLastError,
+    minwinbase::SYSTEMTIME,
+    profileapi::{QueryPerformanceCounter, QueryPerformanceFrequency},
+    sysinfoapi::GetLocalTime,
+    winnt::GUID_SESSION_DISPLAY_STATUS,
+    winnt::HRESULT,
+    winuser::{RegisterPowerSettingNotification, DEVICE_NOTIFY_WINDOW_HANDLE},
+};
+
+use std::ffi::c_void;
 use winit::{
-    event::{ElementState, Event, MouseButton, WindowEvent},
+    event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
@@ -24,7 +48,7 @@ macro_rules! check_bool {
     ($bool:expr) => {
         if !$bool.to_bool() {
             #[allow(unused_unsafe)]
-            let error = unsafe { winapi::um::errhandlingapi::GetLastError() };
+            let error = unsafe { GetLastError() };
             panic!(
                 "non successful action: {} - 0x{:x}",
                 stringify!($bool),
@@ -59,10 +83,10 @@ fn main() {
         device_dependent_resources,
     );
     unsafe {
-        check_bool!(winapi::um::winuser::RegisterPowerSettingNotification(
+        check_bool!(RegisterPowerSettingNotification(
             raw.hwnd as _,
-            &winapi::um::winnt::GUID_SESSION_DISPLAY_STATUS,
-            winapi::um::winuser::DEVICE_NOTIFY_WINDOW_HANDLE,
+            &GUID_SESSION_DISPLAY_STATUS,
+            DEVICE_NOTIFY_WINDOW_HANDLE,
         ))
     }
 
@@ -73,6 +97,10 @@ fn main() {
                 event: WindowEvent::CloseRequested,
                 window_id,
             } if window_id == window.id() => *control_flow = ControlFlow::Exit,
+            Event::WindowEvent {
+                event: WindowEvent::Resized(size),
+                ..
+            } => clock.render(),
             Event::RedrawRequested(window_id) if window_id == window.id() => {
                 clock.render();
             }
@@ -138,8 +166,8 @@ impl Clock {
         };
 
         match hr {
-            winapi::shared::winerror::S_OK => {}
-            winapi::shared::winerror::DXGI_STATUS_OCCLUDED => {
+            S_OK => {}
+            DXGI_STATUS_OCCLUDED => {
                 // HR!(self.dx_factory.register_occlusion_status_window(
                 //     self.window(),
                 //     winapi::um::winuser::WM_USER,
@@ -148,46 +176,51 @@ impl Clock {
                 // self.visible = false;
             }
             _ => {
-                //     release_device();
+                // release_device();
             }
         };
     }
 
     fn draw(&mut self) {
-        let mut orientation = winapi::um::dcommon::D2D_MATRIX_3X2_F::default();
+        let mut orientation = D2D_MATRIX_3X2_F::default();
         orientation.matrix[0][0] = 1.0;
         orientation.matrix[1][1] = 1.0;
         // self.orientation = orientation;
-        let offset = winapi::um::d2d1::D2D1_SIZE_F {
+        let offset = d2d1::D2D1_SIZE_F {
             width: 5.0,
             height: 5.0,
         };
+        let time = get_time(self.device_independent_resources.animation_frequency);
         unsafe {
-            let time = get_time(self.device_independent_resources.animation_frequency);
             HR!(self
                 .device_independent_resources
                 .animation_manager
                 .update(time, std::ptr::null_mut()));
+
             let target = &self.device_dependent_resources.target;
-            target.set_unit_mode(winapi::um::d2d1_1::D2D1_UNIT_MODE_PIXELS);
-            let color_white = winapi::um::d2d1::D2D1_COLOR_F {
+            target.set_unit_mode(D2D1_UNIT_MODE_PIXELS);
+
+            let color_white = D2D1_COLOR_F {
                 r: 1.0,
                 g: 1.0,
                 b: 1.0,
                 a: 1.0,
             };
             target.clear(&color_white);
-            target.set_unit_mode(winapi::um::d2d1_1::D2D1_UNIT_MODE_DIPS);
+            target.set_unit_mode(D2D1_UNIT_MODE_DIPS);
+
             let mut previous: Option<ID2D1Image> = None;
             target.get_target(&mut previous);
             let clock = &self.device_dependent_resources.clock;
             target.set_target(clock.get());
             target.clear(std::ptr::null());
             self.draw_clock();
-            let clock = &self.device_dependent_resources.clock;
             let target = &self.device_dependent_resources.target;
             target.set_target(previous.unwrap());
-            let mut transform = winapi::um::d2d1::D2D1_MATRIX_3X2_F::default();
+
+            let clock = &self.device_dependent_resources.clock;
+
+            let mut transform = d2d1::D2D1_MATRIX_3X2_F::default();
             transform.matrix[0][0] = 1.0;
             transform.matrix[1][1] = 1.0;
             transform.matrix[2][0] = offset.width;
@@ -201,7 +234,7 @@ impl Clock {
             //     D2D1_COMPOSITE_MODE_SOURCE_OVER,
             // );
 
-            let mut identity = winapi::um::dcommon::D2D_MATRIX_3X2_F::default();
+            let mut identity = D2D_MATRIX_3X2_F::default();
             identity.matrix[0][0] = 1.0;
             identity.matrix[1][1] = 1.0;
             target.set_transform(&identity);
@@ -210,8 +243,8 @@ impl Clock {
                 clock.get(),
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
-                winapi::um::d2d1_1::D2D1_INTERPOLATION_MODE::default(),
-                winapi::um::d2d1_1::D2D1_COMPOSITE_MODE::default(),
+                D2D1_INTERPOLATION_MODE::default(),
+                D2D1_COMPOSITE_MODE::default(),
             );
         }
     }
@@ -222,11 +255,11 @@ impl Clock {
             let mut size = std::mem::zeroed();
             target.get_size(&mut size);
             let radius = 200.0f32.max(size.width.min(size.height) / 2.0 - 50.0);
-            let offset = winapi::um::d2d1::D2D1_SIZE_F {
+            let offset = d2d1::D2D1_SIZE_F {
                 width: 2.0,
                 height: 2.0,
             };
-            let mut translation = winapi::um::d2d1::D2D1_MATRIX_3X2_F::default();
+            let mut translation = d2d1::D2D1_MATRIX_3X2_F::default();
             translation.matrix[0][0] = 1.0;
             translation.matrix[1][1] = 1.0;
             translation.matrix[2][0] = size.width / offset.width;
@@ -235,8 +268,8 @@ impl Clock {
             target.get_transform(&mut translation);
 
             let brush = self.device_dependent_resources.brush.get();
-            let ellipse = winapi::um::d2d1::D2D1_ELLIPSE {
-                point: winapi::um::d2d1::D2D1_POINT_2F::default(),
+            let ellipse = D2D1_ELLIPSE {
+                point: d2d1::D2D1_POINT_2F::default(),
                 radiusX: 50.0,
                 radiusY: 50.0,
             };
@@ -248,8 +281,8 @@ impl Clock {
                 Option::<ID2D1StrokeStyle>::None,
             );
 
-            let mut time = winapi::um::minwinbase::SYSTEMTIME::default();
-            winapi::um::sysinfoapi::GetLocalTime(&mut time);
+            let mut time = SYSTEMTIME::default();
+            GetLocalTime(&mut time);
 
             let second_angle = ((time.wSecond + time.wMilliseconds) as f64 / 1000.0) * 6.0;
             let minute_angle = time.wMinute as f64 * 6.0 + second_angle / 60.0;
@@ -275,17 +308,17 @@ impl Clock {
                 // hourAngle *= static_cast<float>(swing);
             }
 
-            let mut rotation = winapi::um::d2d1::D2D1_MATRIX_3X2_F::default();
-            winapi::um::d2d1::D2D1MakeRotateMatrix(
+            let mut rotation = d2d1::D2D1_MATRIX_3X2_F::default();
+            D2D1MakeRotateMatrix(
                 second_angle as f32,
-                winapi::um::d2d1::D2D1_POINT_2F::default(),
+                d2d1::D2D1_POINT_2F::default(),
                 &mut rotation,
             );
             let transform = rotation; //* self.orientation * translation;
             target.set_transform(&transform);
 
-            let zero = winapi::um::d2d1::D2D1_POINT_2F { x: 0.0, y: 0.0 };
-            let end = winapi::um::d2d1::D2D1_POINT_2F {
+            let zero = d2d1::D2D1_POINT_2F { x: 0.0, y: 0.0 };
+            let end = d2d1::D2D1_POINT_2F {
                 x: 0.0,
                 y: -(radius * 0.75),
             };
@@ -309,7 +342,7 @@ impl Clock {
 
             // m_target->SetTransform(Matrix3x2F::Rotation(hourAngle) * m_orientation * translation);
 
-            let end = winapi::um::d2d1::D2D1_POINT_2F {
+            let end = d2d1::D2D1_POINT_2F {
                 x: 0.0,
                 y: -(radius * 0.5),
             };
@@ -332,17 +365,16 @@ fn create_swapchain_bitmap(
     unsafe {
         HR!(swap_chain.get_buffer(
             0,
-            &IDXGISurface::IID as *const _ as *const winapi::shared::guiddef::GUID,
-            &mut surface as *mut _ as *mut *mut std::ffi::c_void,
+            &IDXGISurface::IID,
+            &mut surface as *mut _ as *mut *mut c_void,
         ));
 
-        let mut props = winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1::default();
-        props.pixelFormat = winapi::um::dcommon::D2D1_PIXEL_FORMAT {
-            format: winapi::shared::dxgiformat::DXGI_FORMAT_B8G8R8A8_UNORM,
-            alphaMode: winapi::um::dcommon::D2D1_ALPHA_MODE_IGNORE,
+        let mut props = D2D1_BITMAP_PROPERTIES1::default();
+        props.pixelFormat = D2D1_PIXEL_FORMAT {
+            format: DXGI_FORMAT_B8G8R8A8_UNORM,
+            alphaMode: D2D1_ALPHA_MODE_IGNORE,
         };
-        props.bitmapOptions = winapi::um::d2d1_1::D2D1_BITMAP_OPTIONS_TARGET
-            | winapi::um::d2d1_1::D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
+        props.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
 
         let mut bitmap: Option<ID2D1Bitmap1> = None;
 
@@ -351,20 +383,17 @@ fn create_swapchain_bitmap(
     }
 }
 
-fn create_swapchain(
-    device: &ComPtr<ID3D11Device>,
-    window: winapi::shared::windef::HWND,
-) -> ComPtr<IDXGISwapChain1> {
+fn create_swapchain(device: &ComPtr<ID3D11Device>, window: HWND) -> ComPtr<IDXGISwapChain1> {
     let factory = get_dxgi_factory(device);
 
-    let mut props = winapi::shared::dxgi1_2::DXGI_SWAP_CHAIN_DESC1::default();
-    props.Format = winapi::shared::dxgiformat::DXGI_FORMAT_B8G8R8A8_UNORM;
+    let mut props = DXGI_SWAP_CHAIN_DESC1::default();
+    props.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     props.SampleDesc.Count = 1;
-    props.BufferUsage = winapi::shared::dxgitype::DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    props.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     props.BufferCount = 2;
-    props.SwapEffect = winapi::shared::dxgi::DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    props.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
-    let mut swap_chain: Option<IDXGISwapChain1> = None;
+    let mut swap_chain: Option<ComPtr<IDXGISwapChain1>> = None;
 
     unsafe {
         HR!(factory.create_swap_chain_for_hwnd(
@@ -377,20 +406,20 @@ fn create_swapchain(
         ))
     };
 
-    swap_chain.unwrap().upgrade()
+    swap_chain.unwrap()
 }
 
 fn get_dxgi_factory(device: &ComPtr<ID3D11Device>) -> ComPtr<IDXGIFactory2> {
     let dxdevice = device.get_interface::<IDXGIDevice>().unwrap();
-    let mut adapter: Option<IDXGIAdapter> = None;
+    let mut adapter: Option<ComPtr<IDXGIAdapter>> = None;
     unsafe {
-        HR!(dxdevice.get_adapter(&mut adapter as *mut _));
-        let mut parent: Option<IDXGIFactory2> = None;
+        HR!(dxdevice.get_adapter(&mut adapter));
+        let mut parent: Option<ComPtr<IDXGIFactory2>> = None;
         HR!(adapter.unwrap().get_parent(
-            &IDXGIFactory2::IID as *const _ as *const winapi::shared::guiddef::GUID,
-            &mut parent as *mut _ as *mut *mut std::ffi::c_void
+            &IDXGIFactory2::IID,
+            &mut parent as *mut _ as *mut *mut c_void
         ));
-        parent.unwrap().upgrade()
+        parent.unwrap()
     }
 }
 
@@ -402,50 +431,46 @@ fn create_render_target(
 
     let mut d2device: Option<ID2D1Device> = None;
     let target = unsafe {
-        HR!(factory.create_device(dxdevice, &mut d2device as *mut _));
-        let mut target: Option<ID2D1DeviceContext> = None;
+        HR!(factory.create_device(&dxdevice, &mut d2device));
+        let mut target: Option<ComPtr<ID2D1DeviceContext>> = None;
 
-        HR!(d2device.unwrap().create_device_context(
-            winapi::um::d2d1_1::D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
-            &mut target as *mut _
-        ));
+        HR!(d2device
+            .unwrap()
+            .create_device_context(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &mut target));
         target
     };
 
-    target.unwrap().upgrade()
+    target.unwrap()
 }
 
 fn create_device() -> ComPtr<ID3D11Device> {
-    fn create_device(
-        typ: winapi::um::d3dcommon::D3D_DRIVER_TYPE,
-        device: &mut Option<ComPtr<ID3D11Device>>,
-    ) -> HRESULT {
-        let flags = winapi::um::d3d11::D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+    fn create_device(typ: D3D_DRIVER_TYPE, device: &mut Option<ComPtr<ID3D11Device>>) -> HRESULT {
+        let flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
         // #ifdef _DEBUG
         //     flags |= D3D11_CREATE_DEVICE_DEBUG;
         // #endif
 
         unsafe {
-            winapi::um::d3d11::D3D11CreateDevice(
+            D3D11CreateDevice(
                 std::ptr::null_mut(),
                 typ,
                 std::ptr::null_mut(),
                 flags,
                 std::ptr::null_mut(),
                 0,
-                winapi::um::d3d11::D3D11_SDK_VERSION,
-                device as *const _ as *mut _,
+                D3D11_SDK_VERSION,
+                device as *mut _ as _,
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
             )
         }
     }
     let mut device = None;
-    let mut hr = create_device(winapi::um::d3dcommon::D3D_DRIVER_TYPE_HARDWARE, &mut device);
+    let mut hr = create_device(D3D_DRIVER_TYPE_HARDWARE, &mut device);
 
-    if winapi::shared::winerror::DXGI_ERROR_UNSUPPORTED == hr {
-        hr = create_device(winapi::um::d3dcommon::D3D_DRIVER_TYPE_WARP, &mut device);
+    if DXGI_ERROR_UNSUPPORTED == hr {
+        hr = create_device(D3D_DRIVER_TYPE_WARP, &mut device);
     }
 
     HR!(hr);
@@ -453,28 +478,28 @@ fn create_device() -> ComPtr<ID3D11Device> {
 }
 
 fn create_d2d_factory() -> ComPtr<ID2D1Factory1> {
-    let options = &winapi::um::d2d1::D2D1_FACTORY_OPTIONS::default();
-    let mut factory: Option<ID2D1Factory1> = None;
+    let options = &D2D1_FACTORY_OPTIONS::default();
+    let mut factory: Option<ComPtr<ID2D1Factory1>> = None;
     unsafe {
-        HR!(winapi::um::d2d1::D2D1CreateFactory(
-            winapi::um::d2d1::D2D1_FACTORY_TYPE_SINGLE_THREADED,
+        HR!(D2D1CreateFactory(
+            D2D1_FACTORY_TYPE_SINGLE_THREADED,
             &ID2D1Factory1::IID as *const _ as _,
             options,
             &mut factory as *mut _ as _,
         ));
     }
-    factory.unwrap().upgrade()
+    factory.unwrap()
 }
 
 fn create_dxgi_factory() -> ComPtr<IDXGIFactory2> {
-    let mut dxgi_factory: Option<IDXGIFactory2> = None;
+    let mut dxgi_factory: Option<ComPtr<IDXGIFactory2>> = None;
     unsafe {
-        HR!(winapi::shared::dxgi::CreateDXGIFactory1(
+        HR!(CreateDXGIFactory1(
             &IDXGIFactory2::IID as *const _ as _,
             &mut dxgi_factory as *mut _ as _,
         ));
     };
-    dxgi_factory.unwrap().upgrade()
+    dxgi_factory.unwrap()
 }
 
 fn get_dpi(factory: &ComPtr<ID2D1Factory1>) -> f32 {
@@ -487,7 +512,7 @@ fn get_dpi(factory: &ComPtr<ID2D1Factory1>) -> f32 {
 }
 
 struct DeviceIndependentResources {
-    animation_frequency: winapi::shared::ntdef::LARGE_INTEGER,
+    animation_frequency: LARGE_INTEGER,
     animation_manager: ComPtr<IUIAnimationManager>,
     style: ComPtr<ID2D1StrokeStyle1>,
     animation_variable: ComPtr<IUIAnimationVariable>,
@@ -495,9 +520,9 @@ struct DeviceIndependentResources {
 
 impl DeviceIndependentResources {
     fn new(factory: &ComPtr<ID2D1Factory1>) -> Self {
-        let mut style_props = winapi::um::d2d1_1::D2D1_STROKE_STYLE_PROPERTIES1::default();
-        style_props.startCap = winapi::um::d2d1::D2D1_CAP_STYLE_ROUND;
-        style_props.endCap = winapi::um::d2d1::D2D1_CAP_STYLE_TRIANGLE;
+        let mut style_props = D2D1_STROKE_STYLE_PROPERTIES1::default();
+        style_props.startCap = D2D1_CAP_STYLE_ROUND;
+        style_props.endCap = D2D1_CAP_STYLE_TRIANGLE;
 
         let mut style: Option<ComPtr<ID2D1StrokeStyle1>> = None;
         unsafe {
@@ -514,7 +539,7 @@ impl DeviceIndependentResources {
         let animation_manager =
             com::runtime::create_instance::<IUIAnimationManager>(&class_id).unwrap();
 
-        let mut animation_frequency = winapi::shared::ntdef::LARGE_INTEGER::default();
+        let mut animation_frequency = LARGE_INTEGER::default();
         let mut animation_variable: Option<ComPtr<IUIAnimationVariable>> = None;
 
         let class_id = com::CLSID {
@@ -528,9 +553,7 @@ impl DeviceIndependentResources {
             com::runtime::create_instance(&class_id).unwrap();
         let mut transition: Option<IUIAnimationTransition> = None;
         unsafe {
-            check_bool!(winapi::um::profileapi::QueryPerformanceFrequency(
-                &mut animation_frequency
-            ));
+            check_bool!(QueryPerformanceFrequency(&mut animation_frequency));
 
             HR!(library.create_accelerate_decelerate_transition(
                 5.0,
@@ -589,14 +612,14 @@ impl DeviceDependentResources {
 }
 
 fn create_device_resources(target: &ComPtr<ID2D1DeviceContext>) -> ComPtr<ID2D1SolidColorBrush> {
-    let color_orange = winapi::um::d2d1::D2D1_COLOR_F {
+    let color_orange = D2D1_COLOR_F {
         r: 0.92,
         g: 0.38,
         b: 0.208,
         a: 1.0,
     };
 
-    let mut props = winapi::um::d2d1::D2D1_BRUSH_PROPERTIES::default();
+    let mut props = D2D1_BRUSH_PROPERTIES::default();
     props.opacity = 0.8;
 
     let mut brush = Option::<ComPtr<ID2D1SolidColorBrush>>::None;
@@ -615,22 +638,22 @@ fn create_device_size_resources(
         target.get_size(&mut size);
         size
     };
-    let size = winapi::um::dcommon::D2D_SIZE_U {
+    let size = D2D_SIZE_U {
         width: size.width as u32,
         height: size.height as u32,
     };
 
-    let props = winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1 {
-        pixelFormat: winapi::um::dcommon::D2D1_PIXEL_FORMAT {
-            format: winapi::shared::dxgiformat::DXGI_FORMAT_B8G8R8A8_UNORM,
-            alphaMode: winapi::um::dcommon::D2D1_ALPHA_MODE_PREMULTIPLIED,
+    let props = D2D1_BITMAP_PROPERTIES1 {
+        pixelFormat: D2D1_PIXEL_FORMAT {
+            format: DXGI_FORMAT_B8G8R8A8_UNORM,
+            alphaMode: D2D1_ALPHA_MODE_PREMULTIPLIED,
         },
         dpiX: dpi,
         dpiY: dpi,
-        bitmapOptions: winapi::um::d2d1_1::D2D1_BITMAP_OPTIONS_TARGET,
+        bitmapOptions: D2D1_BITMAP_OPTIONS_TARGET,
         colorContext: std::ptr::null_mut(),
     };
-    let mut clock = Option::<ID2D1Bitmap1>::None;
+    let mut clock = Option::<ComPtr<ID2D1Bitmap1>>::None;
     unsafe {
         HR!(target.create_bitmap(size, std::ptr::null(), 0, &props, &mut clock));
     }
@@ -643,15 +666,13 @@ fn create_device_size_resources(
     //     m_shadow.put()));
 
     // m_shadow->SetInput(0, m_clock.get());
-    clock.unwrap().upgrade().into()
+    clock.unwrap().into()
 }
-
-use winapi::shared::ntdef::LARGE_INTEGER;
 
 fn get_time(frequency: LARGE_INTEGER) -> f64 {
     let mut time = LARGE_INTEGER::default();
     unsafe {
-        check_bool!(winapi::um::profileapi::QueryPerformanceCounter(&mut time));
+        check_bool!(QueryPerformanceCounter(&mut time));
         *time.QuadPart() as f64 / *frequency.QuadPart() as f64
     }
 }
@@ -673,9 +694,9 @@ com_interface! {
         ) -> HRESULT;
         fn create_stroke_style(
             &self,
-            stroke_style_properties: *const winapi::um::d2d1_1::D2D1_STROKE_STYLE_PROPERTIES1,
+            stroke_style_properties: *const D2D1_STROKE_STYLE_PROPERTIES1,
             dashes: *const FLOAT,
-            dashes_count: winapi::shared::basetsd::UINT32,
+            dashes_count: UINT32,
             stroke_style: *mut Option<ID2D1StrokeStyle1>,
         ) -> HRESULT;
     }
@@ -686,9 +707,9 @@ com_interface! {
         fn create_swap_chain_for_hwnd(
             &self,
             p_device: IUnknown,
-            hwnd: winapi::shared::windef::HWND,
-            p_desc: *const winapi::shared::dxgi1_2::DXGI_SWAP_CHAIN_DESC1,
-            p_fullscreen_desc: *const winapi::shared::dxgi1_2::DXGI_SWAP_CHAIN_FULLSCREEN_DESC,
+            hwnd: HWND,
+            p_desc: *const DXGI_SWAP_CHAIN_DESC1,
+            p_fullscreen_desc: *const DXGI_SWAP_CHAIN_FULLSCREEN_DESC,
             p_restrict_to_output: Option<IDXGIOutput>,
             pp_swapchain: *mut Option<IDXGISwapChain1>,
         ) -> HRESULT;
@@ -708,32 +729,32 @@ com_interface! {
     pub unsafe interface ID2D1DeviceContext: ID2D1RenderTarget {
         fn create_bitmap(
             &self,
-            size: winapi::um::d2d1::D2D1_SIZE_U,
-            source_data: *const std::ffi::c_void,
+            size: d2d1::D2D1_SIZE_U,
+            source_data: *const c_void,
             pitch: u32,
-            bitmap_properties: *const winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1,
+            bitmap_properties: *const D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
         ...4
         fn create_bitmap_from_dxgi_surface(
             &self,
             surface: IDXGISurface,
-            bitmap_properties: *const winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1,
+            bitmap_properties: *const D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
         ...11
         fn set_target(&self, image: ID2D1Image);
         fn get_target(&self, image: *mut Option<ID2D1Image>);
         ...4
-        fn set_unit_mode(&self, unit_mode: winapi::um::d2d1_1::D2D1_UNIT_MODE);
+        fn set_unit_mode(&self, unit_mode: D2D1_UNIT_MODE);
         ...2
         fn draw_image(
             &self,
             image: ID2D1Image,
-            target_offset: *const winapi::um::d2d1::D2D1_POINT_2F,
-            image_rectangle: *const winapi::um::d2d1::D2D1_RECT_F,
-            interpolation_mode: winapi::um::d2d1_1::D2D1_INTERPOLATION_MODE,
-            composite_mode: winapi::um::d2d1_1::D2D1_COMPOSITE_MODE,
+            target_offset: *const d2d1::D2D1_POINT_2F,
+            image_rectangle: *const d2d1::D2D1_RECT_F,
+            interpolation_mode: D2D1_INTERPOLATION_MODE,
+            composite_mode: D2D1_COMPOSITE_MODE,
         );
     }
 
@@ -741,7 +762,7 @@ com_interface! {
     pub unsafe interface ID2D1Device: ID2D1Resource {
         fn create_device_context(
             &self,
-            options: winapi::um::d2d1_1::D2D1_DEVICE_CONTEXT_OPTIONS,
+            options: D2D1_DEVICE_CONTEXT_OPTIONS,
             device_context: *mut Option<ID2D1DeviceContext>,
         ) -> HRESULT;
     }
@@ -751,15 +772,15 @@ com_interface! {
         ...4
         fn create_solid_color_brush(
             &self,
-            color: *const winapi::um::d2d1::D2D1_COLOR_F,
-            brush_props: *const winapi::um::d2d1::D2D1_BRUSH_PROPERTIES,
+            color: *const D2D1_COLOR_F,
+            brush_props: *const D2D1_BRUSH_PROPERTIES,
             brush: *mut Option<ID2D1SolidColorBrush>,
         ) -> HRESULT;
         ...6
         fn draw_line(
             &self,
-            point0: winapi::um::d2d1::D2D1_POINT_2F,
-            point1: winapi::um::d2d1::D2D1_POINT_2F,
+            point0: d2d1::D2D1_POINT_2F,
+            point1: d2d1::D2D1_POINT_2F,
             brush: ID2D1Brush,
             stroke_width: f32,
             stroke_type: ID2D1StrokeStyle
@@ -767,26 +788,26 @@ com_interface! {
         ...4
         fn draw_ellipse(
             &self,
-            ellipse: *const winapi::um::d2d1::D2D1_ELLIPSE,
+            ellipse: *const D2D1_ELLIPSE,
             brush: ID2D1Brush,
             stroke_width: f32,
             stroke_style: Option<ID2D1StrokeStyle>,
         );
         ...9
-        fn set_transform(&self, transform: *const winapi::um::d2d1::D2D1_MATRIX_3X2_F);
-        fn get_transform(&self, transform: *mut winapi::um::d2d1::D2D1_MATRIX_3X2_F);
+        fn set_transform(&self, transform: *const d2d1::D2D1_MATRIX_3X2_F);
+        fn get_transform(&self, transform: *mut d2d1::D2D1_MATRIX_3X2_F);
         ...15
-        fn clear(&self, clear_color: *const winapi::um::d2d1::D2D1_COLOR_F);
+        fn clear(&self, clear_color: *const D2D1_COLOR_F);
         fn begin_draw(&self);
         fn end_draw(
             &self,
-            tag1: *mut winapi::um::d2d1::D2D1_TAG,
-            tag2: *mut winapi::um::d2d1::D2D1_TAG,
+            tag1: *mut D2D1_TAG,
+            tag2: *mut D2D1_TAG,
         );
         ...1
         fn set_dpi(&self, dpix: f32, dpiy: f32);
         ...1
-        fn get_size(&self, ret: *mut winapi::um::d2d1::D2D1_SIZE_F) ;
+        fn get_size(&self, ret: *mut d2d1::D2D1_SIZE_F) ;
         ...3
     }
 
@@ -809,8 +830,8 @@ com_interface! {
         ...3
         fn get_parent(
             &self,
-            refid: winapi::shared::guiddef::REFIID,
-            pparent: *mut *mut std::ffi::c_void,
+            refid: *const com::IID,
+            pparent: *mut *mut c_void,
         ) -> HRESULT;
     }
 
@@ -821,14 +842,14 @@ com_interface! {
     pub unsafe interface IDXGISwapChain: IDXGIDeviceSubObject {
         fn present(
             &self,
-            sync_interval: winapi::shared::minwindef::UINT,
-            flags: winapi::shared::minwindef::UINT,
+            sync_interval: UINT,
+            flags: UINT,
         ) -> HRESULT;
         fn get_buffer(
             &self,
-            buffer: winapi::shared::minwindef::UINT,
-            riid: winapi::shared::guiddef::REFIID,
-            pp_surface: *mut *mut std::ffi::c_void,
+            buffer: UINT,
+            riid: *const com::IID,
+            pp_surface: *mut *mut c_void,
         ) -> HRESULT;
     }
 
@@ -871,7 +892,7 @@ com_interface! {
             time_now: UI_ANIMATION_SECONDS,
         ) -> HRESULT;
         ...3
-        fn update(&self, time_now: UI_ANIMATION_SECONDS, _ptr: *mut std::ffi::c_void)
+        fn update(&self, time_now: UI_ANIMATION_SECONDS, _ptr: *mut c_void)
             -> HRESULT;
     }
 
