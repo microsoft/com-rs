@@ -1,6 +1,13 @@
 use com::{com_interface, interfaces::IUnknown, ComInterface, ComPtr};
+use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use winapi::shared::minwindef::FLOAT;
+use winapi::shared::windef::HWND;
 use winapi::um::winnt::HRESULT;
+use winit::{
+    event::{ElementState, Event, MouseButton, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::Window,
+};
 
 // this should most likely just be a wrapper type
 // much like we have in winrt
@@ -29,40 +36,49 @@ macro_rules! check_bool {
 
 fn main() {
     com::runtime::init_apartment(com::runtime::ApartmentType::SingleThreaded).unwrap();
-    let mut clock = ClockWindow::new();
 
-    let mut wc = winapi::um::winuser::WNDCLASSA::default();
+    let event_loop = EventLoop::new();
+    let window = Window::new(&event_loop).unwrap();
+    window.set_title("Clock");
+    let raw = match window.raw_window_handle() {
+        RawWindowHandle::Windows(w) => w,
+        _ => panic!("This app only works on Windows"),
+    };
 
+    // Create factories
+    let d2d_factory = create_d2d_factory();
+    let dxgi_factory = create_dxgi_factory();
+
+    let dpi = get_dpi(&d2d_factory);
+    let device_independent_resources = DeviceIndependentResources::new(&d2d_factory);
+    let device_dependent_resources =
+        DeviceDependentResources::new(&d2d_factory, raw.hwnd as _, dpi);
+    let mut clock = Clock::new(
+        dpi,
+        device_independent_resources,
+        device_dependent_resources,
+    );
     unsafe {
-        wc.hCursor =
-            winapi::um::winuser::LoadCursorW(std::ptr::null_mut(), winapi::um::winuser::IDC_ARROW);
-        wc.hInstance = winapi::um::libloaderapi::GetModuleHandleA(std::ptr::null_mut());
-        let name = b"Sample\0".as_ptr();
-        wc.lpszClassName = name as *const i8;
-        wc.style = winapi::um::winuser::CS_HREDRAW | winapi::um::winuser::CS_VREDRAW;
-        wc.lpfnWndProc = Some(DesktopWindow::window_proc);
-
-        check_bool!(winapi::um::winuser::RegisterClassA(&wc as *const _));
-
-        let name = b"Sample\0".as_ptr();
-        let lp = &mut clock.window as *mut DesktopWindow as _;
-        winapi::um::winuser::CreateWindowExA(
-            0,
-            wc.lpszClassName,
-            name as *const i8,
-            winapi::um::winuser::WS_OVERLAPPEDWINDOW | winapi::um::winuser::WS_VISIBLE,
-            winapi::um::winuser::CW_USEDEFAULT,
-            winapi::um::winuser::CW_USEDEFAULT,
-            winapi::um::winuser::CW_USEDEFAULT,
-            winapi::um::winuser::CW_USEDEFAULT,
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-            wc.hInstance,
-            lp,
-        );
+        check_bool!(winapi::um::winuser::RegisterPowerSettingNotification(
+            raw.hwnd as _,
+            &winapi::um::winnt::GUID_SESSION_DISPLAY_STATUS,
+            winapi::um::winuser::DEVICE_NOTIFY_WINDOW_HANDLE,
+        ))
     }
 
-    clock.run();
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Wait;
+        match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                window_id,
+            } if window_id == window.id() => *control_flow = ControlFlow::Exit,
+            Event::RedrawRequested(window_id) if window_id == window.id() => {
+                clock.render();
+            }
+            _ => {}
+        }
+    })
 }
 
 trait BoolLike {
@@ -91,193 +107,34 @@ macro_rules! primitive_bool {
 }
 primitive_bool!(u16, i32);
 
-trait Window {
-    fn run(&mut self);
-}
-
-struct ClockWindow<W> {
-    window: W,
-}
-
-impl<W: Window> ClockWindow<W> {
-    fn run(&mut self) {
-        self.window.run();
-    }
-}
-
-impl ClockWindow<DesktopWindow> {
-    fn new() -> Self {
-        Self {
-            window: DesktopWindow::new(1.3),
-        }
-    }
-}
-
 #[repr(C)]
-struct DesktopWindow {
-    dpix: f32,
-    window: winapi::shared::windef::HWND,
-    visible: bool,
-    orientation: winapi::um::d2d1::D2D1_MATRIX_3X2_F,
-    frequency: winapi::shared::ntdef::LARGE_INTEGER,
-    target: Option<ComPtr<ID2D1DeviceContext>>,
-    factory: Option<ComPtr<ID2D1Factory1>>,
-    swap_chain: Option<ComPtr<IDXGISwapChain1>>,
-    manager: Option<ComPtr<IUIAnimationManager>>,
-    clock: Option<ComPtr<ID2D1Bitmap1>>,
-    style: Option<ComPtr<ID2D1StrokeStyle1>>,
-    brush: Option<ComPtr<ID2D1SolidColorBrush>>,
-    variable: Option<ComPtr<IUIAnimationVariable>>,
+struct Clock {
+    dpi: f32,
+    device_independent_resources: DeviceIndependentResources,
+    device_dependent_resources: DeviceDependentResources,
 }
 
-impl Default for DesktopWindow {
-    fn default() -> Self {
-        DesktopWindow {
-            window: std::ptr::null_mut(),
-            dpix: Default::default(),
-            visible: false,
-            orientation: winapi::um::d2d1::D2D1_MATRIX_3X2_F::default(),
-            frequency: Default::default(),
-            target: None,
-            factory: None,
-            swap_chain: None,
-            manager: None,
-            clock: None,
-            style: None,
-            brush: None,
-            variable: None,
-        }
-    }
-}
-
-impl DesktopWindow {
-    fn new(dpix: f32) -> Self {
+impl Clock {
+    fn new(
+        dpi: f32,
+        device_independent_resources: DeviceIndependentResources,
+        device_dependent_resources: DeviceDependentResources,
+    ) -> Self {
         Self {
-            dpix,
-            ..Default::default()
-        }
-    }
-
-    unsafe extern "system" fn window_proc(
-        window: winapi::shared::windef::HWND,
-        message: u32,
-        wparam: winapi::shared::minwindef::WPARAM,
-        lparam: winapi::shared::minwindef::LPARAM,
-    ) -> winapi::shared::minwindef::LRESULT {
-        if winapi::um::winuser::WM_NCCREATE == message {
-            let cs = lparam as *mut winapi::um::winuser::CREATESTRUCTA;
-            let that = (*cs).lpCreateParams as *mut DesktopWindow;
-            (*that).window = window;
-            winapi::um::winuser::SetWindowLongPtrA(
-                window,
-                winapi::um::winuser::GWLP_USERDATA,
-                that as isize,
-            );
-        } else {
-            let that =
-                winapi::um::winuser::GetWindowLongPtrA(window, winapi::um::winuser::GWLP_USERDATA);
-            let that = that as usize as *mut DesktopWindow;
-            if !that.is_null() {
-                return (*that).message_handler(message, wparam, lparam);
-            }
-        }
-
-        winapi::um::winuser::DefWindowProcA(window, message, wparam, lparam)
-    }
-
-    unsafe fn message_handler(
-        &mut self,
-        message: u32,
-        wparam: winapi::shared::minwindef::WPARAM,
-        lparam: winapi::shared::minwindef::LPARAM,
-    ) -> winapi::shared::minwindef::LRESULT {
-        match message {
-            winapi::um::winuser::WM_DESTROY => {
-                winapi::um::winuser::PostQuitMessage(0);
-                0
-            }
-            winapi::um::winuser::WM_PAINT => {
-                let ps = &mut winapi::um::winuser::PAINTSTRUCT::default();
-                check_bool!(winapi::um::winuser::BeginPaint(self.window, ps as *mut _));
-                self.render();
-                check_bool!(!winapi::um::winuser::EndPaint(self.window, ps as *mut _));
-                0
-            }
-            winapi::um::winuser::WM_SIZE => {
-                if self.target.is_some() && winapi::um::winuser::SIZE_MINIMIZED != wparam {
-                    // resize_swapchain_bitmap();
-                    self.render();
-                }
-
-                0
-            }
-            winapi::um::winuser::WM_DISPLAYCHANGE => {
-                self.render();
-                0
-            }
-            winapi::um::winuser::WM_USER => {
-                // if (S_OK == m_swapChain->Present(0, DXGI_PRESENT_TEST))
-                // {
-                //     m_dxfactory->UnregisterOcclusionStatus(m_occlusion);
-                //     m_occlusion = 0;
-                //     m_visible = true;
-                // }
-
-                0
-            }
-            winapi::um::winuser::WM_POWERBROADCAST => {
-                let ps = lparam as *const winapi::um::winuser::POWERBROADCAST_SETTING;
-                self.visible = (*ps).Data != [0];
-
-                if self.visible {
-                    winapi::um::winuser::PostMessageA(
-                        self.window,
-                        winapi::um::winuser::WM_NULL,
-                        0,
-                        0,
-                    );
-                }
-
-                winapi::shared::minwindef::TRUE as isize
-            }
-            winapi::um::winuser::WM_ACTIVATE => {
-                self.visible = !winapi::shared::minwindef::HIWORD(wparam as u32).to_bool();
-                0
-            }
-            winapi::um::winuser::WM_GETMINMAXINFO => {
-                let info = lparam as *mut winapi::um::winuser::MINMAXINFO;
-                (*info).ptMinTrackSize.y = 200;
-                0
-            }
-            _ => winapi::um::winuser::DefWindowProcA(self.window, message, wparam, lparam),
+            dpi,
+            device_independent_resources,
+            device_dependent_resources,
         }
     }
 
     fn render(&mut self) {
-        let (target, swap_chain) = match self.target {
-            None => {
-                let mut device = create_device();
-                let target = create_render_target(self.factory.as_ref().unwrap(), &mut device);
-                self.target = Some(target.clone());
-                let swap_chain = create_swapchain(&device, self.window);
-                self.swap_chain = Some(swap_chain.clone());
-
-                create_swapchain_bitmap(&swap_chain, &target);
-
-                unsafe { target.set_dpi(self.dpix, self.dpix) };
-
-                self.create_device_resources();
-                self.create_device_size_resources();
-                (target, swap_chain)
-            }
-            Some(ref t) => (t.clone(), self.swap_chain.as_ref().unwrap().clone()),
-        };
-
-        unsafe { target.begin_draw() };
+        unsafe { self.device_dependent_resources.target.begin_draw() };
         self.draw();
         let hr = unsafe {
-            target.end_draw(std::ptr::null_mut(), std::ptr::null_mut());
-            swap_chain.present(1, 0)
+            self.device_dependent_resources
+                .target
+                .end_draw(std::ptr::null_mut(), std::ptr::null_mut());
+            self.device_dependent_resources.swap_chain.present(1, 0)
         };
 
         match hr {
@@ -288,7 +145,7 @@ impl DesktopWindow {
                 //     winapi::um::winuser::WM_USER,
                 //     &self.occlusion
                 // ));
-                self.visible = false;
+                // self.visible = false;
             }
             _ => {
                 //     release_device();
@@ -300,19 +157,18 @@ impl DesktopWindow {
         let mut orientation = winapi::um::dcommon::D2D_MATRIX_3X2_F::default();
         orientation.matrix[0][0] = 1.0;
         orientation.matrix[1][1] = 1.0;
-        self.orientation = orientation;
+        // self.orientation = orientation;
         let offset = winapi::um::d2d1::D2D1_SIZE_F {
             width: 5.0,
             height: 5.0,
         };
         unsafe {
-            let time = self.get_time();
+            let time = get_time(self.device_independent_resources.animation_frequency);
             HR!(self
-                .manager
-                .as_ref()
-                .unwrap()
+                .device_independent_resources
+                .animation_manager
                 .update(time, std::ptr::null_mut()));
-            let target = self.target.clone().unwrap();
+            let target = &self.device_dependent_resources.target;
             target.set_unit_mode(winapi::um::d2d1_1::D2D1_UNIT_MODE_PIXELS);
             let color_white = winapi::um::d2d1::D2D1_COLOR_F {
                 r: 1.0,
@@ -324,10 +180,12 @@ impl DesktopWindow {
             target.set_unit_mode(winapi::um::d2d1_1::D2D1_UNIT_MODE_DIPS);
             let mut previous: Option<ID2D1Image> = None;
             target.get_target(&mut previous);
-            let clock = self.clock.clone().unwrap();
+            let clock = &self.device_dependent_resources.clock;
             target.set_target(clock.get());
             target.clear(std::ptr::null());
             self.draw_clock();
+            let clock = &self.device_dependent_resources.clock;
+            let target = &self.device_dependent_resources.target;
             target.set_target(previous.unwrap());
             let mut transform = winapi::um::d2d1::D2D1_MATRIX_3X2_F::default();
             transform.matrix[0][0] = 1.0;
@@ -359,7 +217,7 @@ impl DesktopWindow {
     }
 
     fn draw_clock(&mut self) {
-        let target = self.target.as_ref().unwrap();
+        let target = &self.device_dependent_resources.target;
         unsafe {
             let mut size = std::mem::zeroed();
             target.get_size(&mut size);
@@ -376,7 +234,7 @@ impl DesktopWindow {
             target.set_transform(&translation);
             target.get_transform(&mut translation);
 
-            let brush = self.brush.as_ref().map(|b| b.get()).unwrap();
+            let brush = self.device_dependent_resources.brush.get();
             let ellipse = winapi::um::d2d1::D2D1_ELLIPSE {
                 point: winapi::um::d2d1::D2D1_POINT_2F::default(),
                 radiusX: 50.0,
@@ -398,7 +256,10 @@ impl DesktopWindow {
             let hour_angle = (time.wHour % 12) as f64 * 30.0 + minute_angle / 12.0;
 
             let mut swing = 0.0;
-            HR!(self.variable.as_ref().unwrap().get_value(&mut swing));
+            HR!(self
+                .device_independent_resources
+                .animation_variable
+                .get_value(&mut swing));
 
             if 1.0 > swing {
                 // static secondPrevious: f64 = second_angle;
@@ -431,9 +292,9 @@ impl DesktopWindow {
             target.draw_line(
                 zero,
                 end,
-                self.brush.as_mut().unwrap().get(),
+                self.device_dependent_resources.brush.get(),
                 radius / 25.0,
-                self.style.as_mut().unwrap().get(),
+                self.device_independent_resources.style.get(),
             );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(minuteAngle) * m_orientation * translation);
@@ -441,9 +302,9 @@ impl DesktopWindow {
             target.draw_line(
                 zero,
                 end,
-                self.brush.as_mut().unwrap().get(),
+                self.device_dependent_resources.brush.get(),
                 radius / 15.0,
-                self.style.as_mut().unwrap().get(),
+                self.device_independent_resources.style.get(),
             );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(hourAngle) * m_orientation * translation);
@@ -455,136 +316,11 @@ impl DesktopWindow {
             target.draw_line(
                 zero,
                 end,
-                self.brush.as_mut().unwrap().get(),
+                self.device_dependent_resources.brush.get(),
                 radius / 10.0,
-                self.style.as_mut().unwrap().get(),
+                self.device_independent_resources.style.get(),
             );
         }
-    }
-
-    fn get_time(&self) -> f64 {
-        let mut time = winapi::shared::ntdef::LARGE_INTEGER::default();
-        unsafe {
-            check_bool!(winapi::um::profileapi::QueryPerformanceCounter(&mut time));
-            *time.QuadPart() as f64 / *self.frequency.QuadPart() as f64
-        }
-    }
-
-    fn create_device_independent_resources(&mut self) {
-        let mut style = winapi::um::d2d1_1::D2D1_STROKE_STYLE_PROPERTIES1::default();
-        style.startCap = winapi::um::d2d1::D2D1_CAP_STYLE_ROUND;
-        style.endCap = winapi::um::d2d1::D2D1_CAP_STYLE_TRIANGLE;
-
-        unsafe {
-            HR!(self.factory.as_ref().unwrap().create_stroke_style(
-                &style,
-                std::ptr::null_mut(),
-                0,
-                &mut self.style
-            ));
-        }
-
-        self.schedule_animation();
-    }
-
-    fn schedule_animation(&mut self) {
-        let class_id = com::CLSID {
-            data1: 0x4C1FC63A,
-            data2: 0x695C,
-            data3: 0x47E8,
-            data4: [0xA3, 0x39, 0x1A, 0x19, 0x4B, 0xE3, 0xD0, 0xB8],
-        };
-        let manager = com::runtime::create_instance::<IUIAnimationManager>(&class_id).unwrap();
-        self.manager = Some(manager.clone());
-
-        let class_id = com::CLSID {
-            // 1D6322AD-AA85-4EF5-A828-86D71067D145
-            data1: 0x1D6322AD,
-            data2: 0xAA85,
-            data3: 0x4EF5,
-            data4: [0xA8, 0x28, 0x86, 0xD7, 0x10, 0x67, 0xD1, 0x45],
-        };
-        let library: ComPtr<IUIAnimationTransitionLibrary> =
-            com::runtime::create_instance(&class_id).unwrap();
-        unsafe {
-            check_bool!(winapi::um::profileapi::QueryPerformanceFrequency(
-                &mut self.frequency
-            ));
-
-            let mut transition: Option<IUIAnimationTransition> = None;
-
-            HR!(library.create_accelerate_decelerate_transition(
-                5.0,
-                1.0,
-                0.2,
-                0.8,
-                &mut transition,
-            ));
-
-            HR!(manager.create_animation_variable(0.0, &mut self.variable));
-
-            let variable = self.variable.as_ref().unwrap();
-
-            HR!(manager.schedule_transition(variable, transition.unwrap(), self.get_time()));
-        }
-    }
-
-    fn create_device_resources(&mut self) {
-        let color_orange = winapi::um::d2d1::D2D1_COLOR_F {
-            r: 0.92,
-            g: 0.38,
-            b: 0.208,
-            a: 1.0,
-        };
-
-        let mut props = winapi::um::d2d1::D2D1_BRUSH_PROPERTIES::default();
-        props.opacity = 0.8;
-
-        unsafe {
-            let brush = &mut self.brush;
-
-            HR!(self.target.as_ref().unwrap().create_solid_color_brush(
-                &color_orange,
-                &props,
-                brush
-            ));
-        }
-    }
-
-    fn create_device_size_resources(&mut self) {
-        let target = self.target.as_ref().unwrap();
-        unsafe {
-            let mut size = std::mem::zeroed();
-            target.get_size(&mut size);
-            let size = winapi::um::dcommon::D2D_SIZE_U {
-                width: size.width as u32,
-                height: size.height as u32,
-            };
-
-            let props = winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1 {
-                pixelFormat: winapi::um::dcommon::D2D1_PIXEL_FORMAT {
-                    format: winapi::shared::dxgiformat::DXGI_FORMAT_B8G8R8A8_UNORM,
-                    alphaMode: winapi::um::dcommon::D2D1_ALPHA_MODE_PREMULTIPLIED,
-                },
-                dpiX: self.dpix,
-                dpiY: self.dpix,
-                bitmapOptions: winapi::um::d2d1_1::D2D1_BITMAP_OPTIONS_TARGET,
-                colorContext: std::ptr::null_mut(),
-            };
-
-            self.clock = None;
-
-            HR!(target.create_bitmap(size, std::ptr::null(), 0, &props, &mut self.clock));
-        }
-
-        // m_shadow = nullptr;
-
-        // struct __declspec(uuid("C67EA361-1863-4e69-89DB-695D3E9A5B6B")) Direct2DShadow;
-
-        // check_hresult(m_target->CreateEffect(__uuidof(Direct2DShadow),
-        //     m_shadow.put()));
-
-        // m_shadow->SetInput(0, m_clock.get());
     }
 }
 
@@ -614,8 +350,6 @@ fn create_swapchain_bitmap(
         target.set_target(bitmap.unwrap());
     }
 }
-
-extern "system" {}
 
 fn create_swapchain(
     device: &ComPtr<ID3D11Device>,
@@ -678,7 +412,7 @@ fn create_render_target(
         target
     };
 
-    ComPtr::new(target.unwrap())
+    target.unwrap().upgrade()
 }
 
 fn create_device() -> ComPtr<ID3D11Device> {
@@ -718,77 +452,207 @@ fn create_device() -> ComPtr<ID3D11Device> {
     device.unwrap()
 }
 
-impl Window for DesktopWindow {
-    fn run(&mut self) {
-        let factory = create_factory().upgrade();
-        self.factory = Some(factory.clone());
-        let mut dxgi_factory: Option<IDXGIFactory2> = None;
-        let _dxgi_factory = unsafe {
-            HR!(winapi::shared::dxgi::CreateDXGIFactory1(
-                &IDXGIFactory2::IID as *const _ as _,
-                &mut dxgi_factory as *mut _ as _,
-            ));
-            dxgi_factory.unwrap().upgrade()
-        };
-        let mut dpiy: f32 = 0.0;
-        unsafe {
-            factory.get_desktop_dpi(&mut self.dpix, &mut dpiy);
-            self.create_device_independent_resources();
-
-            check_bool!(winapi::um::winuser::RegisterPowerSettingNotification(
-                self.window as _,
-                &winapi::um::winnt::GUID_SESSION_DISPLAY_STATUS,
-                winapi::um::winuser::DEVICE_NOTIFY_WINDOW_HANDLE,
-            ))
-        }
-        let mut message = winapi::um::winuser::MSG::default();
-        loop {
-            if self.visible {
-                self.render();
-
-                unsafe {
-                    while winapi::um::winuser::PeekMessageA(
-                        &mut message,
-                        std::ptr::null_mut(),
-                        0,
-                        0,
-                        winapi::um::winuser::PM_REMOVE,
-                    )
-                    .to_bool()
-                    {
-                        winapi::um::winuser::DispatchMessageA(&message);
-                    }
-                }
-            } else {
-                unsafe {
-                    let result =
-                        winapi::um::winuser::GetMessageA(&mut message, std::ptr::null_mut(), 0, 0);
-                    if result.to_bool() {
-                        if result != -1 {
-                            winapi::um::winuser::DispatchMessageA(&message);
-                        }
-                    }
-                }
-            }
-
-            if winapi::um::winuser::WM_QUIT == message.message {
-                break;
-            }
-        }
-    }
-}
-
-fn create_factory() -> ID2D1Factory1 {
-    let fo = &winapi::um::d2d1::D2D1_FACTORY_OPTIONS::default();
+fn create_d2d_factory() -> ComPtr<ID2D1Factory1> {
+    let options = &winapi::um::d2d1::D2D1_FACTORY_OPTIONS::default();
     let mut factory: Option<ID2D1Factory1> = None;
     unsafe {
         HR!(winapi::um::d2d1::D2D1CreateFactory(
             winapi::um::d2d1::D2D1_FACTORY_TYPE_SINGLE_THREADED,
             &ID2D1Factory1::IID as *const _ as _,
-            fo as *const _,
+            options,
             &mut factory as *mut _ as _,
         ));
-        factory.unwrap()
+    }
+    factory.unwrap().upgrade()
+}
+
+fn create_dxgi_factory() -> ComPtr<IDXGIFactory2> {
+    let mut dxgi_factory: Option<IDXGIFactory2> = None;
+    unsafe {
+        HR!(winapi::shared::dxgi::CreateDXGIFactory1(
+            &IDXGIFactory2::IID as *const _ as _,
+            &mut dxgi_factory as *mut _ as _,
+        ));
+    };
+    dxgi_factory.unwrap().upgrade()
+}
+
+fn get_dpi(factory: &ComPtr<ID2D1Factory1>) -> f32 {
+    let mut dpix: f32 = 0.0;
+    let mut dpiy: f32 = 0.0;
+    unsafe {
+        factory.get_desktop_dpi(&mut dpix, &mut dpiy);
+    }
+    dpix
+}
+
+struct DeviceIndependentResources {
+    animation_frequency: winapi::shared::ntdef::LARGE_INTEGER,
+    animation_manager: ComPtr<IUIAnimationManager>,
+    style: ComPtr<ID2D1StrokeStyle1>,
+    animation_variable: ComPtr<IUIAnimationVariable>,
+}
+
+impl DeviceIndependentResources {
+    fn new(factory: &ComPtr<ID2D1Factory1>) -> Self {
+        let mut style_props = winapi::um::d2d1_1::D2D1_STROKE_STYLE_PROPERTIES1::default();
+        style_props.startCap = winapi::um::d2d1::D2D1_CAP_STYLE_ROUND;
+        style_props.endCap = winapi::um::d2d1::D2D1_CAP_STYLE_TRIANGLE;
+
+        let mut style: Option<ComPtr<ID2D1StrokeStyle1>> = None;
+        unsafe {
+            HR!(factory.create_stroke_style(&style_props, std::ptr::null_mut(), 0, &mut style));
+        }
+        let style = style.unwrap();
+
+        let class_id = com::CLSID {
+            data1: 0x4C1FC63A,
+            data2: 0x695C,
+            data3: 0x47E8,
+            data4: [0xA3, 0x39, 0x1A, 0x19, 0x4B, 0xE3, 0xD0, 0xB8],
+        };
+        let animation_manager =
+            com::runtime::create_instance::<IUIAnimationManager>(&class_id).unwrap();
+
+        let mut animation_frequency = winapi::shared::ntdef::LARGE_INTEGER::default();
+        let mut animation_variable: Option<ComPtr<IUIAnimationVariable>> = None;
+
+        let class_id = com::CLSID {
+            // 1D6322AD-AA85-4EF5-A828-86D71067D145
+            data1: 0x1D6322AD,
+            data2: 0xAA85,
+            data3: 0x4EF5,
+            data4: [0xA8, 0x28, 0x86, 0xD7, 0x10, 0x67, 0xD1, 0x45],
+        };
+        let library: ComPtr<IUIAnimationTransitionLibrary> =
+            com::runtime::create_instance(&class_id).unwrap();
+        let mut transition: Option<IUIAnimationTransition> = None;
+        unsafe {
+            check_bool!(winapi::um::profileapi::QueryPerformanceFrequency(
+                &mut animation_frequency
+            ));
+
+            HR!(library.create_accelerate_decelerate_transition(
+                5.0,
+                1.0,
+                0.2,
+                0.8,
+                &mut transition,
+            ));
+
+            HR!(animation_manager.create_animation_variable(0.0, &mut animation_variable));
+        }
+        let animation_variable = animation_variable.unwrap();
+
+        unsafe {
+            HR!(animation_manager.schedule_transition(
+                &animation_variable,
+                transition.unwrap(),
+                get_time(animation_frequency)
+            ));
+        }
+
+        Self {
+            animation_frequency,
+            animation_manager,
+            animation_variable,
+            style,
+        }
+    }
+}
+
+struct DeviceDependentResources {
+    target: ComPtr<ID2D1DeviceContext>,
+    swap_chain: ComPtr<IDXGISwapChain1>,
+    clock: ComPtr<ID2D1Bitmap1>,
+    brush: ComPtr<ID2D1SolidColorBrush>,
+}
+
+impl DeviceDependentResources {
+    fn new(factory: &ComPtr<ID2D1Factory1>, window: HWND, dpi: f32) -> Self {
+        let mut device = create_device();
+        let target = create_render_target(factory, &mut device);
+        let swap_chain = create_swapchain(&device, window);
+        create_swapchain_bitmap(&swap_chain, &target);
+
+        unsafe { target.set_dpi(dpi, dpi) };
+
+        let brush = create_device_resources(&target);
+        let clock = create_device_size_resources(&target, dpi);
+        Self {
+            target,
+            swap_chain,
+            brush,
+            clock,
+        }
+    }
+}
+
+fn create_device_resources(target: &ComPtr<ID2D1DeviceContext>) -> ComPtr<ID2D1SolidColorBrush> {
+    let color_orange = winapi::um::d2d1::D2D1_COLOR_F {
+        r: 0.92,
+        g: 0.38,
+        b: 0.208,
+        a: 1.0,
+    };
+
+    let mut props = winapi::um::d2d1::D2D1_BRUSH_PROPERTIES::default();
+    props.opacity = 0.8;
+
+    let mut brush = Option::<ComPtr<ID2D1SolidColorBrush>>::None;
+    unsafe {
+        HR!(target.create_solid_color_brush(&color_orange, &props, &mut brush));
+    }
+    brush.unwrap()
+}
+
+fn create_device_size_resources(
+    target: &ComPtr<ID2D1DeviceContext>,
+    dpi: f32,
+) -> ComPtr<ID2D1Bitmap1> {
+    let size = unsafe {
+        let mut size = std::mem::zeroed();
+        target.get_size(&mut size);
+        size
+    };
+    let size = winapi::um::dcommon::D2D_SIZE_U {
+        width: size.width as u32,
+        height: size.height as u32,
+    };
+
+    let props = winapi::um::d2d1_1::D2D1_BITMAP_PROPERTIES1 {
+        pixelFormat: winapi::um::dcommon::D2D1_PIXEL_FORMAT {
+            format: winapi::shared::dxgiformat::DXGI_FORMAT_B8G8R8A8_UNORM,
+            alphaMode: winapi::um::dcommon::D2D1_ALPHA_MODE_PREMULTIPLIED,
+        },
+        dpiX: dpi,
+        dpiY: dpi,
+        bitmapOptions: winapi::um::d2d1_1::D2D1_BITMAP_OPTIONS_TARGET,
+        colorContext: std::ptr::null_mut(),
+    };
+    let mut clock = Option::<ID2D1Bitmap1>::None;
+    unsafe {
+        HR!(target.create_bitmap(size, std::ptr::null(), 0, &props, &mut clock));
+    }
+
+    // m_shadow = nullptr;
+
+    // struct __declspec(uuid("C67EA361-1863-4e69-89DB-695D3E9A5B6B")) Direct2DShadow;
+
+    // check_hresult(m_target->CreateEffect(__uuidof(Direct2DShadow),
+    //     m_shadow.put()));
+
+    // m_shadow->SetInput(0, m_clock.get());
+    clock.unwrap().upgrade().into()
+}
+
+use winapi::shared::ntdef::LARGE_INTEGER;
+
+fn get_time(frequency: LARGE_INTEGER) -> f64 {
+    let mut time = LARGE_INTEGER::default();
+    unsafe {
+        check_bool!(winapi::um::profileapi::QueryPerformanceCounter(&mut time));
+        *time.QuadPart() as f64 / *frequency.QuadPart() as f64
     }
 }
 
