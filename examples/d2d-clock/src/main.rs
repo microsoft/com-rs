@@ -661,6 +661,7 @@ fn create_device_size_resources(target: &ID2D1DeviceContext, dpi: f32) -> ID2D1B
 }
 
 #[derive(Copy, Clone)]
+#[repr(transparent)]
 struct FFISafe<T>(T);
 
 unsafe impl<T: Copy> com::AbiTransferable for FFISafe<T> {
