@@ -18,20 +18,21 @@
 
 #![deny(missing_docs)]
 
-mod com_interface_param;
+mod abi_transferable;
 pub mod interfaces;
 #[doc(hidden)]
 pub mod offset;
-mod ptr;
+mod param;
 #[doc(hidden)]
 pub mod registration;
 pub mod runtime;
 pub mod sys;
 
 #[doc(inline)]
-pub use com_interface_param::ComInterfaceParam;
+pub use abi_transferable::AbiTransferable;
 use interfaces::IUnknown;
-pub use ptr::ComPtr;
+#[doc(inline)]
+pub use param::Param;
 #[doc(inline)]
 pub use sys::{CLSID, IID};
 
@@ -63,41 +64,9 @@ pub unsafe trait ComInterface: Sized + 'static {
                 && <Self::Super as ComInterface>::is_iid_in_inheritance_chain(riid))
     }
 
-    /// Cast the COM interface pointer to a raw pointer
-    ///
-    /// The returned pointer is only guranteed valid for as long
-    /// as the reference to self id valid.
-    fn as_raw(&self) -> std::ptr::NonNull<*const Self::VTable> {
-        unsafe { std::mem::transmute_copy(self) }
-    }
-
     /// Cast the interface pointer to a pointer to IUnknown.
     fn as_iunknown(&self) -> &IUnknown {
         unsafe { std::mem::transmute(self) }
-    }
-
-    /// Upgrade the interface pointer so that Release gets automatically called on drop
-    fn upgrade(self) -> ComPtr<Self> {
-        ComPtr::new(self)
-    }
-
-    /// Treat `ptr` as a ComInterface
-    ///
-    /// # Safety
-    /// The ptr must be valid. This action is treated as a move where ownership
-    /// of the pointer now resides in self. The interface pointer to must have a
-    /// reference count of at least one.
-    unsafe fn from_raw(ptr: std::ptr::NonNull<*const Self::VTable>) -> Self {
-        std::mem::transmute_copy(&ptr.as_ptr())
-    }
-
-    /// aliases the ComInterface
-    ///
-    /// # Safety
-    /// The aliased copy of the interface must only live for at most as long
-    /// as `self` otherwise a use-after-free is possible
-    unsafe fn alias(&self) -> Self {
-        std::mem::transmute_copy(self)
     }
 }
 

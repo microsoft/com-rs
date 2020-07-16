@@ -9,7 +9,7 @@ pub fn generate(interface: &Interface) -> TokenStream {
 
     quote!(
         #[allow(missing_docs)]
-        pub type #vptr_ident = *const #vtable_ident;
+        pub type #vptr_ident = ::std::ptr::NonNull<#vtable_ident>;
     )
 }
 

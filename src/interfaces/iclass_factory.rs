@@ -15,7 +15,7 @@ com_interface! {
         /// the [CreateInstance](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iclassfactory-createinstance) COM method
         unsafe fn create_instance(
             &self,
-            aggr: *mut IUnknownVPtr,
+            aggr: *mut c_void,
             riid: *const GUID,
             ppv: *mut *mut c_void,
         ) -> HRESULT;

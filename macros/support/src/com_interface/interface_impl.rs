@@ -14,12 +14,18 @@ pub fn generate(interface: &Interface) -> TokenStream {
     }
 
     let deref = deref_impl(interface);
+    let drop = drop_impl(interface);
+    let clone = clone_impl(interface);
+    let abi = abi_impl(interface);
 
     quote! {
         impl #interface_name {
             #(#impl_methods)*
         }
         #deref
+        #drop
+        #clone
+        #abi
     }
 }
 
@@ -40,6 +46,52 @@ fn deref_impl(interface: &Interface) -> TokenStream {
     }
 }
 
+fn drop_impl(interface: &Interface) -> TokenStream {
+    let name = &interface.name;
+
+    quote! {
+        impl Drop for #name {
+            fn drop(&mut self) {
+                unsafe {
+                    self.as_iunknown().release();
+                }
+            }
+        }
+    }
+}
+
+fn clone_impl(interface: &Interface) -> TokenStream {
+    let name = &interface.name;
+
+    quote! {
+        impl ::std::clone::Clone for #name {
+            fn clone(&self) -> Self {
+                unsafe {
+                    self.as_iunknown().add_ref();
+                }
+                Self {
+                    inner: self.inner
+                }
+            }
+        }
+    }
+}
+
+fn abi_impl(interface: &Interface) -> TokenStream {
+    let name = &interface.name;
+
+    quote! {
+        unsafe impl ::com::AbiTransferable for #name {
+            type Abi = std::ptr::NonNull<std::ptr::NonNull<<#name as ::com::ComInterface>::VTable>>;
+            fn get_abi(&self) -> Self::Abi {
+                self.inner
+            }
+            fn set_abi(&mut self) -> *mut Self::Abi {
+                &mut self.inner
+            }
+        }
+    }
+}
 fn gen_impl_method(method: &InterfaceMethod) -> TokenStream {
     let inner_method_ident =
         format_ident!("{}", crate::utils::snake_to_camel(&method.name.to_string()));
@@ -49,14 +101,19 @@ fn gen_impl_method(method: &InterfaceMethod) -> TokenStream {
     let return_type = &method.ret;
 
     let mut generics = Vec::new();
+    if method.args.len() > 0 {
+        generics.push(quote! { 'a })
+    }
     let mut params = vec![quote!(#interface_ptr_ident)];
     let mut args = Vec::new();
     let mut into = Vec::new();
     for (index, syn::PatType { pat, ty, .. }) in method.args.iter().enumerate() {
         let generic = quote::format_ident!("__{}", index);
         args.push(quote! { #pat: #generic });
-        generics.push(quote! { #generic: ::com::ComInterfaceParam<#ty> });
-        into.push(quote! { let #pat = unsafe { #pat.into() }; });
+        generics.push(quote! { #generic: ::std::convert::Into<::com::Param<'a, #ty>> });
+        into.push(quote! {
+            let #pat = #pat.into().get_abi();
+        });
         params.push(pat.to_token_stream());
     }
 
@@ -65,8 +122,8 @@ fn gen_impl_method(method: &InterfaceMethod) -> TokenStream {
         #(#docs)*
         pub unsafe fn #outer_method_ident<#(#generics),*>(&self, #(#args),*) #return_type {
             #(#into)*
-            let #interface_ptr_ident = <Self as ::com::ComInterface>::as_raw(self);
-            ((**#interface_ptr_ident.as_ptr()).#inner_method_ident)(#(#params),*)
+            let #interface_ptr_ident = <Self as ::com::AbiTransferable>::get_abi(self);
+            (#interface_ptr_ident.as_ref().as_ref().#inner_method_ident)(#(#params),*)
         }
     };
 }
