@@ -207,9 +207,15 @@ impl syn::parse::Parse for ParenthsizedStr {
 pub struct InterfaceMethod {
     pub name: Ident,
     pub visibility: Visibility,
-    pub args: Vec<syn::PatType>,
+    pub args: Vec<InterfaceMethodArg>,
     pub ret: syn::ReturnType,
     pub docs: Vec<syn::Attribute>,
+}
+
+pub struct InterfaceMethodArg {
+    pub ty: Box<syn::Type>,
+    pub pat: Box<syn::Pat>,
+    pub pass_through: bool,
 }
 
 macro_rules! bail {
@@ -259,10 +265,21 @@ impl syn::parse::Parse for InterfaceMethod {
                 syn::FnArg::Typed(p) => Some(p),
             })
             .map(|p| {
-                unexpected_token!(p.attrs.iter().next(), "function attribute");
-                Ok(p)
+                let mut filter = p
+                    .attrs
+                    .iter()
+                    .filter(|a| a.path.is_ident("pass_through"))
+                    .fuse();
+                let pass_through = filter.next().is_some();
+
+                unexpected_token!(filter.next(), "function attribute");
+                Ok(InterfaceMethodArg {
+                    ty: p.ty,
+                    pat: p.pat,
+                    pass_through,
+                })
             })
-            .collect::<Result<Vec<syn::PatType>, syn::Error>>()?;
+            .collect::<Result<Vec<InterfaceMethodArg>, syn::Error>>()?;
 
         let ret = sig.output;
         Ok(InterfaceMethod {
@@ -291,16 +308,23 @@ impl InterfaceMethod {
         let mut params = vec![quote!(#interface_ptr_ident)];
         let mut args = Vec::new();
         let mut into = Vec::new();
-        for (index, syn::PatType { pat, ty, .. }) in self.args.iter().enumerate() {
-            let generic = quote::format_ident!("__{}", index);
-            args.push(quote! { #pat: #generic });
-            generics.push(quote! { #generic: ::std::convert::Into<::com::Param<'a, #ty>> });
-            // note: we separate the call to `into` and `get_abi` so that the `param`
-            // binding lives to the end of the method.
-            into.push(quote! {
-                let mut param = #pat.into();
-                let #pat = param.get_abi();
-            });
+        for (index, arg) in self.args.iter().enumerate() {
+            let pat = &arg.pat;
+            let ty = &arg.ty;
+            if arg.pass_through {
+                args.push(quote! { #pat: #ty });
+            } else {
+                let generic = quote::format_ident!("__{}", index);
+                args.push(quote! { #pat: #generic });
+                generics.push(quote! { #generic: ::std::convert::Into<::com::Param<'a, #ty>> });
+
+                // note: we separate the call to `into` and `get_abi` so that the `param`
+                // binding lives to the end of the method.
+                into.push(quote! {
+                    let mut param = #pat.into();
+                    let #pat = param.get_abi();
+                });
+            }
             params.push(pat.to_token_stream());
         }
 

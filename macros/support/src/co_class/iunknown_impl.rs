@@ -21,7 +21,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
             #query_interface
 
             ::com::interfaces::IUnknown::VTable {
-                AddRef: add_ref ,
+                AddRef: add_ref,
                 Release: release,
                 QueryInterface: query_interface,
             }

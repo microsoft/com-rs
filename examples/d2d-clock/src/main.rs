@@ -243,8 +243,8 @@ impl Clock {
                 clock,
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
-                FFISafe(D2D1_INTERPOLATION_MODE::default()),
-                FFISafe(D2D1_COMPOSITE_MODE::default()),
+                D2D1_INTERPOLATION_MODE::default(),
+                D2D1_COMPOSITE_MODE::default(),
             );
         }
     }
@@ -318,8 +318,8 @@ impl Clock {
                 y: -(radius * 0.75),
             };
             target.draw_line(
-                FFISafe(zero),
-                FFISafe(end),
+                zero,
+                end,
                 &self.device_dependent_resources.brush,
                 radius / 25.0,
                 &self.device_independent_resources.style,
@@ -328,8 +328,8 @@ impl Clock {
             // m_target->SetTransform(Matrix3x2F::Rotation(minuteAngle) * m_orientation * translation);
 
             target.draw_line(
-                FFISafe(zero),
-                FFISafe(end),
+                zero,
+                end,
                 &self.device_dependent_resources.brush,
                 radius / 15.0,
                 &self.device_independent_resources.style,
@@ -342,8 +342,8 @@ impl Clock {
                 y: -(radius * 0.5),
             };
             target.draw_line(
-                FFISafe(zero),
-                FFISafe(end),
+                zero,
+                end,
                 &self.device_dependent_resources.brush,
                 radius / 10.0,
                 &self.device_independent_resources.style,
@@ -641,7 +641,7 @@ fn create_device_size_resources(target: &ID2D1DeviceContext, dpi: f32) -> ID2D1B
     };
     let mut clock = None;
     unsafe {
-        HR!(target.create_bitmap(FFISafe(size), std::ptr::null(), 0, &props, &mut clock));
+        HR!(target.create_bitmap(size, std::ptr::null(), 0, &props, &mut clock));
     }
 
     // m_shadow = nullptr;
@@ -653,20 +653,6 @@ fn create_device_size_resources(target: &ID2D1DeviceContext, dpi: f32) -> ID2D1B
 
     // m_shadow->SetInput(0, m_clock.get());
     clock.unwrap().into()
-}
-
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-struct FFISafe<T>(T);
-
-unsafe impl<T: Copy> com::AbiTransferable for FFISafe<T> {
-    type Abi = Self;
-    fn get_abi(&self) -> Self::Abi {
-        *self
-    }
-    fn set_abi(&mut self) -> *mut Self::Abi {
-        self
-    }
 }
 
 fn get_time(frequency: LARGE_INTEGER) -> f64 {
@@ -729,7 +715,8 @@ com_interface! {
     unsafe interface ID2D1DeviceContext: ID2D1RenderTarget {
         fn create_bitmap(
             &self,
-            size: FFISafe<d2d1::D2D1_SIZE_U>,
+            #[pass_through]
+            size: d2d1::D2D1_SIZE_U,
             source_data: *const c_void,
             pitch: u32,
             bitmap_properties: *const D2D1_BITMAP_PROPERTIES1,
@@ -753,8 +740,10 @@ com_interface! {
             image: ID2D1Image,
             target_offset: *const d2d1::D2D1_POINT_2F,
             image_rectangle: *const d2d1::D2D1_RECT_F,
-            interpolation_mode: FFISafe<D2D1_INTERPOLATION_MODE>,
-            composite_mode: FFISafe<D2D1_COMPOSITE_MODE>,
+            #[pass_through]
+            interpolation_mode: D2D1_INTERPOLATION_MODE,
+            #[pass_through]
+            composite_mode: D2D1_COMPOSITE_MODE,
         );
     }
 
@@ -779,8 +768,10 @@ com_interface! {
         ...6
         fn draw_line(
             &self,
-            point0: FFISafe<d2d1::D2D1_POINT_2F>,
-            point1: FFISafe<d2d1::D2D1_POINT_2F>,
+            #[pass_through]
+            point0: d2d1::D2D1_POINT_2F,
+            #[pass_through]
+            point1: d2d1::D2D1_POINT_2F,
             brush: ID2D1Brush,
             stroke_width: f32,
             stroke_type: ID2D1StrokeStyle

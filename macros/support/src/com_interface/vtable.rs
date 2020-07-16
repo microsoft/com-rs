@@ -103,14 +103,19 @@ fn gen_raw_params(interface_ident: &Ident, method: &InterfaceMethod) -> syn::Res
     )];
 
     for param in method.args.iter() {
-        params.push(gen_raw_type(&*param.ty)?);
+        params.push(gen_raw_type(param)?);
     }
 
     Ok(TokenStream::from_iter(params))
 }
 
-fn gen_raw_type(t: &Type) -> syn::Result<TokenStream> {
+fn gen_raw_type(p: &super::interface::InterfaceMethodArg) -> syn::Result<TokenStream> {
+    let t = &*p.ty;
     let ty = match t {
+        Type::Path(_) | Type::Ptr(_) if !p.pass_through => {
+            return Ok(quote!(<#t as ::com::AbiTransferable>::Abi,))
+        }
+        Type::Path(_) | Type::Ptr(_) => return Ok(quote!(#t,)),
         Type::Array(_n) => "array type",
         Type::BareFn(_n) => "barefn type",
         Type::Group(_n) => "group type",
@@ -119,7 +124,6 @@ fn gen_raw_type(t: &Type) -> syn::Result<TokenStream> {
         Type::Macro(_n) => "typeMacro type",
         Type::Never(_n) => "typeNever type",
         Type::Paren(_n) => "paren type",
-        Type::Path(_) | Type::Ptr(_) => return Ok(quote!(<#t as ::com::AbiTransferable>::Abi,)),
         Type::Reference(_n) => "reference type",
         Type::Slice(_n) => "slice type",
         Type::TraitObject(_n) => "traitObject type",
