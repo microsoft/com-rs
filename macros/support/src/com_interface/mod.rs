@@ -1,7 +1,6 @@
 mod com_interface_impl;
 mod iid;
 mod interface;
-mod interface_impl;
 mod interfaces;
 mod vptr;
 mod vtable;
@@ -22,7 +21,6 @@ pub fn expand_com_interfaces(interfaces: Interfaces) -> TokenStream {
         out.push(interface.to_struct_tokens());
         out.push(vtable::generate(&interface).unwrap_or_else(|e| e.to_compile_error()));
         out.push(vptr::generate(&interface));
-        out.push(interface_impl::generate(&interface));
         out.push(com_interface_impl::generate(&interface));
         out.push(interface.to_iid_tokens());
     }

@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
 use syn::{Attribute, Ident, Path, Visibility};
 
@@ -20,6 +20,7 @@ impl Interface {
         let name = &self.name;
         let vptr = super::vptr::ident(&name);
         let docs = &self.docs;
+        let impl_block = self.to_impl_block();
         quote! {
             #(#docs)*
             #[repr(transparent)]
@@ -27,6 +28,7 @@ impl Interface {
             #vis struct #name {
                 inner: ::std::ptr::NonNull<#vptr>,
             }
+            #impl_block
         }
     }
 
@@ -36,6 +38,79 @@ impl Interface {
 
     pub fn is_iunknown(&self) -> bool {
         self.parent.is_none()
+    }
+
+    fn to_impl_block(&self) -> TokenStream {
+        let interface_name = &self.name;
+
+        let methods = self.methods.iter().filter_map(|m| {
+            if let MethodDecl::Method(m) = m {
+                Some(m.to_tokens())
+            } else {
+                None
+            }
+        });
+
+        let deref = self.deref_impl();
+        let drop = self.drop_impl();
+        let clone = self.clone_impl();
+
+        quote! {
+            impl #interface_name {
+                #(#methods)*
+            }
+            #deref
+            #drop
+            #clone
+        }
+    }
+
+    fn deref_impl(&self) -> TokenStream {
+        if self.is_iunknown() {
+            return quote! {};
+        }
+
+        let name = &self.name;
+
+        quote! {
+            impl ::std::ops::Deref for #name {
+                type Target = <#name as ::com::ComInterface>::Super;
+                fn deref(&self) -> &Self::Target {
+                    unsafe { ::std::mem::transmute(self) }
+                }
+            }
+        }
+    }
+
+    fn drop_impl(&self) -> TokenStream {
+        let name = &self.name;
+
+        quote! {
+            impl Drop for #name {
+                fn drop(&mut self) {
+                    unsafe {
+                        <Self as ::com::ComInterface>::as_iunknown(self).release();
+                    }
+                }
+            }
+        }
+    }
+
+    fn clone_impl(&self) -> TokenStream {
+        let name = &self.name;
+
+        quote! {
+            impl ::std::clone::Clone for #name {
+                fn clone(&self) -> Self {
+                    unsafe {
+                        <Self as ::com::ComInterface>::as_iunknown(self).add_ref();
+                    }
+                    Self {
+                        inner: self.inner
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -197,6 +272,48 @@ impl syn::parse::Parse for InterfaceMethod {
             ret,
             docs,
         })
+    }
+}
+
+impl InterfaceMethod {
+    fn to_tokens(&self) -> TokenStream {
+        let inner_method_ident =
+            format_ident!("{}", crate::utils::snake_to_camel(&self.name.to_string()));
+        let interface_ptr_ident = format_ident!("interface_ptr");
+
+        let outer_method_ident = &self.name;
+        let return_type = &self.ret;
+
+        let mut generics = Vec::new();
+        if self.args.len() > 0 {
+            generics.push(quote! { 'a })
+        }
+        let mut params = vec![quote!(#interface_ptr_ident)];
+        let mut args = Vec::new();
+        let mut into = Vec::new();
+        for (index, syn::PatType { pat, ty, .. }) in self.args.iter().enumerate() {
+            let generic = quote::format_ident!("__{}", index);
+            args.push(quote! { #pat: #generic });
+            generics.push(quote! { #generic: ::std::convert::Into<::com::Param<'a, #ty>> });
+            // note: we separate the call to `into` and `get_abi` so that the `param`
+            // binding lives to the end of the method.
+            into.push(quote! {
+                let mut param = #pat.into();
+                let #pat = param.get_abi();
+            });
+            params.push(pat.to_token_stream());
+        }
+
+        let docs = &self.docs;
+        let vis = &self.visibility;
+        return quote! {
+            #(#docs)*
+            #vis unsafe fn #outer_method_ident<#(#generics),*>(&self, #(#args),*) #return_type {
+                #(#into)*
+                let #interface_ptr_ident = <Self as ::com::AbiTransferable>::get_abi(self);
+                (#interface_ptr_ident.as_ref().as_ref().#inner_method_ident)(#(#params),*)
+            }
+        };
     }
 }
 
