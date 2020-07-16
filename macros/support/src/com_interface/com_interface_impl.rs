@@ -1,3 +1,4 @@
+use super::vtable_macro;
 use super::Interface;
 use crate::com_interface::{iid, vtable};
 
@@ -8,7 +9,7 @@ pub fn generate(interface: &Interface) -> TokenStream {
     let interface_ident = &interface.name;
     let vtable_ident = vtable::ident(&interface_ident.to_string());
     let iid_ident = iid::ident(interface_ident);
-    // let vtable_macro = vtable_macro::ident(&interface_ident);
+    let vtable_macro = vtable_macro::ident(&interface_ident);
     let parent = if let Some(p) = &interface.parent {
         quote! { #p }
     } else {
@@ -22,10 +23,10 @@ pub fn generate(interface: &Interface) -> TokenStream {
             const IID: com::sys::IID = #iid_ident;
         }
 
-        // impl com::ProductionComInterface<#interface_ident> for #interface_ident {
-        //     fn vtable<O: com::offset::Offset>() -> Self::VTable {
-        //         #vtable_macro!(#interface_ident, O)
-        //     }
-        // }
+        impl com::ProductionComInterface<#interface_ident> for #interface_ident {
+            fn vtable<O: com::offset::Offset>() -> Self::VTable {
+                #vtable_macro!(#interface_ident, O)
+            }
+        }
     }
 }

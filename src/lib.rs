@@ -98,9 +98,7 @@ pub trait ProductionComInterface<T>: ComInterface {
 #[macro_export]
 macro_rules! vtable {
     ($class:ident: $interface:ident, $offset:ident) => {
-        <dyn $interface as $crate::ProductionComInterface<$class>>::vtable::<
-            $crate::offset::$offset,
-        >();
+        <$interface as $crate::ProductionComInterface<$class>>::vtable::<$crate::offset::$offset>();
     };
     ($class:ident: $interface:ident, 4usize) => {
         $crate::vtable!($class: $interface, Four)
