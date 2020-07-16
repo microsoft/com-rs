@@ -87,7 +87,7 @@ primitive_transferable_type! {
     crate::sys::GUID
 }
 
-unsafe impl<T: AbiTransferable> AbiTransferable for *mut T {
+unsafe impl<T> AbiTransferable for *mut T {
     type Abi = Self;
     fn get_abi(&self) -> Self::Abi {
         *self
@@ -97,7 +97,7 @@ unsafe impl<T: AbiTransferable> AbiTransferable for *mut T {
     }
 }
 
-unsafe impl<T: AbiTransferable> AbiTransferable for *const T {
+unsafe impl<T> AbiTransferable for *const T {
     type Abi = Self;
     fn get_abi(&self) -> Self::Abi {
         *self
@@ -107,12 +107,29 @@ unsafe impl<T: AbiTransferable> AbiTransferable for *const T {
     }
 }
 
-unsafe impl AbiTransferable for *mut std::ffi::c_void {
-    type Abi = Self;
+unsafe impl<T: crate::ComInterface> AbiTransferable for T {
+    type Abi = std::ptr::NonNull<std::ptr::NonNull<<T as crate::ComInterface>::VTable>>;
     fn get_abi(&self) -> Self::Abi {
-        *self
+        self.as_raw()
     }
+
     fn set_abi(&mut self) -> *mut Self::Abi {
-        self as *mut Self::Abi
+        &mut self.as_raw()
+    }
+}
+
+unsafe impl<T: crate::ComInterface> AbiTransferable for Option<T> {
+    type Abi = *mut std::ptr::NonNull<<T as crate::ComInterface>::VTable>;
+    fn get_abi(&self) -> Self::Abi {
+        self.as_ref()
+            .map(|p| p.as_raw().as_ptr())
+            .unwrap_or(::std::ptr::null_mut())
+    }
+
+    fn set_abi(&mut self) -> *mut Self::Abi {
+        &mut self
+            .as_mut()
+            .map(|p| p.as_raw().as_ptr())
+            .unwrap_or(::std::ptr::null_mut())
     }
 }

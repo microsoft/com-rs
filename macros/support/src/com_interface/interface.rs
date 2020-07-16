@@ -131,6 +131,7 @@ impl syn::parse::Parse for ParenthsizedStr {
 
 pub struct InterfaceMethod {
     pub name: Ident,
+    pub visibility: Visibility,
     pub args: Vec<syn::PatType>,
     pub ret: syn::ReturnType,
     pub docs: Vec<syn::Attribute>,
@@ -160,12 +161,10 @@ macro_rules! expected_token {
 
 impl syn::parse::Parse for InterfaceMethod {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let docs = input.call(Attribute::parse_outer)?;
+        let visibility = input.parse::<syn::Visibility>()?;
         let method = input.parse::<syn::TraitItemMethod>()?;
-        unexpected_token!(
-            method.attrs.iter().find(|a| !a.path.is_ident("doc")),
-            "attribute"
-        );
-        let docs = method.attrs;
+        unexpected_token!(docs.iter().find(|a| !a.path.is_ident("doc")), "attribute");
         unexpected_token!(method.default, "default method implementation");
         let sig = method.sig;
         unexpected_token!(sig.abi, "abi declaration");
@@ -193,6 +192,7 @@ impl syn::parse::Parse for InterfaceMethod {
         let ret = sig.output;
         Ok(InterfaceMethod {
             name: sig.ident,
+            visibility,
             args,
             ret,
             docs,

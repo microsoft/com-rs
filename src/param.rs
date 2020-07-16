@@ -1,5 +1,3 @@
-use super::ComInterface;
-
 use crate::AbiTransferable;
 
 /// A COM method parameter used to accept either a reference or value.
@@ -29,5 +27,23 @@ impl<'a, T: AbiTransferable> From<T> for Param<'a, T> {
 impl<'a, T: AbiTransferable> From<&'a T> for Param<'a, T> {
     fn from(value: &'a T) -> Param<'a, T> {
         Param::Borrowed(value)
+    }
+}
+
+impl<'a, T> From<&'a T> for Param<'a, *const T> {
+    fn from(value: &'a T) -> Param<'a, *const T> {
+        Param::Owned(value)
+    }
+}
+
+impl<'a, T> From<*mut T> for Param<'a, *const T> {
+    fn from(value: *mut T) -> Param<'a, *const T> {
+        Param::Owned(value)
+    }
+}
+
+impl<'a, T> From<&'a mut T> for Param<'a, *mut T> {
+    fn from(value: &'a mut T) -> Param<'a, *mut T> {
+        Param::Owned(value)
     }
 }

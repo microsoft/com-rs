@@ -16,7 +16,6 @@ pub fn generate(interface: &Interface) -> TokenStream {
     let deref = deref_impl(interface);
     let drop = drop_impl(interface);
     let clone = clone_impl(interface);
-    let abi = abi_impl(interface);
 
     quote! {
         impl #interface_name {
@@ -25,7 +24,6 @@ pub fn generate(interface: &Interface) -> TokenStream {
         #deref
         #drop
         #clone
-        #abi
     }
 }
 
@@ -77,21 +75,6 @@ fn clone_impl(interface: &Interface) -> TokenStream {
     }
 }
 
-fn abi_impl(interface: &Interface) -> TokenStream {
-    let name = &interface.name;
-
-    quote! {
-        unsafe impl ::com::AbiTransferable for #name {
-            type Abi = std::ptr::NonNull<std::ptr::NonNull<<#name as ::com::ComInterface>::VTable>>;
-            fn get_abi(&self) -> Self::Abi {
-                self.inner
-            }
-            fn set_abi(&mut self) -> *mut Self::Abi {
-                &mut self.inner
-            }
-        }
-    }
-}
 fn gen_impl_method(method: &InterfaceMethod) -> TokenStream {
     let inner_method_ident =
         format_ident!("{}", crate::utils::snake_to_camel(&method.name.to_string()));
@@ -118,9 +101,10 @@ fn gen_impl_method(method: &InterfaceMethod) -> TokenStream {
     }
 
     let docs = &method.docs;
+    let vis = &method.visibility;
     return quote! {
         #(#docs)*
-        pub unsafe fn #outer_method_ident<#(#generics),*>(&self, #(#args),*) #return_type {
+        #vis unsafe fn #outer_method_ident<#(#generics),*>(&self, #(#args),*) #return_type {
             #(#into)*
             let #interface_ptr_ident = <Self as ::com::AbiTransferable>::get_abi(self);
             (#interface_ptr_ident.as_ref().as_ref().#inner_method_ident)(#(#params),*)
