@@ -30,7 +30,6 @@ pub fn generate(interface: &Interface) -> syn::Result<TokenStream> {
     Ok(quote!(
         #[allow(non_snake_case, missing_docs)]
         #[repr(C)]
-        #[derive(com::VTable)]
         #vis struct #vtable_ident {
             #base_field
             #methods

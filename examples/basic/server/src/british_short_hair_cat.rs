@@ -6,7 +6,7 @@ use com::sys::{HRESULT, NOERROR};
 co_class! {
     /// The implementation class
     /// https://en.wikipedia.org/wiki/British_Shorthair
-    pub coclass BritishShortHairCat: IDomesticAnimal, ICat, IAnimal {
+    pub coclass BritishShortHairCat: IDomesticAnimal, ICat {
         num_owners: u32,
     }
 

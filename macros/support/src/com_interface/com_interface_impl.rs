@@ -22,11 +22,5 @@ pub fn generate(interface: &Interface) -> TokenStream {
             type Super = #parent;
             const IID: com::sys::IID = #iid_ident;
         }
-
-        impl com::ProductionComInterface<#interface_ident> for #interface_ident {
-            fn vtable<O: com::offset::Offset>() -> Self::VTable {
-                #vtable_macro!(#interface_ident, O)
-            }
-        }
     }
 }

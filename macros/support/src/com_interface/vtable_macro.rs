@@ -102,8 +102,8 @@ fn gen_vtable_function(
     let return_type = &fun.output;
     quote! {
         #[allow(missing_docs)]
-        unsafe extern "stdcall" fn #function_ident<C: #interface_ident, O: com::offset::Offset>(#(#params)*) #return_type {
-            let this = arg0.sub(O::VALUE) as *const C as *mut C;
+        unsafe extern "stdcall" fn #function_ident<O: com::offset::Offset>(#(#params)*) #return_type {
+            let this = arg0.sub(O::VALUE) as *const #interface_ident as *mut #interface_ident;
             (*this).#method_name(#(#args)*)
         }
     }

@@ -83,7 +83,7 @@ pub fn gen_allocate_base_inits(
 
             let out = quote!(
                 let #vptr_field_ident = com::vtable!(#name: #interface, #index);
-                let #vptr_field_ident = Box::into_raw(Box::new(#vptr_field_ident));
+                let #vptr_field_ident = unsafe { ::std::ptr::NonNull::new_unchecked(Box::into_raw(Box::new(#vptr_field_ident))) };
             );
 
             out
