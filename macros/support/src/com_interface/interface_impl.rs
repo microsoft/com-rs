@@ -51,7 +51,7 @@ fn drop_impl(interface: &Interface) -> TokenStream {
         impl Drop for #name {
             fn drop(&mut self) {
                 unsafe {
-                    self.as_iunknown().release();
+                    <Self as ::com::ComInterface>::as_iunknown(self).release();
                 }
             }
         }
@@ -65,7 +65,7 @@ fn clone_impl(interface: &Interface) -> TokenStream {
         impl ::std::clone::Clone for #name {
             fn clone(&self) -> Self {
                 unsafe {
-                    self.as_iunknown().add_ref();
+                    <Self as ::com::ComInterface>::as_iunknown(self).add_ref();
                 }
                 Self {
                     inner: self.inner

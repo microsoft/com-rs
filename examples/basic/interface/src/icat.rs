@@ -6,6 +6,6 @@ use crate::IAnimal;
 com_interface! {
     #[uuid("F5353C58-CFD9-4204-8D92-D274C7578B53")]
     pub unsafe interface ICat: IAnimal {
-        fn ignore_humans(&self) -> HRESULT;
+        pub fn ignore_humans(&self) -> HRESULT;
     }
 }
