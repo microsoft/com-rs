@@ -6,6 +6,6 @@ pub fn generate(struct_item: &CoClass) -> HelperTokenStream {
     let struct_ident = &struct_item.name;
 
     quote! {
-        unsafe impl com::CoClass for #struct_ident {}
+        unsafe impl com::production::CoClass for #struct_ident {}
     }
 }

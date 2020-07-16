@@ -1,5 +1,4 @@
 use proc_macro2::{Ident, TokenStream};
-use syn::{AttributeArgs, ItemStruct};
 
 use std::iter::FromIterator;
 

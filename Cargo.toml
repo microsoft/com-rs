@@ -15,6 +15,9 @@ readme = "./README.md"
 [dependencies]
 com_macros = { version = "0.2", path = "macros" }
 
+[features]
+production = []
+
 [[test]]
 name = "tests"
 path = "tests/progress.rs"

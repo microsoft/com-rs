@@ -8,26 +8,32 @@ use syn::Ident;
 /// Takes into account the base interfaces exposed, as well as
 /// any interfaces exposed through an aggregated object.
 pub fn generate(co_class: &CoClass) -> TokenStream {
-    let struct_ident = &co_class.name;
+    let ident = quote::format_ident!("{}_IUNKNOWN", co_class.name.to_string().to_uppercase());
 
-    let add_ref = gen_add_ref();
-    let release = gen_release(&co_class.interfaces, struct_ident);
-    let query_interface = gen_query_interface(&co_class.interfaces);
+    let add_ref = gen_add_ref(&co_class.name);
+    let release = gen_release(&co_class.interfaces, &co_class.name);
+    let query_interface = gen_query_interface(&co_class.name, &co_class.interfaces);
 
-    quote!(
-        impl #struct_ident {
+    quote! {
+        const #ident: <::com::interfaces::IUnknown as ::com::ComInterface>::VTable = {
             #add_ref
             #release
             #query_interface
-        }
-    )
+
+            ::com::interfaces::IUnknown::VTable {
+                AddRef: add_ref ,
+                Release: release,
+                QueryInterface: query_interface,
+            }
+        };
+    }
 }
 
-pub fn gen_add_ref() -> TokenStream {
+pub fn gen_add_ref(name: &Ident) -> TokenStream {
     let add_ref_implementation = gen_add_ref_implementation();
 
     quote! {
-        unsafe extern "stdcall" fn add_ref(this_ptr: *mut *mut Self) -> u32 {
+        extern "stdcall" fn add_ref(this_ptr: *mut *mut #name) -> u32 {
             assert!(!this_ptr.is_null());
             let this = &(*(*this_ptr));
             #add_ref_implementation
@@ -54,7 +60,7 @@ pub fn gen_release(interface_idents: &[syn::Path], name: &Ident) -> TokenStream 
     let release_drops = gen_release_drops(interface_idents, name);
 
     quote! {
-        unsafe extern "stdcall" fn release(this_ptr: *mut *mut Self) -> u32 {
+        unsafe extern "stdcall" fn release(this_ptr: *mut *mut #name) -> u32 {
             assert!(!this_ptr.is_null());
             let this = &(*(*this_ptr));
             #release_decrement
@@ -101,15 +107,12 @@ pub fn gen_release_drops(interface_idents: &[syn::Path], name: &Ident) -> TokenS
 }
 
 fn gen_vptr_drops(interface_idents: &[syn::Path]) -> TokenStream {
-    let vptr_drops = interface_idents
-        .iter()
-        .enumerate()
-        .map(|(index, interface)| {
-            let vptr_field_ident = quote::format_ident!("__{}", index);
-            quote!(
-                Box::from_raw(this.#vptr_field_ident.as_ptr());
-            )
-        });
+    let vptr_drops = interface_idents.iter().enumerate().map(|(index, _)| {
+        let vptr_field_ident = quote::format_ident!("__{}", index);
+        quote!(
+            Box::from_raw(this.#vptr_field_ident.as_ptr());
+        )
+    });
 
     quote!(#(#vptr_drops)*)
 }
@@ -120,13 +123,13 @@ fn gen_com_object_drop(name: &Ident) -> TokenStream {
     )
 }
 
-pub fn gen_query_interface(interface_idents: &[syn::Path]) -> TokenStream {
+pub fn gen_query_interface(name: &Ident, interface_idents: &[syn::Path]) -> TokenStream {
     // Generate match arms for implemented interfaces
     let base_match_arms = gen_base_match_arms(interface_idents);
 
     quote! {
         unsafe extern "stdcall" fn query_interface(
-            this_ptr: *mut *mut Self,
+            this_ptr: *mut *mut #name,
             riid: *const com::sys::IID,
             ppv: *mut *mut std::ffi::c_void
         ) -> com::sys::HRESULT {
@@ -141,7 +144,7 @@ pub fn gen_query_interface(interface_idents: &[syn::Path]) -> TokenStream {
                 return com::sys::E_NOINTERFACE;
             }
 
-            Self::add_ref(this_ptr);
+            #name::add_ref(this_ptr);
             com::sys::NOERROR
         }
     }

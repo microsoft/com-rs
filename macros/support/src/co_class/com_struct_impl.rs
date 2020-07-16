@@ -1,7 +1,7 @@
 use super::CoClass;
 use proc_macro2::TokenStream as HelperTokenStream;
 use quote::{format_ident, quote};
-use syn::{Fields, Ident, ItemStruct};
+use syn::{Ident, ItemStruct};
 
 pub fn generate(co_class: &CoClass) -> HelperTokenStream {
     let allocate_fn = gen_allocate_fn(co_class);

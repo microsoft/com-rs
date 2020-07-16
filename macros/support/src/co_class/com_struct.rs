@@ -1,7 +1,6 @@
 use super::CoClass;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Fields, Ident, ItemStruct};
 
 /// The COM class object
 ///
@@ -18,8 +17,10 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
     let base_fields = gen_base_fields(&co_class.interfaces);
     let ref_count_field = gen_ref_count_field();
     let user_fields = &co_class.fields;
+    let docs = &co_class.docs;
 
     quote!(
+        #(#docs)*
         #[repr(C)]
         #vis struct #struct_ident {
             #base_fields
