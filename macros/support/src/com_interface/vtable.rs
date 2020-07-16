@@ -25,12 +25,13 @@ pub fn generate(interface: &Interface) -> syn::Result<TokenStream> {
         None => quote! {},
     };
     let methods = gen_vtable_methods(&interface)?;
+    let vis = &interface.visibility;
 
     Ok(quote!(
         #[allow(non_snake_case, missing_docs)]
         #[repr(C)]
         #[derive(com::VTable)]
-        pub struct #vtable_ident {
+        #vis struct #vtable_ident {
             #base_field
             #methods
         }
@@ -119,8 +120,7 @@ fn gen_raw_type(t: &Type) -> syn::Result<TokenStream> {
         Type::Macro(_n) => "typeMacro type",
         Type::Never(_n) => "typeNever type",
         Type::Paren(_n) => "paren type",
-        Type::Path(_n) => return Ok(quote!(#t,)),
-        Type::Ptr(_n) => return Ok(quote!(#t,)),
+        Type::Path(_) | Type::Ptr(_) => return Ok(quote!(<#t as ::com::AbiTransferable>::Abi,)),
         Type::Reference(_n) => "reference type",
         Type::Slice(_n) => "slice type",
         Type::TraitObject(_n) => "traitObject type",

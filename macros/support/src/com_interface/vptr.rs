@@ -6,10 +6,11 @@ use quote::{format_ident, quote};
 pub fn generate(interface: &Interface) -> TokenStream {
     let vptr_ident = ident(&interface.name);
     let vtable_ident = vtable::ident(&interface.name.to_string());
+    let vis = &interface.visibility;
 
     quote!(
         #[allow(missing_docs)]
-        pub type #vptr_ident = *const #vtable_ident;
+        #vis type #vptr_ident = ::std::ptr::NonNull<#vtable_ident>;
     )
 }
 

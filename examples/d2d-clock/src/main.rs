@@ -1,4 +1,4 @@
-use com::{com_interface, interfaces::IUnknown, ComInterface, ComPtr};
+use com::{com_interface, interfaces::IUnknown, ComInterface};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use winapi::shared::{
     basetsd::UINT32,
@@ -212,7 +212,7 @@ impl Clock {
             let mut previous: Option<ID2D1Image> = None;
             target.get_target(&mut previous);
             let clock = &self.device_dependent_resources.clock;
-            target.set_target(clock.get());
+            target.set_target(clock);
             target.clear(std::ptr::null());
             self.draw_clock();
             let target = &self.device_dependent_resources.target;
@@ -240,11 +240,11 @@ impl Clock {
             target.set_transform(&identity);
 
             target.draw_image(
-                clock.get(),
+                clock,
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
-                D2D1_INTERPOLATION_MODE::default(),
-                D2D1_COMPOSITE_MODE::default(),
+                FFISafe(D2D1_INTERPOLATION_MODE::default()),
+                FFISafe(D2D1_COMPOSITE_MODE::default()),
             );
         }
     }
@@ -267,7 +267,7 @@ impl Clock {
             target.set_transform(&translation);
             target.get_transform(&mut translation);
 
-            let brush = self.device_dependent_resources.brush.get();
+            let brush = &self.device_dependent_resources.brush;
             let ellipse = D2D1_ELLIPSE {
                 point: d2d1::D2D1_POINT_2F::default(),
                 radiusX: 50.0,
@@ -323,21 +323,21 @@ impl Clock {
                 y: -(radius * 0.75),
             };
             target.draw_line(
-                zero,
-                end,
-                self.device_dependent_resources.brush.get(),
+                FFISafe(zero),
+                FFISafe(end),
+                &self.device_dependent_resources.brush,
                 radius / 25.0,
-                self.device_independent_resources.style.get(),
+                &self.device_independent_resources.style,
             );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(minuteAngle) * m_orientation * translation);
 
             target.draw_line(
-                zero,
-                end,
-                self.device_dependent_resources.brush.get(),
+                FFISafe(zero),
+                FFISafe(end),
+                &self.device_dependent_resources.brush,
                 radius / 15.0,
-                self.device_independent_resources.style.get(),
+                &self.device_independent_resources.style,
             );
 
             // m_target->SetTransform(Matrix3x2F::Rotation(hourAngle) * m_orientation * translation);
@@ -347,20 +347,17 @@ impl Clock {
                 y: -(radius * 0.5),
             };
             target.draw_line(
-                zero,
-                end,
-                self.device_dependent_resources.brush.get(),
+                FFISafe(zero),
+                FFISafe(end),
+                &self.device_dependent_resources.brush,
                 radius / 10.0,
-                self.device_independent_resources.style.get(),
+                &self.device_independent_resources.style,
             );
         }
     }
 }
 
-fn create_swapchain_bitmap(
-    swap_chain: &ComPtr<IDXGISwapChain1>,
-    target: &ComPtr<ID2D1DeviceContext>,
-) {
+fn create_swapchain_bitmap(swap_chain: &IDXGISwapChain1, target: &ID2D1DeviceContext) {
     let mut surface: Option<IDXGISurface> = None;
     unsafe {
         HR!(swap_chain.get_buffer(
@@ -383,7 +380,7 @@ fn create_swapchain_bitmap(
     }
 }
 
-fn create_swapchain(device: &ComPtr<ID3D11Device>, window: HWND) -> ComPtr<IDXGISwapChain1> {
+fn create_swapchain(device: &ID3D11Device, window: HWND) -> IDXGISwapChain1 {
     let factory = get_dxgi_factory(device);
 
     let mut props = DXGI_SWAP_CHAIN_DESC1::default();
@@ -393,11 +390,11 @@ fn create_swapchain(device: &ComPtr<ID3D11Device>, window: HWND) -> ComPtr<IDXGI
     props.BufferCount = 2;
     props.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
-    let mut swap_chain: Option<ComPtr<IDXGISwapChain1>> = None;
+    let mut swap_chain: Option<IDXGISwapChain1> = None;
 
     unsafe {
         HR!(factory.create_swap_chain_for_hwnd(
-            device.get(),
+            device,
             window,
             &props,
             std::ptr::null_mut(),
@@ -409,12 +406,12 @@ fn create_swapchain(device: &ComPtr<ID3D11Device>, window: HWND) -> ComPtr<IDXGI
     swap_chain.unwrap()
 }
 
-fn get_dxgi_factory(device: &ComPtr<ID3D11Device>) -> ComPtr<IDXGIFactory2> {
+fn get_dxgi_factory(device: &ID3D11Device) -> IDXGIFactory2 {
     let dxdevice = device.get_interface::<IDXGIDevice>().unwrap();
-    let mut adapter: Option<ComPtr<IDXGIAdapter>> = None;
+    let mut adapter: Option<IDXGIAdapter> = None;
     unsafe {
         HR!(dxdevice.get_adapter(&mut adapter));
-        let mut parent: Option<ComPtr<IDXGIFactory2>> = None;
+        let mut parent: Option<IDXGIFactory2> = None;
         HR!(adapter.unwrap().get_parent(
             &IDXGIFactory2::IID,
             &mut parent as *mut _ as *mut *mut c_void
@@ -423,16 +420,13 @@ fn get_dxgi_factory(device: &ComPtr<ID3D11Device>) -> ComPtr<IDXGIFactory2> {
     }
 }
 
-fn create_render_target(
-    factory: &ComPtr<ID2D1Factory1>,
-    device: &mut ComPtr<ID3D11Device>,
-) -> ComPtr<ID2D1DeviceContext> {
+fn create_render_target(factory: &ID2D1Factory1, device: &mut ID3D11Device) -> ID2D1DeviceContext {
     let dxdevice = device.get_interface::<IDXGIDevice>();
 
     let mut d2device: Option<ID2D1Device> = None;
     let target = unsafe {
         HR!(factory.create_device(&dxdevice, &mut d2device));
-        let mut target: Option<ComPtr<ID2D1DeviceContext>> = None;
+        let mut target: Option<ID2D1DeviceContext> = None;
 
         HR!(d2device
             .unwrap()
@@ -443,8 +437,8 @@ fn create_render_target(
     target.unwrap()
 }
 
-fn create_device() -> ComPtr<ID3D11Device> {
-    fn create_device(typ: D3D_DRIVER_TYPE, device: &mut Option<ComPtr<ID3D11Device>>) -> HRESULT {
+fn create_device() -> ID3D11Device {
+    fn create_device(typ: D3D_DRIVER_TYPE, device: &mut Option<ID3D11Device>) -> HRESULT {
         let flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
         // #ifdef _DEBUG
@@ -477,9 +471,9 @@ fn create_device() -> ComPtr<ID3D11Device> {
     device.unwrap()
 }
 
-fn create_d2d_factory() -> ComPtr<ID2D1Factory1> {
+fn create_d2d_factory() -> ID2D1Factory1 {
     let options = &D2D1_FACTORY_OPTIONS::default();
-    let mut factory: Option<ComPtr<ID2D1Factory1>> = None;
+    let mut factory: Option<ID2D1Factory1> = None;
     unsafe {
         HR!(D2D1CreateFactory(
             D2D1_FACTORY_TYPE_SINGLE_THREADED,
@@ -491,8 +485,8 @@ fn create_d2d_factory() -> ComPtr<ID2D1Factory1> {
     factory.unwrap()
 }
 
-fn create_dxgi_factory() -> ComPtr<IDXGIFactory2> {
-    let mut dxgi_factory: Option<ComPtr<IDXGIFactory2>> = None;
+fn create_dxgi_factory() -> IDXGIFactory2 {
+    let mut dxgi_factory: Option<IDXGIFactory2> = None;
     unsafe {
         HR!(CreateDXGIFactory1(
             &IDXGIFactory2::IID as *const _ as _,
@@ -502,7 +496,7 @@ fn create_dxgi_factory() -> ComPtr<IDXGIFactory2> {
     dxgi_factory.unwrap()
 }
 
-fn get_dpi(factory: &ComPtr<ID2D1Factory1>) -> f32 {
+fn get_dpi(factory: &ID2D1Factory1) -> f32 {
     let mut dpix: f32 = 0.0;
     let mut dpiy: f32 = 0.0;
     unsafe {
@@ -513,18 +507,18 @@ fn get_dpi(factory: &ComPtr<ID2D1Factory1>) -> f32 {
 
 struct DeviceIndependentResources {
     animation_frequency: LARGE_INTEGER,
-    animation_manager: ComPtr<IUIAnimationManager>,
-    style: ComPtr<ID2D1StrokeStyle1>,
-    animation_variable: ComPtr<IUIAnimationVariable>,
+    animation_manager: IUIAnimationManager,
+    style: ID2D1StrokeStyle1,
+    animation_variable: IUIAnimationVariable,
 }
 
 impl DeviceIndependentResources {
-    fn new(factory: &ComPtr<ID2D1Factory1>) -> Self {
+    fn new(factory: &ID2D1Factory1) -> Self {
         let mut style_props = D2D1_STROKE_STYLE_PROPERTIES1::default();
         style_props.startCap = D2D1_CAP_STYLE_ROUND;
         style_props.endCap = D2D1_CAP_STYLE_TRIANGLE;
 
-        let mut style: Option<ComPtr<ID2D1StrokeStyle1>> = None;
+        let mut style: Option<ID2D1StrokeStyle1> = None;
         unsafe {
             HR!(factory.create_stroke_style(&style_props, std::ptr::null_mut(), 0, &mut style));
         }
@@ -540,7 +534,7 @@ impl DeviceIndependentResources {
             com::runtime::create_instance::<IUIAnimationManager>(&class_id).unwrap();
 
         let mut animation_frequency = LARGE_INTEGER::default();
-        let mut animation_variable: Option<ComPtr<IUIAnimationVariable>> = None;
+        let mut animation_variable: Option<IUIAnimationVariable> = None;
 
         let class_id = com::CLSID {
             // 1D6322AD-AA85-4EF5-A828-86D71067D145
@@ -549,7 +543,7 @@ impl DeviceIndependentResources {
             data3: 0x4EF5,
             data4: [0xA8, 0x28, 0x86, 0xD7, 0x10, 0x67, 0xD1, 0x45],
         };
-        let library: ComPtr<IUIAnimationTransitionLibrary> =
+        let library: IUIAnimationTransitionLibrary =
             com::runtime::create_instance(&class_id).unwrap();
         let mut transition: Option<IUIAnimationTransition> = None;
         unsafe {
@@ -585,14 +579,14 @@ impl DeviceIndependentResources {
 }
 
 struct DeviceDependentResources {
-    target: ComPtr<ID2D1DeviceContext>,
-    swap_chain: ComPtr<IDXGISwapChain1>,
-    clock: ComPtr<ID2D1Bitmap1>,
-    brush: ComPtr<ID2D1SolidColorBrush>,
+    target: ID2D1DeviceContext,
+    swap_chain: IDXGISwapChain1,
+    clock: ID2D1Bitmap1,
+    brush: ID2D1SolidColorBrush,
 }
 
 impl DeviceDependentResources {
-    fn new(factory: &ComPtr<ID2D1Factory1>, window: HWND, dpi: f32) -> Self {
+    fn new(factory: &ID2D1Factory1, window: HWND, dpi: f32) -> Self {
         let mut device = create_device();
         let target = create_render_target(factory, &mut device);
         let swap_chain = create_swapchain(&device, window);
@@ -611,7 +605,7 @@ impl DeviceDependentResources {
     }
 }
 
-fn create_device_resources(target: &ComPtr<ID2D1DeviceContext>) -> ComPtr<ID2D1SolidColorBrush> {
+fn create_device_resources(target: &ID2D1DeviceContext) -> ID2D1SolidColorBrush {
     let color_orange = D2D1_COLOR_F {
         r: 0.92,
         g: 0.38,
@@ -622,17 +616,14 @@ fn create_device_resources(target: &ComPtr<ID2D1DeviceContext>) -> ComPtr<ID2D1S
     let mut props = D2D1_BRUSH_PROPERTIES::default();
     props.opacity = 0.8;
 
-    let mut brush = Option::<ComPtr<ID2D1SolidColorBrush>>::None;
+    let mut brush = Option::<ID2D1SolidColorBrush>::None;
     unsafe {
         HR!(target.create_solid_color_brush(&color_orange, &props, &mut brush));
     }
     brush.unwrap()
 }
 
-fn create_device_size_resources(
-    target: &ComPtr<ID2D1DeviceContext>,
-    dpi: f32,
-) -> ComPtr<ID2D1Bitmap1> {
+fn create_device_size_resources(target: &ID2D1DeviceContext, dpi: f32) -> ID2D1Bitmap1 {
     let size = unsafe {
         let mut size = std::mem::zeroed();
         target.get_size(&mut size);
@@ -653,9 +644,9 @@ fn create_device_size_resources(
         bitmapOptions: D2D1_BITMAP_OPTIONS_TARGET,
         colorContext: std::ptr::null_mut(),
     };
-    let mut clock = Option::<ComPtr<ID2D1Bitmap1>>::None;
+    let mut clock = Option::<ID2D1Bitmap1>::None;
     unsafe {
-        HR!(target.create_bitmap(size, std::ptr::null(), 0, &props, &mut clock));
+        HR!(target.create_bitmap(FFISafe(size), std::ptr::null(), 0, &props, &mut clock));
     }
 
     // m_shadow = nullptr;
@@ -669,6 +660,20 @@ fn create_device_size_resources(
     clock.unwrap().into()
 }
 
+#[derive(Copy, Clone)]
+#[repr(transparent)]
+struct FFISafe<T>(T);
+
+unsafe impl<T: Copy> com::AbiTransferable for FFISafe<T> {
+    type Abi = Self;
+    fn get_abi(&self) -> Self::Abi {
+        *self
+    }
+    fn set_abi(&mut self) -> *mut Self::Abi {
+        self
+    }
+}
+
 fn get_time(frequency: LARGE_INTEGER) -> f64 {
     let mut time = LARGE_INTEGER::default();
     unsafe {
@@ -679,14 +684,14 @@ fn get_time(frequency: LARGE_INTEGER) -> f64 {
 
 com_interface! {
     #[uuid("06152247-6f50-465a-9245-118bfd3b6007")]
-    pub unsafe interface ID2D1Factory: IUnknown {
+    unsafe interface ID2D1Factory: IUnknown {
         fn reload_system_metrics(&self) -> HRESULT;
         fn get_desktop_dpi(&self, dpi_x: *mut FLOAT, dpi_y: *mut FLOAT);
         ...12
     }
 
     #[uuid("bb12d362-daee-4b9a-aa1d-14ba401cfa1f")]
-    pub unsafe interface ID2D1Factory1: ID2D1Factory {
+    unsafe interface ID2D1Factory1: ID2D1Factory {
         fn create_device(
             &self,
             dxgi_device: Option<IDXGIDevice>,
@@ -702,7 +707,7 @@ com_interface! {
     }
 
     #[uuid("50c83a1c-e072-4c48-87b0-3630fa36a6d0")]
-    pub unsafe interface IDXGIFactory2: IDXGIFactory1 {
+    unsafe interface IDXGIFactory2: IDXGIFactory1 {
         ...1
         fn create_swap_chain_for_hwnd(
             &self,
@@ -716,20 +721,20 @@ com_interface! {
     }
 
     #[uuid("770aae78-f26f-4dba-a829-253c83d1b387")]
-    pub unsafe interface IDXGIFactory1: IDXGIFactory {
+    unsafe interface IDXGIFactory1: IDXGIFactory {
         ...2
     }
 
     #[uuid("7b7166ec-21c7-44ae-b21a-c9ae321ae369")]
-    pub unsafe interface IDXGIFactory: IDXGIObject {
+    unsafe interface IDXGIFactory: IDXGIObject {
         ...5
     }
 
     #[uuid("e8f7fe7a-191c-466d-ad95-975678bda998")]
-    pub unsafe interface ID2D1DeviceContext: ID2D1RenderTarget {
+    unsafe interface ID2D1DeviceContext: ID2D1RenderTarget {
         fn create_bitmap(
             &self,
-            size: d2d1::D2D1_SIZE_U,
+            size: FFISafe<d2d1::D2D1_SIZE_U>,
             source_data: *const c_void,
             pitch: u32,
             bitmap_properties: *const D2D1_BITMAP_PROPERTIES1,
@@ -753,13 +758,13 @@ com_interface! {
             image: ID2D1Image,
             target_offset: *const d2d1::D2D1_POINT_2F,
             image_rectangle: *const d2d1::D2D1_RECT_F,
-            interpolation_mode: D2D1_INTERPOLATION_MODE,
-            composite_mode: D2D1_COMPOSITE_MODE,
+            interpolation_mode: FFISafe<D2D1_INTERPOLATION_MODE>,
+            composite_mode: FFISafe<D2D1_COMPOSITE_MODE>,
         );
     }
 
     #[uuid("47dd575d-ac05-4cdd-8049-9b02cd16f44c")]
-    pub unsafe interface ID2D1Device: ID2D1Resource {
+    unsafe interface ID2D1Device: ID2D1Resource {
         fn create_device_context(
             &self,
             options: D2D1_DEVICE_CONTEXT_OPTIONS,
@@ -768,7 +773,7 @@ com_interface! {
     }
 
     #[uuid("2cd90694-12e2-11dc-9fed-001143a055f9")]
-    pub unsafe interface ID2D1RenderTarget: ID2D1Resource {
+    unsafe interface ID2D1RenderTarget: ID2D1Resource {
         ...4
         fn create_solid_color_brush(
             &self,
@@ -779,8 +784,8 @@ com_interface! {
         ...6
         fn draw_line(
             &self,
-            point0: d2d1::D2D1_POINT_2F,
-            point1: d2d1::D2D1_POINT_2F,
+            point0: FFISafe<d2d1::D2D1_POINT_2F>,
+            point1: FFISafe<d2d1::D2D1_POINT_2F>,
             brush: ID2D1Brush,
             stroke_width: f32,
             stroke_type: ID2D1StrokeStyle
@@ -812,21 +817,21 @@ com_interface! {
     }
 
     #[uuid("2cd90691-12e2-11dc-9fed-001143a055f9")]
-    pub unsafe interface ID2D1Resource: IUnknown {
+    unsafe interface ID2D1Resource: IUnknown {
         ...1
     }
 
     #[uuid("db6f6ddb-ac77-4e88-8253-819df9bbf140")]
-    pub unsafe interface ID3D11Device: IUnknown {}
+    unsafe interface ID3D11Device: IUnknown {}
 
     #[uuid("54ec77fa-1377-44e6-8c32-88fd5f44c84c")]
-    pub unsafe interface IDXGIDevice: IDXGIObject {
+    unsafe interface IDXGIDevice: IDXGIObject {
         fn get_adapter(&self, adapter: *mut Option<IDXGIAdapter>) -> HRESULT;
         ...3
     }
 
     #[uuid("aec22fb8-76f3-4639-9be0-28eb43a67a2e")]
-    pub unsafe interface IDXGIObject: IUnknown {
+    unsafe interface IDXGIObject: IUnknown {
         ...3
         fn get_parent(
             &self,
@@ -836,10 +841,10 @@ com_interface! {
     }
 
     #[uuid("790a45f7-0d42-4876-983a-0a55cfe6f4aa")]
-    pub unsafe interface IDXGISwapChain1: IDXGISwapChain {}
+    unsafe interface IDXGISwapChain1: IDXGISwapChain {}
 
     #[uuid("310d36a0-d2e7-4c0a-aa04-6a9d23b8886a")]
-    pub unsafe interface IDXGISwapChain: IDXGIDeviceSubObject {
+    unsafe interface IDXGISwapChain: IDXGIDeviceSubObject {
         fn present(
             &self,
             sync_interval: UINT,
@@ -854,32 +859,32 @@ com_interface! {
     }
 
     #[uuid("3d3e0379-f9de-4d58-bb6c-18d62992f1a6")]
-    pub unsafe interface IDXGIDeviceSubObject: IDXGIObject {
+    unsafe interface IDXGIDeviceSubObject: IDXGIObject {
         ...1
     }
 
     #[uuid("2411e7e1-12ac-4ccf-bd14-9798e8534dc0")]
-    pub unsafe interface IDXGIAdapter: IDXGIObject {
+    unsafe interface IDXGIAdapter: IDXGIObject {
         ...3
     }
 
     #[uuid("ae02eedb-c735-4690-8d52-5a8dc20213aa")]
-    pub unsafe interface IDXGIOutput: IDXGIObject {}
+    unsafe interface IDXGIOutput: IDXGIObject {}
 
     #[uuid("cafcb56c-6ac3-4889-bf47-9e23bbd260ec")]
-    pub unsafe interface IDXGISurface: IDXGIDeviceSubObject {}
+    unsafe interface IDXGISurface: IDXGIDeviceSubObject {}
 
     #[uuid("a898a84c-3873-4588-b08b-ebbf978df041")]
-    pub unsafe interface ID2D1Bitmap1: ID2D1Bitmap {}
+    unsafe interface ID2D1Bitmap1: ID2D1Bitmap {}
 
     #[uuid("a2296057-ea42-4099-983b-539fb6505426")]
-    pub unsafe interface ID2D1Bitmap: ID2D1Image {}
+    unsafe interface ID2D1Bitmap: ID2D1Image {}
 
     #[uuid("65019f75-8da2-497c-b32c-dfa34e48ede6")]
-    pub unsafe interface ID2D1Image: ID2D1Resource {}
+    unsafe interface ID2D1Image: ID2D1Resource {}
 
     #[uuid("9169896C-AC8D-4e7d-94E5-67FA4DC2F2E8")]
-    pub unsafe interface IUIAnimationManager: IUnknown {
+    unsafe interface IUIAnimationManager: IUnknown {
         fn create_animation_variable(
             &self,
             initial_value: f64,
@@ -897,26 +902,26 @@ com_interface! {
     }
 
     #[uuid("10a72a66-e91c-43f4-993f-ddf4b82b0b4a")]
-    pub unsafe interface ID2D1StrokeStyle1: ID2D1StrokeStyle {}
+    unsafe interface ID2D1StrokeStyle1: ID2D1StrokeStyle {}
 
     #[uuid("2cd9069d-12e2-11dc-9fed-001143a055f9")]
-    pub unsafe interface ID2D1StrokeStyle: ID2D1Resource {}
+    unsafe interface ID2D1StrokeStyle: ID2D1Resource {}
 
     #[uuid("2cd906a9-12e2-11dc-9fed-001143a055f9")]
-    pub unsafe interface ID2D1SolidColorBrush: ID2D1Brush {}
+    unsafe interface ID2D1SolidColorBrush: ID2D1Brush {}
 
     #[uuid("2cd906a8-12e2-11dc-9fed-001143a055f9")]
-    pub unsafe interface ID2D1Brush: ID2D1Resource {}
+    unsafe interface ID2D1Brush: ID2D1Resource {}
 
     #[uuid("8CEEB155-2849-4ce5-9448-91FF70E1E4D9")]
-    pub unsafe interface IUIAnimationVariable: IUnknown {
+    unsafe interface IUIAnimationVariable: IUnknown {
         fn get_value(&self, value: *mut f64) -> HRESULT;
     }
 
     #[uuid("CA5A14B1-D24F-48b8-8FE4-C78169BA954E")]
-    pub unsafe interface IUIAnimationTransitionLibrary: IUnknown {
+    unsafe interface IUIAnimationTransitionLibrary: IUnknown {
         ...7
-        fn create_accelerate_decelerate_transition(
+        pub fn create_accelerate_decelerate_transition(
             &self,
             duration: UI_ANIMATION_SECONDS,
             fin: f64,
@@ -927,7 +932,7 @@ com_interface! {
     }
 
     #[uuid("DC6CE252-F731-41cf-B610-614B6CA049AD")]
-    pub unsafe interface IUIAnimationTransition: IUnknown {}
+    unsafe interface IUIAnimationTransition: IUnknown {}
 }
 
 #[allow(non_camel_case_types)]
