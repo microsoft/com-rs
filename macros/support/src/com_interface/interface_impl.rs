@@ -94,8 +94,11 @@ fn gen_impl_method(method: &InterfaceMethod) -> TokenStream {
         let generic = quote::format_ident!("__{}", index);
         args.push(quote! { #pat: #generic });
         generics.push(quote! { #generic: ::std::convert::Into<::com::Param<'a, #ty>> });
+        // note: we separate the call to `into` and `get_abi` so that the `param`
+        // binding lives to the end of the method.
         into.push(quote! {
-            let #pat = #pat.into().get_abi();
+            let mut param = #pat.into();
+            let #pat = param.get_abi();
         });
         params.push(pat.to_token_stream());
     }
