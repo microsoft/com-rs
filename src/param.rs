@@ -1,7 +1,7 @@
 use crate::AbiTransferable;
 
 /// A COM method parameter used to accept either a reference or value.
-pub enum Param<'a, T: AbiTransferable> {
+pub enum Param<'a, T> {
     /// The borrowed version of the param
     Borrowed(&'a T),
     /// The owned version of the param
@@ -18,13 +18,13 @@ impl<'a, T: AbiTransferable> Param<'a, T> {
     }
 }
 
-impl<'a, T: AbiTransferable> From<T> for Param<'a, T> {
+impl<'a, T> From<T> for Param<'a, T> {
     fn from(value: T) -> Param<'a, T> {
         Param::Owned(value)
     }
 }
 
-impl<'a, T: AbiTransferable> From<&'a T> for Param<'a, T> {
+impl<'a, T> From<&'a T> for Param<'a, T> {
     fn from(value: &'a T) -> Param<'a, T> {
         Param::Borrowed(value)
     }

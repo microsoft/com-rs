@@ -54,8 +54,8 @@ fn convert_impls(parents: HashMap<Ident, Path>) -> Vec<TokenStream> {
                         unsafe { ::std::mem::transmute(this) }
                     }
                 }
-                impl ::std::convert::Into<::com::Param<'static, #p>> for #name {
-                    fn into(self) -> ::com::Param<'static, #p> {
+                impl <'a> ::std::convert::Into<::com::Param<'a, #p>> for #name {
+                    fn into(self) -> ::com::Param<'a, #p> {
                         ::com::Param::Owned(unsafe { std::mem::transmute(self) })
                     }
                 }
