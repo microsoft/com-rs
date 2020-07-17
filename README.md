@@ -24,28 +24,30 @@ COM has been superseded by [WinRT](https://docs.microsoft.com/en-us/windows/uwp/
 To both consume or produce a COM component through an interface, you will first need to generate the Rust representation of said interface. The `com_interface` macro is the main tool for automatically generating this Rust representation.
 
 ```rust
-#[com_interface("00000000-0000-0000-C000-000000000046")]
-pub trait IUnknown {
-    unsafe fn query_interface(
-        &self,
-        riid: *const IID,
-        ppv: *mut *mut c_void
-    ) -> HRESULT;
-    fn add_ref(&self) -> u32;
-    unsafe fn release(&self) -> u32;
-}
+com::com_interface! {
+    #[uuid("00000000-0000-0000-C000-000000000046")]
+    pub unsafe interface IUnknown {
+        fn query_interface(
+            &self,
+            riid: *const IID,
+            ppv: *mut *mut c_void
+        ) -> HRESULT;
+        fn add_ref(&self) -> u32;
+        fn release(&self) -> u32;
+    }
 
-#[com_interface("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
-pub trait IAnimal: IUnknown {
-    unsafe fn eat(&self) -> HRESULT;
+    #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
+    pub unsafe interface IAnimal: IUnknown {
+        fn eat(&self) -> HRESULT;
+    }
 }
 ```
 
-Short explanation: This generates the VTable layout for IUnknown and implements the trait on `com::ComRc` so that it dereferences the correct function pointer entry within the VTable.
+Short explanation: This generates the VTable layout for IUnknown and IAnimal as well as the correct `Clone` and `Drop` implementations.
 
 ### Consuming a COM component
 
-Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::ComRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
+Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). 
 
 ```rust
 use com::run_time::{create_instance, init_runtime};
@@ -57,10 +59,13 @@ init_runtime().expect("Failed to initialize COM Library");
 // - The CLSID of the COM component
 // - The interface of the COM component that you want
 // create_instance returns a ComRc<dyn IAnimal> in this case.
-let mut cat = create_instance::<dyn IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
+let mut cat = create_instance::<IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
 
-// All IAnimal methods will be defined on ComRc<T: IAnimal>
-cat.eat();
+// All IAnimal methods will be available.
+// Because we are crossing an FFI boundary, all COM interfaces are marked as unsafe.
+// It is the job of the programmer to ensure that invariants beyond what the COM library guarantees are upheld.
+// See the unsafe documentation for more info.
+unsafe { cat.eat(); }
 ```
 
 ### Producing a COM component
@@ -136,10 +141,6 @@ You can read more about what gurantees this library makes in the [guide to safet
 There are many existing Rust crates that help with COM interactions. Depending on your use case, you may find these crates more suited to your needs. For example, we have
 - [Intercom](https://github.com/Rantanen/intercom), which focuses on providing support for writing cross-platform COM components in Rust.
 - [winapi-rs](https://github.com/retep998/winapi-rs), which provides a straightforward macro that allows you to easily consume COM interfaces.
-
-## Notes
-
-There are many advanced concepts in COM that our library aim to support. Relevant documentation on these advanced features can be found within the [docs](./docs) folder.
 
 ## Building
 

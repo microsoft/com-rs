@@ -45,7 +45,7 @@ impl IID {
         let data4_7 = hex_lit(data4_7);
         let data4_8 = hex_lit(data4_8);
         quote!(
-            #[allow(non_upper_case_globals, missing_docs)]
+            #[allow(missing_docs)]
             pub const #iid_ident: com::sys::IID = com::sys::IID {
                 data1: #data1,
                 data2: #data2,

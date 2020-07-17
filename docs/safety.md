@@ -5,7 +5,7 @@ COM specifies very little in the way of memory safety of COM based APIs. It is l
 
 ## The `unsafe` Keyword
 
-It is a requirement for all methods of a `com_interface` to be marked as `unsafe`. This is required since at the time of declaring an interface, there is no way to ensure that any call to that interface will meet all of Rust's safety expectations. 
+It is a requirement for all usages of COM methods be marked as `unsafe`. This is required since at the time of declaring an interface, there is no way to ensure that any call to that interface will meet all of Rust's safety expectations. 
 
 ## `&self`, `&mut self`, and `self`
 
@@ -24,9 +24,11 @@ seemingly do very little, but we'll explore what the programmer must ensure for 
 interface to be safe.
 
 ```rust
-#[com_interface("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
-pub trait IAnimal: IUnknown {
-    unsafe fn eat(&self) -> HRESULT;
+com::com_interface! {
+    #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
+    pub unsage interface IAnimal: IUnknown {
+        fn eat(&self) -> HRESULT;
+    }
 }
 ```
 
@@ -36,118 +38,98 @@ defined by `IUnknown`.
 This interface will expand to the following code.
 
 ```rust 
-pub mod ianimal {
-    use com::{com_interface, interfaces::iunknown::IUnknown, sys::HRESULT};
+// The interface is an FFI safe struct around a non-null pointer
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct IAnimal {
+    inner: std::ptr::NonNull<IAnimalVPtr>,
+}
 
-    // Redeclaration of the trait
-    pub trait IAnimal: IUnknown {
-        unsafe fn eat(&self) -> HRESULT;
+// The declared methods are generated as calls through the VTable
+impl IAnimal {
+    // It is up to the programmer to ensure that the pointer contained
+    // in the interface is still valid.
+    // This is likely to be the case as interface automatically keeps 
+    // track of its reference count.
+    pub unsafe fn eat(&self) -> HRESULT {
+        let interface_ptr = <Self as com::AbiTransferable>::get_abi(self);
+        (interface_ptr.as_ref().as_ref().Eat)(interface_ptr)
     }
+}
 
-    // The VTable for the IAnimal interface
-    #[allow(non_snake_case)]
-    #[repr(C)]
-    pub struct IAnimalVTable {
-        pub iunknown_base: <dyn IUnknown as com::ComInterface>::VTable,
-        pub Eat: unsafe extern "stdcall" fn(*mut IAnimalVPtr) -> HRESULT,
+// All interfaces dereference to their parent interface
+impl std::ops::Deref for IAnimal {
+    type Target = <IAnimal as com::ComInterface>::Super;
+    fn deref(&self) -> &Self::Target {
+        // This is safe because a valid reference to the child interface is exactly 
+        // equal to a valid reference to its parent interface
+        unsafe { std::mem::transmute(self) }
     }
+}
 
-    pub type IAnimalVPtr = *const IAnimalVTable;
-
-    // Allowing `eat` to be called on on an `ComRc<dyn IAnimal>`
-    impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::ComRc<T> {
-        unsafe fn eat(&self) -> HRESULT {
-            let interface_ptr = self.as_raw() as *mut IAnimalVPtr;
-            ((**interface_ptr).Eat)(interface_ptr)
+// On drop the interface will call the IUknown::Release method
+impl Drop for IAnimal {
+    fn drop(&mut self) {
+        unsafe {
+            <Self as com::ComInterface>::as_iunknown(self).release();
         }
     }
+}
 
-    // Allowing `eat` to be called on on an `ComPtr<dyn IAnimal>`
-    impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::ComPtr<T> {
-        unsafe fn eat(&self) -> HRESULT {
-            let interface_ptr = self.as_raw() as *mut IAnimalVPtr;
-            ((**interface_ptr).Eat)(interface_ptr)
+// Cloning the interface increases its reference count
+impl ::std::clone::Clone for IAnimal {
+    fn clone(&self) -> Self {
+        unsafe {
+            <Self as com::ComInterface>::as_iunknown(self).add_ref();
         }
+        Self { inner: self.inner }
     }
+}
 
-    // Declaration that IAnimal is a COM Interface
-    unsafe impl com::ComInterface for dyn IAnimal {
-        type VTable = IAnimalVTable;
-        type Super = IUnknown;
-        const IID: com::sys::IID = IID_IANIMAL;
-        
+// The interfaces vtable first contains the parent's vtable and then
+// any methods declared on that interface
+#[allow(non_snake_case)]
+#[repr(C)]
+pub struct IAnimalVTable {
+    pub iunknown_base: <IUnknown as com::ComInterface>::VTable,
+    pub Eat: unsafe extern "stdcall" fn(std::ptr::NonNull<IAnimalVPtr>) -> HRESULT,
+}
+
+pub type IAnimalVPtr = std::ptr::NonNull<IAnimalVTable>;
+unsafe impl com::ComInterface for IAnimal {
+    type VTable = IAnimalVTable;
+    type Super = IUnknown;
+    const IID: com::sys::IID = IID_IANIMAL;
+}
+
+pub const IID_IANIMAL: com::sys::IID = com::sys::IID {
+    data1: 0xEFF8970E,
+    data2: 0xC50F,
+    data3: 0x45E0,
+    data4: [0x92, 0x84, 0x29, 0x1C, 0xE5, 0xA6, 0xF7, 0x71],
+};
+
+/// Conversions to parent interface
+impl std::convert::From<IAnimal> for IUnknown {
+    fn from(this: IAnimal) -> Self {
+        unsafe { std::mem::transmute(this) }
     }
-
-    impl<C: IAnimal> com::ProductionComInterface<C> for dyn IAnimal {
-        fn vtable<O: com::offset::Offset>() -> Self::VTable {
-            {
-                let parent_vtable = <dyn IUnknown com::ProductionComInterface<C>>::vtable::<O>();
-
-                // The actual real call to some `eat` COM method
-                unsafe extern "stdcall" fn ianimal_eat<C: IAnimal, O: com::offset::Offset>(
-                    arg0: *mut IAnimalVPtr,
-                ) -> HRESULT {
-                    let this = arg0.sub(O::VALUE) as *const C as *mut C;
-                    (*this).eat()
-                }
-
-                IAnimalVTable {
-                    iunknown_base: parent_vtable,
-                    Eat: ianimal_eat::<C, O>,
-                }
-            }
-        }
+}
+impl<'a> ::std::convert::From<&'a IAnimal> for &'a IUnknown {
+    fn from(this: &'a IAnimal) -> Self {
+        unsafe { ::std::mem::transmute(this) }
     }
-    #[allow(non_upper_case_globals)]
-    pub const IID_IANIMAL: com::sys::IID =
-        com::sys:::IID {
-            data1: 0xEFF8970E,
-            data2: 0xC50F,
-            data3: 0x45E0,
-            data4: [0x92, 0x84, 0x29, 0x1C, 0xE5, 0xA6, 0xF7, 0x71],
-        };
+}
+
+// Allow this interface to be passed as a param to method which takes its parent
+impl<'a> ::std::convert::Into<::com::Param<'a, IUnknown>> for IAnimal {
+    fn into(self) -> ::com::Param<'a, IUnknown> {
+        ::com::Param::Owned(self.into())
+    }
+}
+impl<'a> ::std::convert::Into<::com::Param<'a, IUnknown>> for &'a IAnimal {
+    fn into(self) -> ::com::Param<'a, IUnknown> {
+        ::com::Param::Borrowed(self.into())
+    }
 }
 ```
-
-
-There's a few occasions where we're going outside of the Rust type system and relying that the 
-programmer has verified everything will be ok. 
-
-The first we should look at is where we implement `IAnimal` for `ComRc<dyn IAnimal>` and `ComPtr<dyn IAnimal>`:
-
-```rust
-impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::ComRc<T> {
-        unsafe fn eat(&self) -> HRESULT {
-            let interface_ptr = self.as_raw() as *mut IAnimalVPtr;
-            ((**interface_ptr).Eat)(interface_ptr)
-        }
-    }
-
-    // Allowing `eat` to be called on on an `ComPtr<dyn IAnimal>`
-    impl<T: IAnimal + com::ComInterface + ?Sized> IAnimal for com::ComPtr<T> {
-        unsafe fn eat(&self) -> HRESULT {
-            let interface_ptr = self.as_raw() as *mut IAnimalVPtr;
-            ((**interface_ptr).Eat)(interface_ptr)
-        }
-    }
-```
-
-Here we are casting whatever pointer the `ComRc` or `ComPtr` is holding on to
-as an `*mut IAnimalVPtr` or in other words a `*mut *const IAnimalVTable`. When working 
-with raw pointers there are several things we need to sure in order to verify it's safe usage
-within Rust:
-* The pointer is non null
-* The pointer is pointing to valid data
-* The pointer is not aliased for longer than the lifetime of `&self`. In other words, you can alias
-the pointer but only for as long as `&self` lives. 
-* The contents pointed are not mutated if there are other readers of `&self`. In other words, because we have non-exclusive access, we are not allowed to mutate the contents the pointer is pointing to. If we cannot be sure about this at compile time we should wrap this interface in an `Rc`.
-
-The first two points should be verified in other parts of the code. The `ComRc` and `ComPtr` 
-types should only be constructed if the first two points hold. If they do not hold, then some code 
-somewhere else is incorrect.
-
-The last two points cannot really be known until the point we call `ComRc<dyn IAnimal>::eat`. It 
-is up to the programmer at the time of calling to ensure that these two points will hold. This is why
-it the method is marked as `unsafe`. Only the programmer who is writing the code where the interface method
-can be called has any possibility of verifying these rules. If they cannot be verified than the programmer
-should use some runtime constructs like `Rc` to ensure this is the case. 
