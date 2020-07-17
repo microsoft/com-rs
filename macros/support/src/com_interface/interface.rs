@@ -10,7 +10,7 @@ pub struct Interface {
     pub visibility: Visibility,
     pub name: Ident,
     pub parent: Option<Path>,
-    pub methods: Vec<MethodDecl>,
+    pub methods: Vec<InterfaceMethod>,
     docs: Vec<Attribute>,
 }
 
@@ -43,13 +43,7 @@ impl Interface {
     fn to_impl_block(&self) -> TokenStream {
         let interface_name = &self.name;
 
-        let methods = self.methods.iter().filter_map(|m| {
-            if let MethodDecl::Method(m) = m {
-                Some(m.to_tokens())
-            } else {
-                None
-            }
-        });
+        let methods = self.methods.iter().map(|m| m.to_tokens());
 
         let deref = self.deref_impl();
         let drop = self.drop_impl();
@@ -163,15 +157,7 @@ impl syn::parse::Parse for Interface {
         syn::braced!(content in input);
         let mut methods = Vec::new();
         while !content.is_empty() {
-            let decl = if content.peek(syn::Token!(...)) {
-                content.parse::<syn::Token!(...)>().unwrap();
-                let int = content.parse::<syn::LitInt>()?;
-                let int = int.base10_parse::<u16>()?;
-                MethodDecl::PlaceHolder(int)
-            } else {
-                MethodDecl::Method(content.parse::<InterfaceMethod>()?)
-            };
-            methods.push(decl);
+            methods.push(content.parse::<InterfaceMethod>()?);
         }
         Ok(Self {
             iid,
@@ -339,9 +325,4 @@ impl InterfaceMethod {
             }
         };
     }
-}
-
-pub enum MethodDecl {
-    Method(InterfaceMethod),
-    PlaceHolder(u16),
 }

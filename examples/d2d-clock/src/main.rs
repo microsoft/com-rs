@@ -668,7 +668,19 @@ com_interface! {
     unsafe interface ID2D1Factory: IUnknown {
         fn reload_system_metrics(&self) -> HRESULT;
         fn get_desktop_dpi(&self, dpi_x: *mut FLOAT, dpi_y: *mut FLOAT);
-        ...12
+        // ununsed functions
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
+        fn f3(&self);
+        fn f4(&self);
+        fn f5(&self);
+        fn f6(&self);
+        fn f7(&self);
+        fn f8(&self);
+        fn f9(&self);
+        fn f10(&self);
+        fn f11(&self);
     }
 
     #[uuid("bb12d362-daee-4b9a-aa1d-14ba401cfa1f")]
@@ -689,7 +701,7 @@ com_interface! {
 
     #[uuid("50c83a1c-e072-4c48-87b0-3630fa36a6d0")]
     unsafe interface IDXGIFactory2: IDXGIFactory1 {
-        ...1
+        fn f0(&self);
         fn create_swap_chain_for_hwnd(
             &self,
             p_device: IUnknown,
@@ -703,12 +715,17 @@ com_interface! {
 
     #[uuid("770aae78-f26f-4dba-a829-253c83d1b387")]
     unsafe interface IDXGIFactory1: IDXGIFactory {
-        ...2
+        fn f0(&self);
+        fn f1(&self);
     }
 
     #[uuid("7b7166ec-21c7-44ae-b21a-c9ae321ae369")]
     unsafe interface IDXGIFactory: IDXGIObject {
-        ...5
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
+        fn f3(&self);
+        fn f4(&self);
     }
 
     #[uuid("e8f7fe7a-191c-466d-ad95-975678bda998")]
@@ -722,19 +739,36 @@ com_interface! {
             bitmap_properties: *const D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
-        ...4
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
+        fn f3(&self);
         fn create_bitmap_from_dxgi_surface(
             &self,
             surface: IDXGISurface,
             bitmap_properties: *const D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
-        ...11
+        fn f4(&self);
+        fn f5(&self);
+        fn f6(&self);
+        fn f7(&self);
+        fn f8(&self);
+        fn f9(&self);
+        fn f10(&self);
+        fn f11(&self);
+        fn f12(&self);
+        fn f13(&self);
+        fn f14(&self);
         fn set_target(&self, image: ID2D1Image);
         fn get_target(&self, image: *mut Option<ID2D1Image>);
-        ...4
+        fn f15(&self);
+        fn f16(&self);
+        fn f17(&self);
+        fn f18(&self);
         fn set_unit_mode(&self, unit_mode: D2D1_UNIT_MODE);
-        ...2
+        fn f19(&self);
+        fn f20(&self);
         fn draw_image(
             &self,
             image: ID2D1Image,
@@ -758,14 +792,22 @@ com_interface! {
 
     #[uuid("2cd90694-12e2-11dc-9fed-001143a055f9")]
     unsafe interface ID2D1RenderTarget: ID2D1Resource {
-        ...4
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
+        fn f3(&self);
         fn create_solid_color_brush(
             &self,
             color: *const D2D1_COLOR_F,
             brush_props: *const D2D1_BRUSH_PROPERTIES,
             brush: *mut Option<ID2D1SolidColorBrush>,
         ) -> HRESULT;
-        ...6
+        fn f4(&self);
+        fn f5(&self);
+        fn f6(&self);
+        fn f7(&self);
+        fn f8(&self);
+        fn f9(&self);
         fn draw_line(
             &self,
             #[pass_through]
@@ -776,7 +818,10 @@ com_interface! {
             stroke_width: f32,
             stroke_type: ID2D1StrokeStyle
         );
-        ...4
+        fn f10(&self);
+        fn f11(&self);
+        fn f12(&self);
+        fn f13(&self);
         fn draw_ellipse(
             &self,
             ellipse: *const D2D1_ELLIPSE,
@@ -784,10 +829,32 @@ com_interface! {
             stroke_width: f32,
             stroke_style: Option<ID2D1StrokeStyle>,
         );
-        ...9
+        fn f14(&self);
+        fn f15(&self);
+        fn f16(&self);
+        fn f17(&self);
+        fn f18(&self);
+        fn f19(&self);
+        fn f20(&self);
+        fn f21(&self);
+        fn f22(&self);
         fn set_transform(&self, transform: *const d2d1::D2D1_MATRIX_3X2_F);
         fn get_transform(&self, transform: *mut d2d1::D2D1_MATRIX_3X2_F);
-        ...15
+        fn f23(&self);
+        fn f24(&self);
+        fn f25(&self);
+        fn f26(&self);
+        fn f27(&self);
+        fn f28(&self);
+        fn f29(&self);
+        fn f30(&self);
+        fn f31(&self);
+        fn f32(&self);
+        fn f33(&self);
+        fn f34(&self);
+        fn f35(&self);
+        fn f36(&self);
+        fn f37(&self);
         fn clear(&self, clear_color: *const D2D1_COLOR_F);
         fn begin_draw(&self);
         fn end_draw(
@@ -795,16 +862,18 @@ com_interface! {
             tag1: *mut D2D1_TAG,
             tag2: *mut D2D1_TAG,
         );
-        ...1
+        fn f38(&self);
         fn set_dpi(&self, dpix: f32, dpiy: f32);
-        ...1
+        fn f39(&self);
         fn get_size(&self, ret: *mut d2d1::D2D1_SIZE_F) ;
-        ...3
+        fn f40(&self);
+        fn f41(&self);
+        fn f42(&self);
     }
 
     #[uuid("2cd90691-12e2-11dc-9fed-001143a055f9")]
     unsafe interface ID2D1Resource: IUnknown {
-        ...1
+        fn f0(&self);
     }
 
     #[uuid("db6f6ddb-ac77-4e88-8253-819df9bbf140")]
@@ -813,12 +882,16 @@ com_interface! {
     #[uuid("54ec77fa-1377-44e6-8c32-88fd5f44c84c")]
     unsafe interface IDXGIDevice: IDXGIObject {
         fn get_adapter(&self, adapter: *mut Option<IDXGIAdapter>) -> HRESULT;
-        ...3
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
     }
 
     #[uuid("aec22fb8-76f3-4639-9be0-28eb43a67a2e")]
     unsafe interface IDXGIObject: IUnknown {
-        ...3
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
         fn get_parent(
             &self,
             refid: *const com::IID,
@@ -846,12 +919,14 @@ com_interface! {
 
     #[uuid("3d3e0379-f9de-4d58-bb6c-18d62992f1a6")]
     unsafe interface IDXGIDeviceSubObject: IDXGIObject {
-        ...1
+        fn f0(&self);
     }
 
     #[uuid("2411e7e1-12ac-4ccf-bd14-9798e8534dc0")]
     unsafe interface IDXGIAdapter: IDXGIObject {
-        ...3
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
     }
 
     #[uuid("ae02eedb-c735-4690-8d52-5a8dc20213aa")]
@@ -882,7 +957,9 @@ com_interface! {
             transition: IUIAnimationTransition,
             time_now: UI_ANIMATION_SECONDS,
         ) -> HRESULT;
-        ...3
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
         fn update(&self, time_now: UI_ANIMATION_SECONDS, _ptr: *mut c_void)
             -> HRESULT;
     }
@@ -906,7 +983,13 @@ com_interface! {
 
     #[uuid("CA5A14B1-D24F-48b8-8FE4-C78169BA954E")]
     unsafe interface IUIAnimationTransitionLibrary: IUnknown {
-        ...7
+        fn f0(&self);
+        fn f1(&self);
+        fn f2(&self);
+        fn f3(&self);
+        fn f4(&self);
+        fn f5(&self);
+        fn f6(&self);
         pub fn create_accelerate_decelerate_transition(
             &self,
             duration: UI_ANIMATION_SECONDS,
