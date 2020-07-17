@@ -14,7 +14,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
     let struct_ident = &co_class.name;
     let vis = &co_class.visibility;
 
-    let base_fields = gen_base_fields(&co_class.interfaces);
+    let base_fields = gen_interface_fields(&co_class.interfaces.keys().collect::<Vec<_>>());
     let ref_count_field = gen_ref_count_field();
     let user_fields = &co_class.fields;
     let docs = &co_class.docs;
@@ -30,15 +30,12 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
     )
 }
 
-pub fn gen_base_fields(base_interface_idents: &[syn::Path]) -> TokenStream {
-    let bases_interface_idents = base_interface_idents
-        .iter()
-        .enumerate()
-        .map(|(index, base)| {
-            let field_ident = quote::format_ident!("__{}", index);
-            quote!(#field_ident: ::std::ptr::NonNull<<#base as ::com::ComInterface>::VTable>)
-        });
-    quote!(#(#bases_interface_idents,)*)
+pub fn gen_interface_fields(interface_idents: &[&syn::Path]) -> TokenStream {
+    let interface_idents = interface_idents.iter().enumerate().map(|(index, base)| {
+        let field_ident = quote::format_ident!("__{}", index);
+        quote!(#field_ident: ::std::ptr::NonNull<<#base as ::com::ComInterface>::VTable>)
+    });
+    quote!(#(#interface_idents,)*)
 }
 
 pub fn gen_ref_count_field() -> TokenStream {

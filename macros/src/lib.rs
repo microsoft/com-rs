@@ -1,4 +1,4 @@
-use com_macros_support::com_interface::{expand_com_interfaces, expand_derive};
+use com_macros_support::com_interface::expand_com_interfaces;
 use com_macros_support::CoClass;
 use com_macros_support::Interfaces;
 
@@ -12,12 +12,6 @@ pub fn com_interface(item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as Interfaces);
 
     expand_com_interfaces(input).into()
-}
-
-#[proc_macro_derive(VTable)]
-pub fn derive_vtable(item: TokenStream) -> TokenStream {
-    let input = syn::parse_macro_input!(item as ItemStruct);
-    expand_derive(input).into()
 }
 
 #[proc_macro]

@@ -10,12 +10,12 @@ co_class! {
         num_owners: u32,
     }
 
-    // impl IDomesticAnimal for BritishShortHairCat {
-    //     unsafe fn train(&self) -> HRESULT {
-    //         println!("Training...");
-    //         NOERROR
-    //     }
-    // }
+    impl IDomesticAnimal for BritishShortHairCat {
+        fn train(&self) -> HRESULT {
+            println!("Training...");
+            NOERROR
+        }
+    }
 
     // impl ICat for BritishShortHairCat {
     //     unsafe fn ignore_humans(&self) -> HRESULT {

@@ -1,9 +1,9 @@
 use super::CoClass;
-use proc_macro2::TokenStream as HelperTokenStream;
+use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Ident, ItemStruct};
 
-pub fn generate(co_class: &CoClass) -> HelperTokenStream {
+pub fn generate(co_class: &CoClass) -> TokenStream {
     let allocate_fn = gen_allocate_fn(co_class);
     let struct_ident = &co_class.name;
 
@@ -18,16 +18,17 @@ pub fn generate(co_class: &CoClass) -> HelperTokenStream {
 }
 
 /// Function used to instantiate the COM fields, such as vpointers for the COM object.
-pub fn gen_allocate_fn(co_class: &CoClass) -> HelperTokenStream {
+pub fn gen_allocate_fn(co_class: &CoClass) -> TokenStream {
     let name = &co_class.name;
 
     // Allocate function signature
     let allocate_parameters = &co_class.fields;
 
-    let base_inits = gen_allocate_base_inits(name, &co_class.interfaces);
+    let base_inits = gen_vpointer_inits(co_class);
 
     // Syntax for instantiating the fields of the struct.
-    let base_fields = gen_allocate_base_fields(&co_class.interfaces);
+    let interfaces = &co_class.interfaces.keys().collect::<Vec<_>>();
+    let base_fields = gen_allocate_base_fields(interfaces);
     let ref_count_field = gen_allocate_ref_count_field();
     let user_fields = gen_allocate_user_fields(co_class);
 
@@ -46,14 +47,14 @@ pub fn gen_allocate_fn(co_class: &CoClass) -> HelperTokenStream {
 }
 
 // User field input as parameters to the allocate function.
-pub fn gen_allocate_user_fields(co_class: &CoClass) -> HelperTokenStream {
+pub fn gen_allocate_user_fields(co_class: &CoClass) -> TokenStream {
     let field_idents = co_class.fields.iter().map(|f| &f.ident);
 
     quote!(#(#field_idents,)*)
 }
 
 // Reference count field initialisation.
-pub fn gen_allocate_ref_count_field() -> HelperTokenStream {
+pub fn gen_allocate_ref_count_field() -> TokenStream {
     let ref_count_ident = crate::utils::ref_count_ident();
     quote!(
         #ref_count_ident: std::cell::Cell::new(0),
@@ -61,7 +62,7 @@ pub fn gen_allocate_ref_count_field() -> HelperTokenStream {
 }
 
 // Generate the vptr field idents needed in the instantiation syntax of the COM struct.
-pub fn gen_allocate_base_fields(interface_idents: &[syn::Path]) -> HelperTokenStream {
+pub fn gen_allocate_base_fields(interface_idents: &[&syn::Path]) -> TokenStream {
     let base_fields = interface_idents
         .iter()
         .enumerate()
@@ -71,30 +72,39 @@ pub fn gen_allocate_base_fields(interface_idents: &[syn::Path]) -> HelperTokenSt
 }
 
 // Initialise VTables with the correct adjustor thunks, through the vtable! macro.
-pub fn gen_allocate_base_inits(
-    name: &Ident,
-    base_interface_idents: &[syn::Path],
-) -> HelperTokenStream {
-    let base_inits = base_interface_idents
+pub fn gen_vpointer_inits(co_class: &CoClass) -> TokenStream {
+    let interface_inits = co_class.interfaces
         .iter()
         .enumerate()
-        .map(|(index, interface)| {
+        .map(move |(index, (interface, impls))| {
             let vptr_field_ident = format_ident!("__{}", index);
+            let vtable_ident = quote::format_ident!("{}VTable", interface.get_ident().unwrap());
+            let fields = impls.iter().map(|i| {
+                let name = &i.sig.ident;
+                quote! {
+                    #name: pub extern "stdcall" fn() {
+                    }
+                }
+
+            });
 
             let out = quote!(
-                let #vptr_field_ident = com::vtable!(#name: #interface, #index);
+                type  #vtable_ident  =<#interface as ::com::ComInterface>::VTable ;
+                let #vptr_field_ident = #vtable_ident {
+                    #(#fields)*,
+                };
                 let #vptr_field_ident = unsafe { ::std::ptr::NonNull::new_unchecked(Box::into_raw(Box::new(#vptr_field_ident))) };
             );
 
             out
         });
 
-    quote!(#(#base_inits)*)
+    quote!(#(#interface_inits)*)
 }
 
 /// Function used by in-process DLL macro to get an instance of the
 /// class object.
-pub fn gen_get_class_object_fn(struct_item: &ItemStruct) -> HelperTokenStream {
+pub fn gen_get_class_object_fn(struct_item: &ItemStruct) -> TokenStream {
     let struct_ident = &struct_item.ident;
     let class_factory_ident = crate::utils::class_factory_ident(&struct_ident);
 

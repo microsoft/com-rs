@@ -3,13 +3,12 @@ mod iid;
 mod interface;
 mod interfaces;
 mod vptr;
-mod vtable;
-mod vtable_macro;
+pub mod vtable;
 
 pub use interface::{Interface, InterfaceMethod};
 pub use interfaces::Interfaces;
 use proc_macro2::{Ident, TokenStream};
-use syn::{ItemStruct, Path};
+use syn::Path;
 
 use std::collections::HashMap;
 use std::iter::FromIterator;
@@ -27,10 +26,6 @@ pub fn expand_com_interfaces(interfaces: Interfaces) -> TokenStream {
     out.extend(convert_impls(interfaces.parents));
 
     TokenStream::from_iter(out)
-}
-
-pub fn expand_derive(input: ItemStruct) -> TokenStream {
-    vtable_macro::generate(&input).into()
 }
 
 fn convert_impls(parents: HashMap<Ident, Path>) -> Vec<TokenStream> {

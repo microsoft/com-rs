@@ -10,9 +10,10 @@ use syn::Ident;
 pub fn generate(co_class: &CoClass) -> TokenStream {
     let ident = quote::format_ident!("{}_IUNKNOWN", co_class.name.to_string().to_uppercase());
 
+    let interfaces = &co_class.interfaces.keys().collect::<Vec<_>>();
     let add_ref = gen_add_ref(&co_class.name);
-    let release = gen_release(&co_class.interfaces, &co_class.name);
-    let query_interface = gen_query_interface(&co_class.name, &co_class.interfaces);
+    let release = gen_release(interfaces, &co_class.name);
+    let query_interface = gen_query_interface(&co_class.name, interfaces);
 
     quote! {
         const #ident: <::com::interfaces::IUnknown as ::com::ComInterface>::VTable = {
@@ -50,7 +51,7 @@ pub fn gen_add_ref_implementation() -> TokenStream {
     }
 }
 
-pub fn gen_release(interface_idents: &[syn::Path], name: &Ident) -> TokenStream {
+pub fn gen_release(interface_idents: &[&syn::Path], name: &Ident) -> TokenStream {
     let ref_count_ident = crate::utils::ref_count_ident();
 
     let release_decrement = gen_release_decrement(&ref_count_ident);
@@ -96,7 +97,7 @@ pub fn gen_new_count_var_zero_check(new_count_ident: &Ident) -> TokenStream {
     )
 }
 
-pub fn gen_release_drops(interface_idents: &[syn::Path], name: &Ident) -> TokenStream {
+pub fn gen_release_drops(interface_idents: &[&syn::Path], name: &Ident) -> TokenStream {
     let vptr_drops = gen_vptr_drops(interface_idents);
     let com_object_drop = gen_com_object_drop(name);
 
@@ -106,7 +107,7 @@ pub fn gen_release_drops(interface_idents: &[syn::Path], name: &Ident) -> TokenS
     )
 }
 
-fn gen_vptr_drops(interface_idents: &[syn::Path]) -> TokenStream {
+fn gen_vptr_drops(interface_idents: &[&syn::Path]) -> TokenStream {
     let vptr_drops = interface_idents.iter().enumerate().map(|(index, _)| {
         let vptr_field_ident = quote::format_ident!("__{}", index);
         quote!(
@@ -123,7 +124,7 @@ fn gen_com_object_drop(name: &Ident) -> TokenStream {
     )
 }
 
-pub fn gen_query_interface(name: &Ident, interface_idents: &[syn::Path]) -> TokenStream {
+pub fn gen_query_interface(name: &Ident, interface_idents: &[&syn::Path]) -> TokenStream {
     // Generate match arms for implemented interfaces
     let base_match_arms = gen_base_match_arms(interface_idents);
 
@@ -150,7 +151,7 @@ pub fn gen_query_interface(name: &Ident, interface_idents: &[syn::Path]) -> Toke
     }
 }
 
-pub fn gen_base_match_arms(interface_idents: &[syn::Path]) -> TokenStream {
+pub fn gen_base_match_arms(interface_idents: &[&syn::Path]) -> TokenStream {
     // Generate match arms for implemented interfaces
     let base_match_arms = interface_idents
         .iter()
