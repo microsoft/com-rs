@@ -32,8 +32,8 @@ co_class! {
     }
 }
 
-// impl BritishShortHairCat {
-//     pub(crate) fn new() -> Box<BritishShortHairCat> {
-//         BritishShortHairCat::allocate(20)
-//     }
-// }
+impl BritishShortHairCat {
+    pub(crate) fn new() -> Box<BritishShortHairCat> {
+        BritishShortHairCat::allocate(20)
+    }
+}

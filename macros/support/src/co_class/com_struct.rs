@@ -18,6 +18,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
     let ref_count_field = gen_ref_count_field();
     let user_fields = &co_class.fields;
     let docs = &co_class.docs;
+    let methods = co_class.methods.values().flat_map(|ms| ms);
 
     quote!(
         #(#docs)*
@@ -26,6 +27,9 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
             #base_fields
             #ref_count_field
             #(#user_fields)*,
+        }
+        impl #struct_ident {
+            #(#methods)*
         }
     )
 }

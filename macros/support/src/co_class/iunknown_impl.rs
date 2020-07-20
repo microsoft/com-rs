@@ -2,13 +2,14 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Ident;
 
-pub fn gen_add_ref(class_name: &Ident) -> TokenStream {
+pub fn gen_add_ref(class_name: &Ident, offset: usize) -> TokenStream {
     let add_ref_implementation = gen_add_ref_implementation();
     let this_ptr = this_ptr();
 
     quote! {
-        extern "stdcall" fn add_ref(this_ptr: #this_ptr) -> u32 {
-            let this = this_ptr.as_ref().as_ref();
+        unsafe extern "stdcall" fn add_ref(this_ptr: #this_ptr) -> u32 {
+            let this_ptr = this_ptr.as_ptr().sub(#offset);
+            let this = &(*(&this_ptr as *const _ as *const #class_name));
             #add_ref_implementation
         }
     }
@@ -23,7 +24,11 @@ pub fn gen_add_ref_implementation() -> TokenStream {
     }
 }
 
-pub fn gen_release(interface_idents: &[&syn::Path], class_name: &Ident) -> TokenStream {
+pub fn gen_release(
+    interface_idents: &[&syn::Path],
+    class_name: &Ident,
+    offset: usize,
+) -> TokenStream {
     let ref_count_ident = crate::utils::ref_count_ident();
 
     let release_decrement = gen_release_decrement(&ref_count_ident);
@@ -35,7 +40,8 @@ pub fn gen_release(interface_idents: &[&syn::Path], class_name: &Ident) -> Token
 
     quote! {
         unsafe extern "stdcall" fn release(this_ptr: #this_ptr) -> u32 {
-            let this = this_ptr.as_ref().as_ref();
+            let this_ptr = this_ptr.as_ptr().sub(#offset);
+            let this = &(*(&this_ptr as *const _ as *const #class_name));
             #release_decrement
             #release_assign_new_count_to_var
             if #release_new_count_var_zero_check {
@@ -71,11 +77,10 @@ pub fn gen_new_count_var_zero_check(new_count_ident: &Ident) -> TokenStream {
 
 pub fn gen_release_drops(interface_idents: &[&syn::Path], name: &Ident) -> TokenStream {
     let vptr_drops = gen_vptr_drops(interface_idents);
-    let com_object_drop = gen_com_object_drop(name);
 
     quote!(
         #vptr_drops
-        #com_object_drop
+        Box::from_raw(this_ptr as *const _ as *mut #name);
     )
 }
 
@@ -90,13 +95,11 @@ fn gen_vptr_drops(interface_idents: &[&syn::Path]) -> TokenStream {
     quote!(#(#vptr_drops)*)
 }
 
-fn gen_com_object_drop(name: &Ident) -> TokenStream {
-    quote!(
-        Box::from_raw(this_ptr as *const _ as *mut #name);
-    )
-}
-
-pub fn gen_query_interface(name: &Ident, interface_idents: &[&syn::Path]) -> TokenStream {
+pub fn gen_query_interface(
+    class_name: &Ident,
+    interface_idents: &[&syn::Path],
+    offset: usize,
+) -> TokenStream {
     // Generate match arms for implemented interfaces
     let base_match_arms = gen_base_match_arms(interface_idents);
     let this_ptr = this_ptr();
@@ -107,7 +110,8 @@ pub fn gen_query_interface(name: &Ident, interface_idents: &[&syn::Path]) -> Tok
             riid: *const com::sys::IID,
             ppv: *mut *mut std::ffi::c_void
         ) -> com::sys::HRESULT {
-            let this = this_ptr.as_ref().as_ref();
+            let this = this_ptr.as_ptr().sub(#offset);
+            let this = &(*(&this as *const _ as *const #class_name));
             let riid = &*riid;
 
             if riid == &com::interfaces::iunknown::IID_IUNKNOWN {
@@ -117,7 +121,7 @@ pub fn gen_query_interface(name: &Ident, interface_idents: &[&syn::Path]) -> Tok
                 return com::sys::E_NOINTERFACE;
             }
 
-            #name::add_ref(this_ptr);
+            add_ref(this_ptr);
             com::sys::NOERROR
         }
     }

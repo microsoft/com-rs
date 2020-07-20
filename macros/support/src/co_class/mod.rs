@@ -26,26 +26,30 @@ struct Interface {
 
 impl Interface {
     /// Creates an intialized VTable for the interface
-    fn to_initialized_vtable_tokens(&self, co_class: &CoClass) -> TokenStream {
+    fn to_initialized_vtable_tokens(&self, co_class: &CoClass, offset: usize) -> TokenStream {
         let vtable_ident = self.vtable_ident();
         let vtable_type = self.to_vtable_type_tokens();
         let parent = self
             .parent
             .as_ref()
-            .map(|p| p.to_initialized_vtable_tokens(co_class))
-            .unwrap_or_else(|| Self::iunknown_tokens(co_class));
+            .map(|p| p.to_initialized_vtable_tokens(co_class, offset))
+            .unwrap_or_else(|| Self::iunknown_tokens(co_class, offset));
         let fields = co_class.methods.get(&self.path).unwrap().iter().map(|m| {
             let name = &m.sig.ident;
-            let params = m.sig.inputs.iter().filter_map(|p| 
+            let mut params = m.sig.inputs.iter().filter_map(|p| 
                 match p {
                     syn::FnArg::Receiver(_) => None,
                     syn::FnArg::Typed(p) => Some(p),
                 }
             );
             let ret = &m.sig.output;
+            let co_class_name = &co_class.name;
+            // println!("HERLLO{}", quote::quote! { });
             let method = quote::quote! {
-                unsafe extern "stdcall" fn #name(this: ::std::ptr::NonNull<::std::ptr::NonNull<#vtable_ident>>, #(#params)*) #ret {
+                unsafe extern "stdcall" fn #name(this: ::std::ptr::NonNull<::std::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
+                    let this = this.as_ptr().sub(#offset);
                     todo!()
+                    // #co_class_name::#name(&*(this as *mut #co_class_name), )
                 }
             };
             quote::quote! {
@@ -53,7 +57,6 @@ impl Interface {
                     #method
                     #name
                 }
-
             }
         });
         quote::quote! {
@@ -61,7 +64,7 @@ impl Interface {
                 #vtable_type
                 #vtable_ident {
                     parent: #parent,
-                    #(#fields)*,
+                    #(#fields),*
                 }
             }
         }
@@ -80,11 +83,11 @@ impl Interface {
         quote::format_ident!("{}VTable", name.get_ident().unwrap())
     }
 
-    fn iunknown_tokens(co_class: &CoClass) -> TokenStream {
+    fn iunknown_tokens(co_class: &CoClass, offset: usize) -> TokenStream {
         let interfaces = &co_class.interfaces.keys().collect::<Vec<_>>();
-        let add_ref = iunknown_impl::gen_add_ref(&co_class.name);
-        let release = iunknown_impl::gen_release(interfaces, &co_class.name);
-        let query_interface = iunknown_impl::gen_query_interface(&co_class.name, interfaces);
+        let add_ref = iunknown_impl::gen_add_ref(&co_class.name, offset);
+        let release = iunknown_impl::gen_release(interfaces, &co_class.name, offset);
+        let query_interface = iunknown_impl::gen_query_interface(&co_class.name, interfaces, offset);
         quote::quote! {
             {
                 type IUknownVTable = <::com::interfaces::IUnknown as ::com::ComInterface>::VTable;
@@ -143,6 +146,7 @@ impl syn::parse::Parse for CoClass {
                         syn::Field::parse_named
                     )?;
                 let fields = fields.into_iter().collect();
+
                 co_class = Some(CoClass {
                     name,
                     docs,
@@ -152,6 +156,7 @@ impl syn::parse::Parse for CoClass {
                     fields,
                 });
             } else {
+
                 let item = input.parse::<syn::ItemImpl>()?;
                 // TODO: ensure that co_class idents line up
                 let (_, interface, _) = item.trait_.unwrap();
@@ -164,6 +169,7 @@ impl syn::parse::Parse for CoClass {
                     })
                     .collect::<Vec<_>>();
                 let co_class = co_class.as_mut().unwrap();
+
                 // ensure not already there
                 co_class.methods.insert(interface, methods);
             }
@@ -174,8 +180,6 @@ impl syn::parse::Parse for CoClass {
 
 impl CoClass {
     pub fn to_tokens(&self) -> TokenStream {
-        // let base_interface_idents = crate::utils::base_interface_idents(attr_args);
-
         let mut out: Vec<TokenStream> = Vec::new();
         out.push(com_struct::generate(self));
 
@@ -183,8 +187,7 @@ impl CoClass {
 
         // out.push(co_class_impl::generate(self));
 
-        // out.push(iunknown_impl::generate(self));
-        // out.push(class_factory::generate(input).into());
+        out.push(class_factory::generate(self).into());
 
         TokenStream::from_iter(out)
     }

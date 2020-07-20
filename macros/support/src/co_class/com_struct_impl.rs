@@ -7,12 +7,12 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
     let allocate_fn = gen_allocate_fn(co_class);
     let struct_ident = &co_class.name;
 
-    // let get_class_object_fn = gen_get_class_object_fn(struct_item);
+    let get_class_object_fn = gen_get_class_object_fn(co_class);
 
     quote!(
         impl #struct_ident {
             #allocate_fn
-            // #get_class_object_fn
+            #get_class_object_fn
         }
     )
 }
@@ -77,7 +77,7 @@ pub fn gen_vpointer_inits(co_class: &CoClass) -> TokenStream {
         .iter()
         .enumerate()
         .map(move |(index, (_, interface))| {
-            let interface = interface.to_initialized_vtable_tokens(co_class);
+            let interface = interface.to_initialized_vtable_tokens(co_class, index);
             let vptr_field_ident = quote::format_ident!("__{}", index);
             quote!(
                 let #vptr_field_ident = unsafe { ::std::ptr::NonNull::new_unchecked(Box::into_raw(Box::new(#interface))) };
@@ -89,9 +89,12 @@ pub fn gen_vpointer_inits(co_class: &CoClass) -> TokenStream {
 
 /// Function used by in-process DLL macro to get an instance of the
 /// class object.
-pub fn gen_get_class_object_fn(struct_item: &ItemStruct) -> TokenStream {
-    let struct_ident = &struct_item.ident;
-    let class_factory_ident = crate::utils::class_factory_ident(&struct_ident);
+pub fn gen_get_class_object_fn(co_class: &CoClass) -> TokenStream {
+    if &co_class.name == "BritishShortHairCatClassFactory" {
+        return TokenStream::new();
+    }
+    let name = &co_class.name;
+    let class_factory_ident = crate::utils::class_factory_ident(&name);
 
     quote!(
         pub fn get_class_object() -> Box<#class_factory_ident> {
