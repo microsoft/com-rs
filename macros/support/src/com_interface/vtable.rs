@@ -10,16 +10,10 @@ use syn::Type;
 pub fn generate(interface: &Interface) -> syn::Result<TokenStream> {
     let interface_ident = &interface.name;
     let vtable_ident = ident(&interface_ident.to_string());
-    let base_field = match interface.parent {
+    let parent_field = match interface.parent {
         Some(ref parent) => {
-            let last_ident = &parent
-                .segments
-                .last()
-                .expect("Supertrait has empty path")
-                .ident;
-            let base_field_ident = base_field_ident(&last_ident.to_string());
             quote! {
-                pub #base_field_ident: <#parent as com::ComInterface>::VTable,
+                pub parent: <#parent as com::ComInterface>::VTable,
             }
         }
         None => quote! {},
@@ -31,7 +25,7 @@ pub fn generate(interface: &Interface) -> syn::Result<TokenStream> {
         #[allow(non_snake_case, missing_docs)]
         #[repr(C)]
         #vis struct #vtable_ident {
-            #base_field
+            #parent_field
             #methods
         }
     ))
@@ -39,10 +33,6 @@ pub fn generate(interface: &Interface) -> syn::Result<TokenStream> {
 
 pub fn ident(interface_name: &str) -> Ident {
     format_ident!("{}VTable", interface_name)
-}
-
-fn base_field_ident(base_interface_name: &str) -> Ident {
-    format_ident!("{}_base", crate::utils::camel_to_snake(base_interface_name))
 }
 
 fn gen_vtable_methods(interface: &Interface) -> syn::Result<TokenStream> {

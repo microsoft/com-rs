@@ -6,30 +6,30 @@ use com::sys::{HRESULT, NOERROR};
 co_class! {
     /// The implementation class
     /// https://en.wikipedia.org/wiki/British_Shorthair
-    pub coclass BritishShortHairCat: IDomesticAnimal, ICat {
+    pub coclass BritishShortHairCat: IDomesticAnimal(IAnimal), ICat(IAnimal) {
         num_owners: u32,
     }
 
     impl IDomesticAnimal for BritishShortHairCat {
-        fn train(&self) -> HRESULT {
+        fn Train(&self) -> HRESULT {
             println!("Training...");
             NOERROR
         }
     }
 
-    // impl ICat for BritishShortHairCat {
-    //     unsafe fn ignore_humans(&self) -> HRESULT {
-    //         println!("Ignoring Humans...");
-    //         NOERROR
-    //     }
-    // }
+    impl ICat for BritishShortHairCat {
+        unsafe fn IgnoreHumans(&self) -> HRESULT {
+            println!("Ignoring Humans...");
+            NOERROR
+        }
+    }
 
-    // impl IAnimal for BritishShortHairCat {
-    //     unsafe fn eat(&self) -> HRESULT {
-    //         println!("Eating...");
-    //         NOERROR
-    //     }
-    // }
+    impl IAnimal for BritishShortHairCat {
+        unsafe fn Eat(&self) -> HRESULT {
+            println!("Eating...");
+            NOERROR
+        }
+    }
 }
 
 // impl BritishShortHairCat {
