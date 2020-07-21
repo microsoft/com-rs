@@ -36,7 +36,7 @@ impl Interface {
             .unwrap_or_else(|| Self::iunknown_tokens(co_class, offset));
         let fields = co_class.methods.get(&self.path).unwrap().iter().map(|m| {
             let name = &m.sig.ident;
-            let mut params = m.sig.inputs.iter().filter_map(|p| 
+            let params = m.sig.inputs.iter().filter_map(|p| 
                 match p {
                     syn::FnArg::Receiver(_) => None,
                     syn::FnArg::Typed(p) => Some(p),
@@ -44,12 +44,10 @@ impl Interface {
             );
             let ret = &m.sig.output;
             let co_class_name = &co_class.name;
-            // println!("HERLLO{}", quote::quote! { });
             let method = quote::quote! {
                 unsafe extern "stdcall" fn #name(this: ::std::ptr::NonNull<::std::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
                     let this = this.as_ptr().sub(#offset);
-                    todo!()
-                    // #co_class_name::#name(&*(this as *mut #co_class_name), )
+                    #co_class_name::#name(&*(this as *mut #co_class_name), )
                 }
             };
             quote::quote! {
@@ -84,20 +82,23 @@ impl Interface {
     }
 
     fn iunknown_tokens(co_class: &CoClass, offset: usize) -> TokenStream {
+        let name = &co_class.name;
         let interfaces = &co_class.interfaces.keys().collect::<Vec<_>>();
-        let add_ref = iunknown_impl::gen_add_ref(&co_class.name, offset);
+        let add_ref = iunknown_impl::gen_add_ref(name, offset);
         let release = iunknown_impl::gen_release(interfaces, &co_class.name, offset);
-        let query_interface = iunknown_impl::gen_query_interface(&co_class.name, interfaces, offset);
+        let query_interface = iunknown_impl::gen_query_interface(name, interfaces, offset);
         quote::quote! {
             {
                 type IUknownVTable = <::com::interfaces::IUnknown as ::com::ComInterface>::VTable;
-                #add_ref
-                #release
-                #query_interface
+                impl #name {
+                    #add_ref
+                    #release
+                    #query_interface
+                }
                 IUknownVTable {
-                    AddRef: add_ref,
-                    Release: release,
-                    QueryInterface: query_interface,
+                    AddRef: #name::add_ref,
+                    Release: #name::release,
+                    QueryInterface: #name::query_interface,
                 }
             }
         }

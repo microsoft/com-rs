@@ -226,10 +226,10 @@ macro_rules! inproc_dll_module {
 
             let class_id = unsafe { &*class_id };
             if class_id == &$class_id_one {
-                let mut instance = <$class_type_one>::get_class_object();
+                let mut instance = Box::new(<$class_type_one>::default());
                 initialize_class_object(instance, iid, result)
             } $(else if class_id == &$class_id {
-                let mut instance = <$class_type>::get_class_object();
+                let mut instance = Box::new(<$class_type>::default());
                 initialize_class_object(instance, iid, result)
             })* else {
                 com::sys::CLASS_E_CLASSNOTAVAILABLE

@@ -14,7 +14,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
             pub coclass #class_factory_ident: IClassFactory {}
 
             impl IClassFactory for #class_factory_ident {
-                fn create_instance(
+                fn CreateInstance(
                     &self,
                     aggr: *mut *const <::com::interfaces::IUnknown as ::com::ComInterface>::VTable,
                     riid: *const com::sys::IID,
@@ -33,7 +33,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
                     hr
                 }
 
-                fn lock_server(&self, _increment: com::sys::BOOL) -> com::sys::HRESULT {
+                fn LockServer(&self, _increment: com::sys::BOOL) -> com::sys::HRESULT {
                     com::sys::S_OK
                 }
             }

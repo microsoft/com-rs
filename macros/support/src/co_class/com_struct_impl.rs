@@ -7,12 +7,9 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
     let allocate_fn = gen_allocate_fn(co_class);
     let struct_ident = &co_class.name;
 
-    let get_class_object_fn = gen_get_class_object_fn(co_class);
-
     quote!(
         impl #struct_ident {
             #allocate_fn
-            #get_class_object_fn
         }
     )
 }
@@ -24,24 +21,23 @@ pub fn gen_allocate_fn(co_class: &CoClass) -> TokenStream {
     // Allocate function signature
     let allocate_parameters = &co_class.fields;
 
-    let base_inits = gen_vpointer_inits(co_class);
+    let interface_inits = gen_vpointer_inits(co_class);
 
     // Syntax for instantiating the fields of the struct.
     let interfaces = &co_class.interfaces.keys().collect::<Vec<_>>();
-    let base_fields = gen_allocate_base_fields(interfaces);
+    let interface_fields = gen_allocate_interface_fields(interfaces);
     let ref_count_field = gen_allocate_ref_count_field();
     let user_fields = gen_allocate_user_fields(co_class);
 
     quote! {
-        fn allocate(#(#allocate_parameters),*) -> Box<#name> {
-            #base_inits
+        fn new(#(#allocate_parameters),*) -> #name {
+            #interface_inits
 
-            let out = #name {
-                #base_fields
+            #name {
+                #interface_fields
                 #ref_count_field
                 #user_fields
-            };
-            Box::new(out)
+            }
         }
     }
 }
@@ -62,7 +58,7 @@ pub fn gen_allocate_ref_count_field() -> TokenStream {
 }
 
 // Generate the vptr field idents needed in the instantiation syntax of the COM struct.
-pub fn gen_allocate_base_fields(interface_idents: &[&syn::Path]) -> TokenStream {
+pub fn gen_allocate_interface_fields(interface_idents: &[&syn::Path]) -> TokenStream {
     let base_fields = interface_idents
         .iter()
         .enumerate()
@@ -85,20 +81,4 @@ pub fn gen_vpointer_inits(co_class: &CoClass) -> TokenStream {
         });
 
     quote!(#(#interface_inits)*)
-}
-
-/// Function used by in-process DLL macro to get an instance of the
-/// class object.
-pub fn gen_get_class_object_fn(co_class: &CoClass) -> TokenStream {
-    if &co_class.name == "BritishShortHairCatClassFactory" {
-        return TokenStream::new();
-    }
-    let name = &co_class.name;
-    let class_factory_ident = crate::utils::class_factory_ident(&name);
-
-    quote!(
-        pub fn get_class_object() -> Box<#class_factory_ident> {
-            <#class_factory_ident>::new()
-        }
-    )
 }
