@@ -84,21 +84,28 @@ impl Interface {
     fn iunknown_tokens(co_class: &CoClass, offset: usize) -> TokenStream {
         let name = &co_class.name;
         let interfaces = &co_class.interfaces.keys().collect::<Vec<_>>();
-        let add_ref = iunknown_impl::gen_add_ref(name, offset);
-        let release = iunknown_impl::gen_release(interfaces, &co_class.name, offset);
-        let query_interface = iunknown_impl::gen_query_interface(name, interfaces, offset);
+        let iunknown = iunknown_impl::IUnknown::new(name.clone(), offset);
+        let add_ref_std = iunknown.to_add_ref_stdcall_tokens();
+        let add_ref = iunknown.to_add_ref_tokens();
+        let release_std = iunknown.to_release_stdcall_tokens();
+        let release = iunknown.to_release_tokens(interfaces);
+        let query_interface_std = iunknown.to_query_interface_stdcall_tokens(interfaces);
+        let query_interface = iunknown.to_query_interface_tokens(interfaces);
         quote::quote! {
             {
                 type IUknownVTable = <::com::interfaces::IUnknown as ::com::ComInterface>::VTable;
+                #add_ref_std
+                #release_std
+                #query_interface_std
                 impl #name {
                     #add_ref
                     #release
                     #query_interface
                 }
                 IUknownVTable {
-                    AddRef: #name::add_ref,
-                    Release: #name::release,
-                    QueryInterface: #name::query_interface,
+                    AddRef: #add_ref_std,
+                    Release: #release_std,
+                    QueryInterface: query_interface_std,
                 }
             }
         }
