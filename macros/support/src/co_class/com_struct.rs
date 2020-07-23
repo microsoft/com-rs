@@ -11,25 +11,35 @@ use quote::quote;
 ///     ..fields..
 /// }
 pub fn generate(co_class: &CoClass) -> TokenStream {
-    let struct_ident = &co_class.name;
+    let name = &co_class.name;
     let vis = &co_class.visibility;
 
-    let base_fields = gen_interface_fields(&co_class.interfaces.keys().collect::<Vec<_>>());
-    let ref_count_field = gen_ref_count_field();
+    let interfaces = co_class.interfaces.keys().collect::<Vec<_>>();
+    let interface_fields = gen_interface_fields(&interfaces);
+    let ref_count_ident = crate::utils::ref_count_ident();
+
     let user_fields = &co_class.fields;
     let docs = &co_class.docs;
     let methods = co_class.methods.values().flat_map(|ms| ms);
 
+    let iunknown = super::iunknown_impl::IUnknown::new(name.clone());
+    let add_ref = iunknown.to_add_ref_tokens();
+    let release = iunknown.to_release_tokens(&interfaces);
+    let query_interface = iunknown.to_query_interface_tokens(&interfaces);
+
     quote!(
         #(#docs)*
         #[repr(C)]
-        #vis struct #struct_ident {
-            #base_fields
-            #ref_count_field
+        #vis struct #name {
+            #interface_fields
+            #ref_count_ident: ::std::cell::Cell<u32>,
             #(#user_fields)*,
         }
-        impl #struct_ident {
+        impl #name {
             #(#methods)*
+            #add_ref
+            #release
+            #query_interface
         }
     )
 }
@@ -40,9 +50,4 @@ pub fn gen_interface_fields(interface_idents: &[&syn::Path]) -> TokenStream {
         quote!(#field_ident: ::std::ptr::NonNull<<#base as ::com::ComInterface>::VTable>)
     });
     quote!(#(#interface_idents,)*)
-}
-
-pub fn gen_ref_count_field() -> TokenStream {
-    let ref_count_ident = crate::utils::ref_count_ident();
-    quote!(#ref_count_ident: ::std::cell::Cell<u32>,)
 }

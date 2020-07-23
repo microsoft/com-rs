@@ -5,7 +5,6 @@ use crate::sys::{
     RegSetValueExA, CLSID, ERROR_SUCCESS, FAILED, GUID, HKEY, HRESULT, IID, LSTATUS,
     SELFREG_E_CLASS, S_OK,
 };
-use crate::ComInterface;
 
 use std::convert::TryInto;
 use std::ffi::c_void;
@@ -173,24 +172,6 @@ fn guid_to_string(guid: &GUID) -> String {
     )
 }
 
-#[doc(hidden)]
-#[inline]
-pub fn initialize_class_object<T: ComInterface>(
-    instance: Box<T>,
-    riid: *const IID,
-    result: *mut *mut c_void,
-) -> HRESULT {
-    let hr = unsafe {
-        instance.as_iunknown().add_ref();
-        let hr = instance.as_iunknown().query_interface(riid, result);
-        instance.as_iunknown().release();
-        hr
-    };
-    Box::into_raw(instance);
-
-    hr
-}
-
 /// Register the supplied keys with the registry
 #[doc(hidden)]
 #[inline]
@@ -221,16 +202,31 @@ macro_rules! inproc_dll_module {
         #[no_mangle]
         extern "stdcall" fn DllGetClassObject(class_id: *const com::sys::CLSID, iid: *const com::sys::IID, result: *mut *mut std::ffi::c_void) -> com::sys::HRESULT {
             use com::interfaces::IUnknown;
-            use com::production::registration::initialize_class_object;
             assert!(!class_id.is_null(), "class id passed to DllGetClassObject should never be null");
 
             let class_id = unsafe { &*class_id };
             if class_id == &$class_id_one {
                 let mut instance = Box::new(<$class_type_one>::default());
-                initialize_class_object(instance, iid, result)
+                let hr = unsafe {
+                    instance.add_ref();
+                    let hr = instance.query_interface(iid, result);
+                    instance.release();
+                    hr
+                };
+                Box::into_raw(instance);
+
+                hr
             } $(else if class_id == &$class_id {
                 let mut instance = Box::new(<$class_type>::default());
-                initialize_class_object(instance, iid, result)
+                let hr = unsafe {
+                    instance.add_ref();
+                    let hr = instance.query_interface(iid, result);
+                    instance.release();
+                    hr
+                };
+                Box::into_raw(instance);
+
+                hr
             })* else {
                 com::sys::CLASS_E_CLASSNOTAVAILABLE
             }

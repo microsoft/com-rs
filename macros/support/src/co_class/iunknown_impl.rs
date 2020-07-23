@@ -2,18 +2,18 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Ident;
 
-pub struct IUnknown {
+pub struct IUnknownAbi {
     class_name: Ident,
     offset: usize,
 }
 
-impl IUnknown {
+impl IUnknownAbi {
     pub fn new(class_name: Ident, offset: usize) -> Self {
         Self { class_name, offset }
     }
 
-    pub fn to_add_ref_stdcall_tokens(&self) -> TokenStream {
-        let this_ptr = Self::this_ptr_type();
+    pub fn to_add_ref_tokens(&self) -> TokenStream {
+        let this_ptr = this_ptr_type();
         let munge = self.pointer_munging();
         let class_name = &self.class_name;
 
@@ -25,19 +25,8 @@ impl IUnknown {
         }
     }
 
-    pub fn to_add_ref_tokens(&self) -> TokenStream {
-        let ref_count_ident = crate::utils::ref_count_ident();
-        quote! {
-            unsafe fn add_ref(&self) -> u32 {
-                let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
-                self.#ref_count_ident.set(value);
-                value
-            }
-        }
-    }
-
-    pub fn to_release_stdcall_tokens(&self) -> TokenStream {
-        let this_ptr = Self::this_ptr_type();
+    pub fn to_release_tokens(&self) -> TokenStream {
+        let this_ptr = this_ptr_type();
         let munge = self.pointer_munging();
         let class_name = &self.class_name;
 
@@ -49,8 +38,57 @@ impl IUnknown {
         }
     }
 
-    pub fn to_release_tokens(&self, interface_idents: &[&syn::Path]) -> TokenStream {
+    pub fn to_query_interface_tokens(&self, interface_idents: &[&syn::Path]) -> TokenStream {
         let offset = self.offset;
+        let class_name = &self.class_name;
+        // Generate match arms for implemented interfaces
+        let this_ptr = this_ptr_type();
+        let munge = self.pointer_munging();
+
+        quote! {
+            unsafe extern "stdcall" fn query_interface(
+                this_ptr: #this_ptr,
+                riid: *const com::sys::IID,
+                ppv: *mut *mut std::ffi::c_void
+            ) -> com::sys::HRESULT {
+                #munge
+                #class_name::query_interface(this, riid, ppv)
+            }
+        }
+    }
+
+    fn pointer_munging(&self) -> TokenStream {
+        let offset = self.offset;
+        let class_name = &self.class_name;
+
+        quote! {
+            let this_ptr = this_ptr.as_ptr().sub(#offset);
+            let this = &(*(&this_ptr as *const _ as *const #class_name));
+        }
+    }
+}
+
+pub struct IUnknown {
+    class_name: Ident,
+}
+
+impl IUnknown {
+    pub fn new(class_name: Ident) -> Self {
+        Self { class_name }
+    }
+
+    pub fn to_add_ref_tokens(&self) -> TokenStream {
+        let ref_count_ident = crate::utils::ref_count_ident();
+        quote! {
+            pub unsafe fn add_ref(&self) -> u32 {
+                let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
+                self.#ref_count_ident.set(value);
+                value
+            }
+        }
+    }
+
+    pub fn to_release_tokens(&self, interface_idents: &[&syn::Path]) -> TokenStream {
         let class_name = &self.class_name;
         let ref_count_ident = crate::utils::ref_count_ident();
 
@@ -61,10 +99,8 @@ impl IUnknown {
             }
         });
 
-        let this_ptr = Self::this_ptr_type();
-
         quote! {
-            unsafe fn release(&self) -> u32 {
+            pub unsafe fn release(&self) -> u32 {
                 let value = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
                 self.#ref_count_ident.set(value);
                 let #ref_count_ident = self.#ref_count_ident.get();
@@ -78,38 +114,12 @@ impl IUnknown {
         }
     }
 
-    pub fn to_query_interface_stdcall_tokens(
-        &self,
-        interface_idents: &[&syn::Path],
-    ) -> TokenStream {
-        let offset = self.offset;
-        let class_name = &self.class_name;
-        // Generate match arms for implemented interfaces
-        let base_match_arms = Self::gen_base_match_arms(interface_idents);
-        let this_ptr = Self::this_ptr_type();
-        let munge = self.pointer_munging();
-
-        quote! {
-            unsafe extern "stdcall" fn query_interface(
-                this_ptr: #this_ptr,
-                riid: *const com::sys::IID,
-                ppv: *mut *mut std::ffi::c_void
-            ) -> com::sys::HRESULT {
-                #munge
-                #class_name::query_interface(this)
-            }
-        }
-    }
-
     pub fn to_query_interface_tokens(&self, interface_idents: &[&syn::Path]) -> TokenStream {
-        let offset = self.offset;
-        let class_name = &self.class_name;
         // Generate match arms for implemented interfaces
         let base_match_arms = Self::gen_base_match_arms(interface_idents);
-        let this_ptr = Self::this_ptr_type();
 
         quote! {
-            unsafe fn query_interface(
+            pub unsafe fn query_interface(
                 &self,
                 riid: *const com::sys::IID,
                 ppv: *mut *mut std::ffi::c_void
@@ -148,20 +158,10 @@ impl IUnknown {
 
         quote!(#(#base_match_arms)*)
     }
+}
 
-    fn pointer_munging(&self) -> TokenStream {
-        let offset = self.offset;
-        let class_name = &self.class_name;
-
-        quote! {
-            let this_ptr = this_ptr.as_ptr().sub(#offset);
-            let this = &(*(&this_ptr as *const _ as *const #class_name));
-        }
-    }
-
-    fn this_ptr_type() -> TokenStream {
-        quote! {
-            ::std::ptr::NonNull<::std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::ComInterface>::VTable>>
-        }
+fn this_ptr_type() -> TokenStream {
+    quote! {
+        ::std::ptr::NonNull<::std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::ComInterface>::VTable>>
     }
 }

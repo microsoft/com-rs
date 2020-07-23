@@ -94,24 +94,16 @@ impl Interface {
     fn iunknown_tokens(co_class: &CoClass, offset: usize) -> TokenStream {
         let name = &co_class.name;
         let interfaces = &co_class.interfaces.keys().collect::<Vec<_>>();
-        let iunknown = iunknown_impl::IUnknown::new(name.clone(), offset);
-        let add_ref_std = iunknown.to_add_ref_stdcall_tokens();
+        let iunknown = iunknown_impl::IUnknownAbi::new(name.clone(), offset);
         let add_ref = iunknown.to_add_ref_tokens();
-        let release_std = iunknown.to_release_stdcall_tokens();
-        let release = iunknown.to_release_tokens(interfaces);
-        let query_interface_std = iunknown.to_query_interface_stdcall_tokens(interfaces);
+        let release  = iunknown.to_release_tokens();
         let query_interface = iunknown.to_query_interface_tokens(interfaces);
         quote::quote! {
             {
                 type IUknownVTable = <::com::interfaces::IUnknown as ::com::ComInterface>::VTable;
-                #add_ref_std
-                #release_std
-                #query_interface_std
-                impl #name {
-                    #add_ref
-                    #release
-                    #query_interface
-                }
+                #add_ref
+                #release
+                #query_interface
                 IUknownVTable {
                     AddRef: add_ref,
                     Release: release,
@@ -200,10 +192,8 @@ impl CoClass {
     pub fn to_tokens(&self) -> TokenStream {
         let mut out: Vec<TokenStream> = Vec::new();
         out.push(com_struct::generate(self));
-
         out.push(com_struct_impl::generate(self));
-
-        // out.push(co_class_impl::generate(self));
+        out.push(co_class_impl::generate(self));
 
         // out.push(class_factory::generate(self).into());
 
