@@ -16,6 +16,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
 /// Function used to instantiate the COM fields, such as vpointers for the COM object.
 pub fn gen_allocate_fn(co_class: &CoClass) -> TokenStream {
     let name = &co_class.name;
+    let vis = &co_class.visibility;
 
     // Allocate function signature
     let allocate_parameters = &co_class.fields;
@@ -29,7 +30,7 @@ pub fn gen_allocate_fn(co_class: &CoClass) -> TokenStream {
     let user_fields = gen_allocate_user_fields(co_class);
 
     quote! {
-        fn new(#(#allocate_parameters),*) -> #name {
+        #vis fn new(#(#allocate_parameters),*) -> #name {
             #interface_inits
 
             #name {

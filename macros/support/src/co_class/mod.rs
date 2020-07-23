@@ -52,12 +52,18 @@ impl Interface {
                     syn::FnArg::Typed(p) => Some(p),
                 }
             );
+            let args = m.sig.inputs.iter().filter_map(|p| 
+                match p {
+                    syn::FnArg::Receiver(_) => None,
+                    syn::FnArg::Typed(p) => Some(&p.pat),
+                }
+            );
             let ret = &m.sig.output;
             let co_class_name = &co_class.name;
             let method = quote::quote! {
                 unsafe extern "stdcall" fn #name(this: ::std::ptr::NonNull<::std::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
                     let this = this.as_ptr().sub(#offset);
-                    #co_class_name::#name(&*(this as *mut #co_class_name), )
+                    #co_class_name::#name(&*(this as *mut #co_class_name), #(#args),*)
                 }
             };
             quote::quote! {
