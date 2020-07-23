@@ -3,20 +3,20 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 pub fn generate(co_class: &CoClass) -> TokenStream {
-    let class_factory_ident = crate::utils::class_factory_ident(&co_class.name);
-    let co_class_name = &co_class.name;
-    if co_class_name.to_string() == "BritishShortHairCatClassFactory" {
+    if co_class.class_factory {
         return TokenStream::new();
     }
+    let class_factory_ident = crate::utils::class_factory_ident(&co_class.name);
+    let co_class_name = &co_class.name;
     quote! {
         use ::com::interfaces::IClassFactory;
         ::com::co_class! {
-            pub coclass #class_factory_ident: IClassFactory {}
+            pub classfactory #class_factory_ident: IClassFactory {}
 
             impl IClassFactory for #class_factory_ident {
                 fn CreateInstance(
                     &self,
-                    aggr: *mut *const <::com::interfaces::IUnknown as ::com::ComInterface>::VTable,
+                    aggr: *mut std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::ComInterface>::VTable>,
                     riid: *const com::sys::IID,
                     ppv: *mut *mut std::ffi::c_void,
                 ) -> com::sys::HRESULT {

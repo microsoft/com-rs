@@ -11,6 +11,7 @@ pub mod iunknown_impl;
 
 pub struct CoClass {
     name: Ident,
+    class_factory: bool,
     docs: Vec<syn::Attribute>,
     visibility: syn::Visibility,
     interfaces: std::collections::HashMap<syn::Path, Interface>,
@@ -123,7 +124,13 @@ impl syn::parse::Parse for CoClass {
             if !input.peek(syn::Token!(impl)) {
                 let mut interfaces = HashMap::new();
                 let visibility = input.parse::<syn::Visibility>()?;
-                let _ = input.parse::<keywords::coclass>()?;
+                let class_factory = if input.peek(keywords::classfactory) {
+                    let _ = input.parse::<keywords::classfactory>()?;
+                    true
+                } else {
+                    let _ = input.parse::<keywords::coclass>()?;
+                    false
+                };
                 let name = input.parse::<Ident>()?;
                 let _ = input.parse::<syn::Token!(:)>()?;
                 while !input.peek(syn::token::Brace) {
@@ -159,6 +166,7 @@ impl syn::parse::Parse for CoClass {
 
                 co_class = Some(CoClass {
                     name,
+                    class_factory,
                     docs,
                     visibility,
                     interfaces,
@@ -194,8 +202,7 @@ impl CoClass {
         out.push(com_struct::generate(self));
         out.push(com_struct_impl::generate(self));
         out.push(co_class_impl::generate(self));
-
-        // out.push(class_factory::generate(self).into());
+        out.push(class_factory::generate(self).into());
 
         TokenStream::from_iter(out)
     }
@@ -203,4 +210,5 @@ impl CoClass {
 
 mod keywords {
     syn::custom_keyword!(coclass);
+    syn::custom_keyword!(classfactory);
 }

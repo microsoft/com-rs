@@ -1,5 +1,3 @@
-use crate::ComInterface;
-
 /// A COM compliant class
 ///
 /// # Safety

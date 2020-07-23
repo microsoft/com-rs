@@ -1,11 +1,18 @@
 use super::CoClass;
-use proc_macro2::TokenStream as HelperTokenStream;
+use proc_macro2::TokenStream;
 use quote::quote;
 
-pub fn generate(struct_item: &CoClass) -> HelperTokenStream {
-    let struct_ident = &struct_item.name;
+pub fn generate(co_class: &CoClass) -> TokenStream {
+    if co_class.class_factory {
+        return TokenStream::new();
+    }
+
+    let name = &co_class.name;
+    let factory = crate::utils::class_factory_ident(name);
 
     quote! {
-        unsafe impl com::production::CoClass for #struct_ident {}
+        unsafe impl com::production::CoClass for #name {
+            type Factory = #factory;
+        }
     }
 }
