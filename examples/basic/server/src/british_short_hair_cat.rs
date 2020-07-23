@@ -18,14 +18,14 @@ co_class! {
     }
 
     impl ICat for BritishShortHairCat {
-        unsafe fn IgnoreHumans(&self) -> HRESULT {
+        fn IgnoreHumans(&self) -> HRESULT {
             println!("Ignoring Humans...");
             NOERROR
         }
     }
 
     impl IAnimal for BritishShortHairCat {
-        unsafe fn Eat(&self) -> HRESULT {
+        fn Eat(&self) -> HRESULT {
             println!("Eating...");
             NOERROR
         }

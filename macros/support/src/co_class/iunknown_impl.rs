@@ -57,7 +57,7 @@ impl IUnknown {
         let vptr_drops = interface_idents.iter().enumerate().map(|(index, _)| {
             let vptr_field_ident = quote::format_ident!("__{}", index);
             quote! {
-                Box::from_raw(this.#vptr_field_ident.as_ptr());
+                Box::from_raw(self.#vptr_field_ident.as_ptr());
             }
         });
 

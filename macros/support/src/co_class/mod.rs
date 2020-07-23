@@ -1,5 +1,4 @@
 use proc_macro2::{Ident, TokenStream};
-use syn::spanned::Spanned;
 
 use std::collections::HashMap;
 use std::iter::FromIterator;
@@ -27,13 +26,23 @@ struct Interface {
 impl Interface {
     /// Creates an intialized VTable for the interface
     fn to_initialized_vtable_tokens(&self, co_class: &CoClass, offset: usize) -> TokenStream {
+        let mut already_initialized = std::collections::HashSet::new();
         let vtable_ident = self.vtable_ident();
         let vtable_type = self.to_vtable_type_tokens();
-        let parent = self
+        let iunknown_path = &syn::parse_str::<syn::Path>("IUknown").unwrap();
+        let parent = match self
             .parent
-            .as_ref()
-            .map(|p| p.to_initialized_vtable_tokens(co_class, offset))
-            .unwrap_or_else(|| Self::iunknown_tokens(co_class, offset));
+            .as_ref() {
+                Some(p) if already_initialized.get(&p.path).is_none() => {
+                    already_initialized.insert(&p.path);
+                    Some(p.to_initialized_vtable_tokens(co_class, offset))
+                }
+                None if already_initialized.get(iunknown_path).is_none() => {
+                    already_initialized.insert(iunknown_path);
+                    Some(Self::iunknown_tokens(co_class, offset))
+                }
+                _ => None
+            };
         let fields = co_class.methods.get(&self.path).unwrap().iter().map(|m| {
             let name = &m.sig.ident;
             let params = m.sig.inputs.iter().filter_map(|p| 
@@ -57,11 +66,12 @@ impl Interface {
                 }
             }
         });
+        let parent = parent.as_ref().map(|p| quote::quote! { parent: #parent, });
         quote::quote! {
             {
                 #vtable_type
                 #vtable_ident {
-                    parent: #parent,
+                    #parent
                     #(#fields),*
                 }
             }
@@ -103,9 +113,9 @@ impl Interface {
                     #query_interface
                 }
                 IUknownVTable {
-                    AddRef: #add_ref_std,
-                    Release: #release_std,
-                    QueryInterface: query_interface_std,
+                    AddRef: add_ref,
+                    Release: release,
+                    QueryInterface: query_interface,
                 }
             }
         }
@@ -195,7 +205,7 @@ impl CoClass {
 
         // out.push(co_class_impl::generate(self));
 
-        out.push(class_factory::generate(self).into());
+        // out.push(class_factory::generate(self).into());
 
         TokenStream::from_iter(out)
     }
