@@ -33,7 +33,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
         #vis struct #name {
             #interface_fields
             #ref_count_ident: ::std::cell::Cell<u32>,
-            #(#user_fields)*,
+            #(#user_fields),*
         }
         impl #name {
             #(#methods)*
