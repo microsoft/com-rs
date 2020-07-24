@@ -1,4 +1,4 @@
-use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal};
+use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal, Food};
 
 use com::class;
 use com::sys::{HRESULT, NOERROR};
@@ -7,7 +7,7 @@ class! {
     /// The implementation class
     /// https://en.wikipedia.org/wiki/British_Shorthair
     pub class BritishShortHairCat: IDomesticAnimal(IAnimal), ICat(IAnimal) {
-        num_owners: u32,
+        happiness: std::cell::Cell<usize>,
     }
 
     impl IDomesticAnimal for BritishShortHairCat {
@@ -25,15 +25,22 @@ class! {
     }
 
     impl IAnimal for BritishShortHairCat {
-        fn eat(&self) -> HRESULT {
+        fn eat(&self, food: *const Food) -> HRESULT {
+            assert!(!food.is_null());
+            let food = unsafe { *food };
             println!("Eating...");
+            self.happiness.set(self.happiness.get() + food.deliciousness);
             NOERROR
+        }
+
+        fn happiness(&self) ->usize {
+            self.happiness.get()
         }
     }
 }
 
 impl Default for BritishShortHairCat {
     fn default() -> BritishShortHairCat {
-        BritishShortHairCat::new(20)
+        BritishShortHairCat::new(std::cell::Cell::new(10))
     }
 }

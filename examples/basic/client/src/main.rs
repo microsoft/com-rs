@@ -3,7 +3,7 @@ use com::{
     interfaces::iunknown::IUnknown,
     runtime::{create_instance, get_class_object, init_apartment, ApartmentType},
 };
-use interface::{IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS};
+use interface::{Food, IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS};
 
 fn main() {
     init_apartment(ApartmentType::SingleThreaded)
@@ -23,7 +23,9 @@ fn main() {
         .expect("Failed to get IAnimal");
     println!("Got IAnimal");
 
-    unsafe { animal.eat() };
+    let food = Food { deliciousness: 10 };
+    unsafe { animal.eat(&food) };
+    assert!(unsafe { animal.happiness() } == 20);
 
     // Test cross-vtable interface queries for both directions.
     let domestic_animal = animal
@@ -50,7 +52,7 @@ fn main() {
         .unwrap_or_else(|hr| panic!("Failed to get a cat {:x}", hr));
     println!("Got another cat");
 
-    unsafe { cat.eat() };
+    unsafe { cat.eat(&food) };
 
     assert!(animal.get_interface::<ICat>().is_some());
     assert!(animal.get_interface::<IUnknown>().is_some());

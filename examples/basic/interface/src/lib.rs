@@ -18,3 +18,9 @@ pub const CLSID_CAT_CLASS: IID = IID {
     data3: 0x418C,
     data4: [0xA9, 0xF9, 0x05, 0xAC, 0x67, 0x52, 0x5E, 0x43],
 };
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Food {
+    pub deliciousness: usize,
+}
