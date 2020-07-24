@@ -5,7 +5,7 @@ use syn::spanned::Spanned;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 
-pub struct CoClass {
+pub struct Class {
     pub name: Ident,
     pub class_factory: bool,
     pub docs: Vec<syn::Attribute>,
@@ -15,28 +15,25 @@ pub struct CoClass {
     pub fields: Vec<syn::Field>,
 }
 
-impl CoClass {
+impl Class {
     pub fn to_tokens(&self) -> TokenStream {
         let mut out: Vec<TokenStream> = Vec::new();
         out.push(self.to_struct_tokens());
-        out.push(self.to_co_class_trait_impl_tokens());
+        out.push(self.to_class_trait_impl_tokens());
         out.push(super::class_factory::generate(self));
 
         TokenStream::from_iter(out)
     }
 
-    /// Parse the co_class macro syntax (without the `impl`s)
-    fn parse_co_class(
-        input: syn::parse::ParseStream,
-        docs: Vec<syn::Attribute>,
-    ) -> syn::Result<Self> {
+    /// Parse the class macro syntax (without the `impl`s)
+    fn parse_class(input: syn::parse::ParseStream, docs: Vec<syn::Attribute>) -> syn::Result<Self> {
         let mut interfaces: Vec<Interface> = Vec::new();
         let visibility = input.parse::<syn::Visibility>()?;
-        let class_factory = input.peek(keywords::classfactory);
+        let class_factory = input.peek(keywords::factory);
         if class_factory {
-            let _ = input.parse::<keywords::classfactory>()?;
+            let _ = input.parse::<keywords::factory>()?;
         } else {
-            let _ = input.parse::<keywords::coclass>()?;
+            let _ = input.parse::<keywords::class>()?;
         };
 
         let name = input.parse::<Ident>()?;
@@ -76,7 +73,7 @@ impl CoClass {
             )?;
         let fields = fields.into_iter().collect();
 
-        Ok(CoClass {
+        Ok(Class {
             name,
             class_factory,
             docs,
@@ -119,7 +116,7 @@ impl CoClass {
         let add_ref = iunknown.to_add_ref_tokens();
         let release = iunknown.to_release_tokens(interfaces);
         let query_interface = iunknown.to_query_interface_tokens(interfaces);
-        let constructor = super::co_class_constructor::generate(self);
+        let constructor = super::class_constructor::generate(self);
 
         quote!(
             #(#docs)*
@@ -140,7 +137,7 @@ impl CoClass {
         )
     }
 
-    pub fn to_co_class_trait_impl_tokens(&self) -> TokenStream {
+    pub fn to_class_trait_impl_tokens(&self) -> TokenStream {
         if self.class_factory {
             return TokenStream::new();
         }
@@ -149,16 +146,16 @@ impl CoClass {
         let factory = crate::utils::class_factory_ident(name);
 
         quote! {
-            unsafe impl com::production::CoClass for #name {
+            unsafe impl com::production::Class for #name {
                 type Factory = #factory;
             }
         }
     }
 }
 
-impl syn::parse::Parse for CoClass {
+impl syn::parse::Parse for Class {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let mut co_class = None;
+        let mut class = None;
         let mut methods: HashMap<syn::Path, Vec<syn::ImplItemMethod>> = HashMap::new();
         while !input.is_empty() {
             let docs = input.call(syn::Attribute::parse_outer)?;
@@ -167,10 +164,10 @@ impl syn::parse::Parse for CoClass {
             }
 
             if !input.peek(syn::Token!(impl)) {
-                co_class = Some(Self::parse_co_class(input, docs)?);
+                class = Some(Self::parse_class(input, docs)?);
             } else {
                 let item = input.parse::<syn::ItemImpl>()?;
-                // TODO: ensure that co_class idents line up
+                // TODO: ensure that class idents line up
                 let interface = match item.trait_ {
                     Some((_, i, _)) => i,
                     None => {
@@ -200,23 +197,23 @@ impl syn::parse::Parse for CoClass {
                 }
             }
         }
-        let mut co_class = match co_class {
+        let mut class = match class {
             Some(c) => c,
             None => {
                 return Err(syn::Error::new(
                     input.span().clone(),
-                    "no coclass was defined",
+                    "no class was defined",
                 ));
             }
         };
-        co_class.methods = methods;
-        Ok(co_class)
+        class.methods = methods;
+        Ok(class)
     }
 }
 
 mod keywords {
-    syn::custom_keyword!(coclass);
-    syn::custom_keyword!(classfactory);
+    syn::custom_keyword!(class);
+    syn::custom_keyword!(factory);
 }
 
 pub struct Interface {
@@ -226,15 +223,15 @@ pub struct Interface {
 
 impl Interface {
     /// Creates an intialized VTable for the interface
-    pub fn to_initialized_vtable_tokens(&self, co_class: &CoClass, offset: usize) -> TokenStream {
-        let class_name = &co_class.name;
+    pub fn to_initialized_vtable_tokens(&self, class: &Class, offset: usize) -> TokenStream {
+        let class_name = &class.name;
         let vtable_ident = self.vtable_ident();
         let vtable_type = self.to_vtable_type_tokens();
         let parent = match self.parent.as_ref() {
-            Some(p) => p.to_initialized_vtable_tokens(co_class, offset),
-            None => Self::iunknown_tokens(co_class, offset),
+            Some(p) => p.to_initialized_vtable_tokens(class, offset),
+            None => Self::iunknown_tokens(class, offset),
         };
-        let fields = co_class.methods.get(&self.path).unwrap().iter().map(|m| {
+        let fields = class.methods.get(&self.path).unwrap().iter().map(|m| {
             let name = &m.sig.ident;
             let params = m.sig.inputs.iter().filter_map(|p| {
                 match p {
@@ -288,8 +285,8 @@ impl Interface {
         quote::format_ident!("{}VTable", name.get_ident().unwrap())
     }
 
-    fn iunknown_tokens(co_class: &CoClass, offset: usize) -> TokenStream {
-        let name = &co_class.name;
+    fn iunknown_tokens(class: &Class, offset: usize) -> TokenStream {
+        let name = &class.name;
         let iunknown = super::iunknown_impl::IUnknownAbi::new(name.clone(), offset);
         let add_ref = iunknown.to_add_ref_tokens();
         let release = iunknown.to_release_tokens();

@@ -41,7 +41,7 @@ pub use sys::{CLSID, IID};
 pub use com_macros::com_interface;
 
 #[cfg(feature = "production")]
-pub use com_macros::co_class;
+pub use com_macros::class;
 
 // this allows for the crate to refer to itself as `com` to keep macros consistent
 // whether they are used by some other crate or internally

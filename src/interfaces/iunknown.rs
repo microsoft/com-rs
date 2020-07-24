@@ -42,9 +42,11 @@ com_interface! {
 }
 
 impl IUnknown {
-    /// A safe version of `QueryInterface`. If the backing CoClass implements the
-    /// interface `I` then a `Some` containing an `ComPtr` pointing to that
-    /// interface will be returned otherwise `None` will be returned.
+    /// A safe version of `QueryInterface`.
+    ///
+    /// If the backing class implements the interface `I` then a `Some`
+    /// containing an `ComPtr` pointing to that interface will be returned
+    /// otherwise `None` will be returned.
     pub fn get_interface<I: ComInterface>(&self) -> Option<I> {
         let mut ppv = None;
         let hr = unsafe {

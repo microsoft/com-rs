@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Ident;
 
-use super::co_class::Interface;
+use super::class::Interface;
 
 pub struct IUnknownAbi {
     class_name: Ident,

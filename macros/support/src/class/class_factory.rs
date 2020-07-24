@@ -1,17 +1,17 @@
-use super::CoClass;
+use super::Class;
 use proc_macro2::TokenStream;
 use quote::quote;
 
-pub fn generate(co_class: &CoClass) -> TokenStream {
-    if co_class.class_factory {
+pub fn generate(class: &Class) -> TokenStream {
+    if class.class_factory {
         return TokenStream::new();
     }
-    let class_factory_ident = crate::utils::class_factory_ident(&co_class.name);
-    let co_class_name = &co_class.name;
+    let class_factory_ident = crate::utils::class_factory_ident(&class.name);
+    let class_name = &class.name;
     quote! {
         use ::com::interfaces::IClassFactory;
-        ::com::co_class! {
-            pub classfactory #class_factory_ident: IClassFactory {}
+        ::com::class! {
+            pub factory #class_factory_ident: IClassFactory {}
 
             impl IClassFactory for #class_factory_ident {
                 unsafe fn CreateInstance(
@@ -24,7 +24,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
                         return com::sys::CLASS_E_NOAGGREGATION;
                     }
 
-                    let mut instance = ::std::boxed::Box::new(<#co_class_name as ::std::default::Default>::default());
+                    let mut instance = ::std::boxed::Box::new(<#class_name as ::std::default::Default>::default());
                     instance.add_ref();
                     let hr = instance.query_interface(riid, ppv);
                     instance.release();

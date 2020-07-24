@@ -1,12 +1,12 @@
 use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal};
 
-use com::co_class;
+use com::class;
 use com::sys::{HRESULT, NOERROR};
 
-co_class! {
+class! {
     /// The implementation class
     /// https://en.wikipedia.org/wiki/British_Shorthair
-    pub coclass BritishShortHairCat: IDomesticAnimal(IAnimal), ICat(IAnimal) {
+    pub class BritishShortHairCat: IDomesticAnimal(IAnimal), ICat(IAnimal) {
         num_owners: u32,
     }
 

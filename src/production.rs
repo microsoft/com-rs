@@ -1,6 +1,6 @@
-mod co_class;
+mod class;
 #[doc(hidden)]
 pub mod registration;
 
 #[doc(inline)]
-pub use co_class::CoClass;
+pub use class::Class;

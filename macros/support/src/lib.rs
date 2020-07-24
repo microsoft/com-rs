@@ -1,7 +1,7 @@
-pub mod co_class;
+pub mod class;
 pub mod com_interface;
 mod utils;
 
-pub use co_class::CoClass;
+pub use class::Class;
 pub use com_interface::Interface;
 pub use com_interface::Interfaces;

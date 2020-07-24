@@ -77,10 +77,10 @@ Producing a COM component is relatively complicated compared to consumption, due
 2. Implement the necessary interfaces on the class.
 
 ```rust
-use com::co_class;
+use com::class;
 
-com::co_class! {
-    pub coclass BritishShortHairCat: ICat(IAnimal), IDomesticAnimal(IAnimal) {
+com::class! {
+    pub class BritishShortHairCat: ICat(IAnimal), IDomesticAnimal(IAnimal) {
         num_owners: u32,
     }
     

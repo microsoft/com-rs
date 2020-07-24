@@ -1,6 +1,6 @@
 //! COM runtime facilities
 //!
-//! This includes initializing the COM runtime as well as creating instances of CoClasses
+//! This includes initializing the COM runtime as well as creating instances of COM classes
 use crate::sys::{
     CoCreateInstance, CoGetClassObject, CoIncrementMTAUsage, CoInitializeEx, CoUninitialize,
     CLSCTX_INPROC_SERVER, CLSID, COINIT_APARTMENTTHREADED, COINIT_MULTITHREADED, FAILED, HRESULT,
@@ -113,7 +113,7 @@ pub fn get_class_object<T: ComInterface>(class_id: &CLSID) -> Result<T, HRESULT>
     Ok(class.unwrap())
 }
 
-/// Create an instance of a CoClass with the associated class id
+/// Create an instance of a COM class with the associated class id
 ///
 /// Calls `CoCreateInstance` internally
 pub fn create_instance<T: ComInterface>(class_id: &CLSID) -> Result<T, HRESULT> {

@@ -1,5 +1,5 @@
 use com_macros_support::com_interface::expand_com_interfaces;
-use com_macros_support::CoClass;
+use com_macros_support::Class;
 use com_macros_support::Interfaces;
 
 extern crate proc_macro;
@@ -14,7 +14,7 @@ pub fn com_interface(item: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn co_class(input: TokenStream) -> TokenStream {
-    let co_class = syn::parse_macro_input!(input as CoClass);
-    co_class.to_tokens().into()
+pub fn class(input: TokenStream) -> TokenStream {
+    let class = syn::parse_macro_input!(input as Class);
+    class.to_tokens().into()
 }

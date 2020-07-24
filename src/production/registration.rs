@@ -206,7 +206,7 @@ macro_rules! inproc_dll_module {
 
             let class_id = unsafe { &*class_id };
             if class_id == &$class_id_one {
-                let mut instance = Box::new(<$class_type_one as ::com::production::CoClass>::Factory::new());
+                let mut instance = Box::new(<$class_type_one as ::com::production::Class>::Factory::new());
                 let hr = unsafe {
                     instance.add_ref();
                     let hr = instance.query_interface(iid, result);
@@ -217,7 +217,7 @@ macro_rules! inproc_dll_module {
 
                 hr
             } $(else if class_id == &$class_id {
-                let mut instance = Box::new(<$class_type_one as ::com::production::CoClass>::Factory::new());
+                let mut instance = Box::new(<$class_type_one as ::com::production::Class>::Factory::new());
                 let hr = unsafe {
                     instance.add_ref();
                     let hr = instance.query_interface(iid, result);

@@ -6,7 +6,7 @@
 /// * it is `#[repr(C)]`
 /// * The first fields of the struct are pointers to the backing VTables for
 /// each of the COM Interfaces the class implements
-pub unsafe trait CoClass {
+pub unsafe trait Class {
     /// The factory object associated with this class
     type Factory;
 }
