@@ -2,8 +2,8 @@
 
 use crate::sys::{
     GetModuleFileNameA, GetModuleHandleA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA,
-    RegSetValueExA, CLSID, ERROR_SUCCESS, FAILED, GUID, HKEY, HRESULT, IID, LSTATUS,
-    SELFREG_E_CLASS, S_OK,
+    RegSetValueExA, CLSID, ERROR_SUCCESS, FAILED, GUID, HKEY, HRESULT, LSTATUS, SELFREG_E_CLASS,
+    S_OK,
 };
 
 use std::convert::TryInto;

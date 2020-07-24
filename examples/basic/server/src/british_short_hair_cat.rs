@@ -11,21 +11,21 @@ co_class! {
     }
 
     impl IDomesticAnimal for BritishShortHairCat {
-        fn Train(&self) -> HRESULT {
+        fn train(&self) -> HRESULT {
             println!("Training...");
             NOERROR
         }
     }
 
     impl ICat for BritishShortHairCat {
-        fn IgnoreHumans(&self) -> HRESULT {
+        fn ignore_humans(&self) -> HRESULT {
             println!("Ignoring Humans...");
             NOERROR
         }
     }
 
     impl IAnimal for BritishShortHairCat {
-        fn Eat(&self) -> HRESULT {
+        fn eat(&self) -> HRESULT {
             println!("Eating...");
             NOERROR
         }

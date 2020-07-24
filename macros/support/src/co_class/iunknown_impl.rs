@@ -38,8 +38,7 @@ impl IUnknownAbi {
         }
     }
 
-    pub fn to_query_interface_tokens(&self, interface_idents: &[&syn::Path]) -> TokenStream {
-        let offset = self.offset;
+    pub fn to_query_interface_tokens(&self) -> TokenStream {
         let class_name = &self.class_name;
         // Generate match arms for implemented interfaces
         let this_ptr = this_ptr_type();

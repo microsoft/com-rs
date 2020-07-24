@@ -2,19 +2,8 @@ use super::CoClass;
 use proc_macro2::TokenStream;
 use quote::quote;
 
-pub fn generate(co_class: &CoClass) -> TokenStream {
-    let allocate_fn = gen_allocate_fn(co_class);
-    let struct_ident = &co_class.name;
-
-    quote!(
-        impl #struct_ident {
-            #allocate_fn
-        }
-    )
-}
-
 /// Function used to instantiate the COM fields, such as vpointers for the COM object.
-pub fn gen_allocate_fn(co_class: &CoClass) -> TokenStream {
+pub fn generate(co_class: &CoClass) -> TokenStream {
     let name = &co_class.name;
     let vis = &co_class.visibility;
 
