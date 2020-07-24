@@ -1,11 +1,11 @@
 //! Everything related to the [IClassFactory](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iclassfactory) COM interface
-use crate::com_interface;
+use crate::interfaces;
 use crate::sys::{BOOL, FAILED, GUID, HRESULT};
 use std::ffi::c_void;
 
 use crate::{interfaces::iunknown::IUnknown, Interface};
 
-com_interface! {
+interfaces! {
     /// [IClassFactory](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iclassfactory) COM interface
     #[uuid("00000001-0000-0000-c000-000000000046")]
     pub unsafe interface IClassFactory: IUnknown {

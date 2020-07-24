@@ -1,4 +1,4 @@
-use com_macros_support::interface::expand_com_interfaces;
+use com_macros_support::interface::expand_interfacess;
 use com_macros_support::Class;
 use com_macros_support::Interfaces;
 
@@ -7,10 +7,10 @@ use proc_macro::TokenStream;
 
 // All the Macro exports declared here. Delegates to respective crate for expansion.
 #[proc_macro]
-pub fn com_interface(item: TokenStream) -> TokenStream {
+pub fn interfaces(item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as Interfaces);
 
-    expand_com_interfaces(input).into()
+    expand_interfacess(input).into()
 }
 
 #[proc_macro]

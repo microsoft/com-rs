@@ -2,11 +2,11 @@
 
 use crate::sys::{E_NOINTERFACE, E_POINTER, FAILED};
 use crate::sys::{GUID, HRESULT};
-use crate::{com_interface, Interface, IID};
+use crate::{interfaces, Interface, IID};
 
 use std::ffi::c_void;
 
-com_interface! {
+interfaces! {
     /// [IUnknown](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown) COM interface
     #[uuid("00000000-0000-0000-C000-000000000046")]
     pub unsafe interface IUnknown {

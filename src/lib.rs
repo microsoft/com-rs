@@ -6,7 +6,7 @@
 //!
 //! ```rust,no_run
 //! /// Define an IAnimal interface
-//! com::com_interface! {
+//! com::interfaces! {
 //!     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
 //!     pub unsafe interface IAnimal: com::interfaces::IUnknown {
 //!         unsafe fn eat(&self) -> com::sys::HRESULT;
@@ -19,7 +19,7 @@
 #![deny(missing_docs)]
 
 mod abi_transferable;
-mod com_interface;
+mod interface;
 pub mod interfaces;
 mod param;
 pub mod runtime;
@@ -32,13 +32,13 @@ pub mod production;
 #[doc(inline)]
 pub use abi_transferable::AbiTransferable;
 #[doc(inline)]
-pub use com_interface::Interface;
+pub use interface::Interface;
 #[doc(inline)]
 pub use param::Param;
 #[doc(inline)]
 pub use sys::{CLSID, IID};
 
-pub use com_macros::com_interface;
+pub use com_macros::interfaces;
 
 #[cfg(feature = "production")]
 pub use com_macros::class;

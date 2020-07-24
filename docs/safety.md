@@ -9,7 +9,7 @@ It is a requirement for all usages of COM methods be marked as `unsafe`. This is
 
 ## `&self`, `&mut self`, and `self`
 
-All methods of a `com_interface` are required to take an unexclusive reference to self 
+All methods of a COM interface are required to take an unexclusive reference to self 
 (`&self`). This reflects the reality that COM interfaces do not have exclusive access to 
 the underlying class,and it does not take ownership (i.e., it is not responsible for the 
 destruction) of the underlying class. As such if you're implementing a COM server, you 
@@ -24,7 +24,7 @@ seemingly do very little, but we'll explore what the programmer must ensure for 
 interface to be safe.
 
 ```rust
-com::com_interface! {
+com::interfaces! {
     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
     pub unsafe interface IAnimal: IUnknown {
         fn eat(&self) -> HRESULT;

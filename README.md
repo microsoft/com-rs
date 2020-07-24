@@ -21,10 +21,10 @@ COM has been superseded by [WinRT](https://docs.microsoft.com/en-us/windows/uwp/
 
 ### Defining a COM interface
 
-To both consume or produce a COM component through an interface, you will first need to generate the Rust representation of said interface. The `com_interface` macro is the main tool for automatically generating this Rust representation.
+To both consume or produce a COM component through an interface, you will first need to generate the Rust representation of said interface. The `interfaces` macro is the main tool for automatically generating this Rust representation.
 
 ```rust
-com::com_interface! {
+com::interfaces! {
     #[uuid("00000000-0000-0000-C000-000000000046")]
     pub unsafe interface IUnknown {
         fn query_interface(

@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 
 // Expansion entry point
-pub fn expand_com_interfaces(interfaces: Interfaces) -> TokenStream {
+pub fn expand_interfacess(interfaces: Interfaces) -> TokenStream {
     let mut out: Vec<TokenStream> = Vec::new();
     for interface in interfaces.inner {
         out.push(interface.to_struct_tokens());

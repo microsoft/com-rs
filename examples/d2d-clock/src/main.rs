@@ -1,4 +1,4 @@
-use com::{com_interface, interfaces::IUnknown, Interface};
+use com::{interfaces, interfaces::IUnknown, Interface};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use winapi::shared::{
     basetsd::UINT32,
@@ -663,7 +663,7 @@ fn get_time(frequency: LARGE_INTEGER) -> f64 {
     }
 }
 
-com_interface! {
+interfaces! {
     #[uuid("06152247-6f50-465a-9245-118bfd3b6007")]
     unsafe interface ID2D1Factory: IUnknown {
         fn reload_system_metrics(&self) -> HRESULT;
