@@ -13,7 +13,7 @@ pub fn generate(interface: &Interface) -> syn::Result<TokenStream> {
     let parent_field = match interface.parent {
         Some(ref parent) => {
             quote! {
-                pub parent: <#parent as com::ComInterface>::VTable,
+                pub parent: <#parent as com::Interface>::VTable,
             }
         }
         None => quote! {},

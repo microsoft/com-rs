@@ -107,8 +107,8 @@ unsafe impl<T> AbiTransferable for *const T {
     }
 }
 
-unsafe impl<T: crate::ComInterface> AbiTransferable for T {
-    type Abi = std::ptr::NonNull<std::ptr::NonNull<<T as crate::ComInterface>::VTable>>;
+unsafe impl<T: crate::Interface> AbiTransferable for T {
+    type Abi = std::ptr::NonNull<std::ptr::NonNull<<T as crate::Interface>::VTable>>;
     fn get_abi(&self) -> Self::Abi {
         self.as_raw()
     }
@@ -118,8 +118,8 @@ unsafe impl<T: crate::ComInterface> AbiTransferable for T {
     }
 }
 
-unsafe impl<T: crate::ComInterface> AbiTransferable for Option<T> {
-    type Abi = *mut std::ptr::NonNull<<T as crate::ComInterface>::VTable>;
+unsafe impl<T: crate::Interface> AbiTransferable for Option<T> {
+    type Abi = *mut std::ptr::NonNull<<T as crate::Interface>::VTable>;
     fn get_abi(&self) -> Self::Abi {
         self.as_ref()
             .map(|p| p.as_raw().as_ptr())

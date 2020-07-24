@@ -2,7 +2,7 @@
 
 use crate::sys::{E_NOINTERFACE, E_POINTER, FAILED};
 use crate::sys::{GUID, HRESULT};
-use crate::{com_interface, ComInterface, IID};
+use crate::{com_interface, Interface, IID};
 
 use std::ffi::c_void;
 
@@ -47,7 +47,7 @@ impl IUnknown {
     /// If the backing class implements the interface `I` then a `Some`
     /// containing an `ComPtr` pointing to that interface will be returned
     /// otherwise `None` will be returned.
-    pub fn get_interface<I: ComInterface>(&self) -> Option<I> {
+    pub fn get_interface<I: Interface>(&self) -> Option<I> {
         let mut ppv = None;
         let hr = unsafe {
             self.query_interface(

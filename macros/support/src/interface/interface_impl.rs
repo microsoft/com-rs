@@ -1,5 +1,5 @@
 use super::Interface;
-use crate::com_interface::{iid, vtable};
+use crate::interface::{iid, vtable};
 
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -15,7 +15,7 @@ pub fn generate(interface: &Interface) -> TokenStream {
     };
 
     quote! {
-        unsafe impl com::ComInterface for #interface_ident {
+        unsafe impl com::Interface for #interface_ident {
             type VTable = #vtable_ident;
             type Super = #parent;
             const IID: com::sys::IID = #iid_ident;

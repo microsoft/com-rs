@@ -32,7 +32,7 @@ pub mod production;
 #[doc(inline)]
 pub use abi_transferable::AbiTransferable;
 #[doc(inline)]
-pub use com_interface::ComInterface;
+pub use com_interface::Interface;
 #[doc(inline)]
 pub use param::Param;
 #[doc(inline)]

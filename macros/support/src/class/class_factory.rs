@@ -16,7 +16,7 @@ pub fn generate(class: &Class) -> TokenStream {
             impl IClassFactory for #class_factory_ident {
                 unsafe fn CreateInstance(
                     &self,
-                    aggr: *mut std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::ComInterface>::VTable>,
+                    aggr: *mut std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::Interface>::VTable>,
                     riid: *const com::sys::IID,
                     ppv: *mut *mut std::ffi::c_void,
                 ) -> com::sys::HRESULT {

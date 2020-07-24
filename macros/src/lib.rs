@@ -1,4 +1,4 @@
-use com_macros_support::com_interface::expand_com_interfaces;
+use com_macros_support::interface::expand_com_interfaces;
 use com_macros_support::Class;
 use com_macros_support::Interfaces;
 

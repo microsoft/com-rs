@@ -8,7 +8,7 @@ use crate::sys::{
 };
 use std::ffi::c_void;
 
-use crate::ComInterface;
+use crate::Interface;
 
 /// Initialize a new multithreaded apartment (MTA) runtime. This will ensure
 /// that an MTA is running for the process. Every new thread will implicitly
@@ -95,7 +95,7 @@ impl Drop for ApartmentRuntime {
 /// Get the class object with the associated [`CLSID`]
 ///
 /// Calls `CoGetClassObject` internally
-pub fn get_class_object<T: ComInterface>(class_id: &CLSID) -> Result<T, HRESULT> {
+pub fn get_class_object<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
     let mut class = None;
     let hr = unsafe {
         CoGetClassObject(
@@ -116,12 +116,12 @@ pub fn get_class_object<T: ComInterface>(class_id: &CLSID) -> Result<T, HRESULT>
 /// Create an instance of a COM class with the associated class id
 ///
 /// Calls `CoCreateInstance` internally
-pub fn create_instance<T: ComInterface>(class_id: &CLSID) -> Result<T, HRESULT> {
+pub fn create_instance<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
     unsafe { Ok(create_raw_instance::<T>(class_id, std::ptr::null_mut())?) }
 }
 
 /// A helper for creating both regular and aggregated instances
-unsafe fn create_raw_instance<T: ComInterface>(
+unsafe fn create_raw_instance<T: Interface>(
     class_id: &CLSID,
     outer: *mut c_void,
 ) -> Result<T, HRESULT> {

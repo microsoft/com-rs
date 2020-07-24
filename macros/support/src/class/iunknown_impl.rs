@@ -148,7 +148,7 @@ impl IUnknown {
             .map(|(index, interface)| {
                 let interface = &interface.path;
                 let match_condition =
-                    quote!(<#interface as com::ComInterface>::is_iid_in_inheritance_chain(riid));
+                    quote!(<#interface as com::Interface>::is_iid_in_inheritance_chain(riid));
 
                 quote!(
                     else if #match_condition {
@@ -163,6 +163,6 @@ impl IUnknown {
 
 fn this_ptr_type() -> TokenStream {
     quote! {
-        ::std::ptr::NonNull<::std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::ComInterface>::VTable>>
+        ::std::ptr::NonNull<::std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::Interface>::VTable>>
     }
 }

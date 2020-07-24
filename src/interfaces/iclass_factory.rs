@@ -3,7 +3,7 @@ use crate::com_interface;
 use crate::sys::{BOOL, FAILED, GUID, HRESULT};
 use std::ffi::c_void;
 
-use crate::{interfaces::iunknown::IUnknown, ComInterface};
+use crate::{interfaces::iunknown::IUnknown, Interface};
 
 com_interface! {
     /// [IClassFactory](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iclassfactory) COM interface
@@ -23,7 +23,7 @@ com_interface! {
 
 impl IClassFactory {
     /// Get an instance of the associated Co Class
-    pub fn get_instance<T: ComInterface>(&self) -> Option<T> {
+    pub fn get_instance<T: Interface>(&self) -> Option<T> {
         let mut ppv = None;
         let hr =
             unsafe { self.create_instance(None, &T::IID, &mut ppv as *mut _ as *mut *mut c_void) };

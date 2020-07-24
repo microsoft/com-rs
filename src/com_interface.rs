@@ -14,19 +14,19 @@ use crate::sys::IID;
 /// for the interface `T`. An interface pointer as the name suggests points to an
 /// interface. A valid interface is itself trivial castable to a `*mut T::VTable`.
 /// In other words, the implementing type must also be equal to `*mut *const T::VTable`
-pub unsafe trait ComInterface: Sized + 'static {
+pub unsafe trait Interface: Sized + 'static {
     /// A COM compatible V-Table
     type VTable;
     /// The interface that this interface inherits from
-    type Super: ComInterface;
+    type Super: Interface;
     /// The associated id for this interface
     const IID: IID;
 
     /// Check whether a given IID is in the inheritance hierarchy of this interface
     fn is_iid_in_inheritance_chain(riid: &IID) -> bool {
         riid == &Self::IID
-            || (Self::IID != <IUnknown as ComInterface>::IID
-                && <Self::Super as ComInterface>::is_iid_in_inheritance_chain(riid))
+            || (Self::IID != <IUnknown as Interface>::IID
+                && <Self::Super as Interface>::is_iid_in_inheritance_chain(riid))
     }
 
     /// Cast the interface pointer to a pointer to IUnknown.

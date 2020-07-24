@@ -1,4 +1,4 @@
-use com::{com_interface, interfaces::IUnknown, ComInterface};
+use com::{com_interface, interfaces::IUnknown, Interface};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 use winapi::shared::{
     basetsd::UINT32,

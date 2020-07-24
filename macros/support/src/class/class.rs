@@ -103,7 +103,7 @@ impl Class {
             let interface_name = &interface.path;
             let field_ident = quote::format_ident!("__{}", index);
             quote! {
-                #field_ident: ::std::ptr::NonNull<<#interface_name as ::com::ComInterface>::VTable>
+                #field_ident: ::std::ptr::NonNull<<#interface_name as ::com::Interface>::VTable>
             }
         });
         let ref_count_ident = crate::utils::ref_count_ident();
@@ -276,7 +276,7 @@ impl Interface {
         let name = &self.path;
         let vtable_ident = self.vtable_ident();
         quote! {
-            type #vtable_ident = <#name as ::com::ComInterface>::VTable;
+            type #vtable_ident = <#name as ::com::Interface>::VTable;
         }
     }
 
@@ -293,7 +293,7 @@ impl Interface {
         let query_interface = iunknown.to_query_interface_tokens();
         quote! {
             {
-                type IUknownVTable = <::com::interfaces::IUnknown as ::com::ComInterface>::VTable;
+                type IUknownVTable = <::com::interfaces::IUnknown as ::com::Interface>::VTable;
                 #add_ref
                 #release
                 #query_interface

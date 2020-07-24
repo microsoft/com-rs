@@ -68,7 +68,7 @@ impl Interface {
 
         quote! {
             impl ::std::ops::Deref for #name {
-                type Target = <#name as ::com::ComInterface>::Super;
+                type Target = <#name as ::com::Interface>::Super;
                 fn deref(&self) -> &Self::Target {
                     unsafe { ::std::mem::transmute(self) }
                 }
@@ -83,7 +83,7 @@ impl Interface {
             impl Drop for #name {
                 fn drop(&mut self) {
                     unsafe {
-                        <Self as ::com::ComInterface>::as_iunknown(self).release();
+                        <Self as ::com::Interface>::as_iunknown(self).release();
                     }
                 }
             }
@@ -97,7 +97,7 @@ impl Interface {
             impl ::std::clone::Clone for #name {
                 fn clone(&self) -> Self {
                     unsafe {
-                        <Self as ::com::ComInterface>::as_iunknown(self).add_ref();
+                        <Self as ::com::Interface>::as_iunknown(self).add_ref();
                     }
                     Self {
                         inner: self.inner

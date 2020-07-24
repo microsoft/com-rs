@@ -59,7 +59,7 @@ impl IAnimal {
 
 // All interfaces dereference to their parent interface
 impl std::ops::Deref for IAnimal {
-    type Target = <IAnimal as com::ComInterface>::Super;
+    type Target = <IAnimal as com::Interface>::Super;
     fn deref(&self) -> &Self::Target {
         // This is safe because a valid reference to the child interface is exactly 
         // equal to a valid reference to its parent interface
@@ -71,7 +71,7 @@ impl std::ops::Deref for IAnimal {
 impl Drop for IAnimal {
     fn drop(&mut self) {
         unsafe {
-            <Self as com::ComInterface>::as_iunknown(self).release();
+            <Self as com::Interface>::as_iunknown(self).release();
         }
     }
 }
@@ -80,7 +80,7 @@ impl Drop for IAnimal {
 impl ::std::clone::Clone for IAnimal {
     fn clone(&self) -> Self {
         unsafe {
-            <Self as com::ComInterface>::as_iunknown(self).add_ref();
+            <Self as com::Interface>::as_iunknown(self).add_ref();
         }
         Self { inner: self.inner }
     }
@@ -91,12 +91,12 @@ impl ::std::clone::Clone for IAnimal {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct IAnimalVTable {
-    pub iunknown_base: <IUnknown as com::ComInterface>::VTable,
+    pub iunknown_base: <IUnknown as com::Interface>::VTable,
     pub Eat: unsafe extern "stdcall" fn(std::ptr::NonNull<IAnimalVPtr>) -> HRESULT,
 }
 
 pub type IAnimalVPtr = std::ptr::NonNull<IAnimalVTable>;
-unsafe impl com::ComInterface for IAnimal {
+unsafe impl com::Interface for IAnimal {
     type VTable = IAnimalVTable;
     type Super = IUnknown;
     const IID: com::sys::IID = IID_IANIMAL;
