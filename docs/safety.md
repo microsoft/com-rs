@@ -26,7 +26,7 @@ interface to be safe.
 ```rust
 com::com_interface! {
     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
-    pub unsage interface IAnimal: IUnknown {
+    pub unsafe interface IAnimal: IUnknown {
         fn eat(&self) -> HRESULT;
     }
 }

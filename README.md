@@ -72,60 +72,49 @@ unsafe { cat.eat(); }
 
 Producing a COM component is relatively complicated compared to consumption, due to the many features available that we must support. Here, we will walk you through producing one of our examples, the `BritishShortHairCat`.
 
-1. Define the struct containing all the user fields you want.
-- Apply the `#[co_class(...)]` macro to the struct. This will expand the struct into a COM-compatible struct, by adding COM-specific fields.
-- You can then use the attribute argument `implements(...)` to indicate inheritance of any COM interfaces. The order of interfaces declared is important, as the generated vpointers are going to be in that order.
+1. Define the class containing all the user fields you want.
+- Specify each of the interfaces the class implements. You must list the interface's parent interface in paraenthesis with the exception of IUnknown which is assumed when no parent is specified (e.g., `: MyInterface(MyParentInterface(MyGrandParentInterface))), MyOtherInterface`
+2. Implement the necessary interfaces on the class.
 
 ```rust
 use com::co_class;
 
-#[co_class(implements(ICat, IDomesticAnimal))]
-pub struct BritishShortHairCat {
-    num_owners: u32,
-}
-```
-
-2. Implement the necessary traits on the COM struct (in this case, `BritishShortHairCat`).
-
-```rust
-impl IDomesticAnimal for BritishShortHairCat {
-    unsafe fn train(&self) -> HRESULT {
-        println!("Training...");
-        NOERROR
+com::co_class! {
+    pub coclass BritishShortHairCat: ICat(IAnimal), IDomesticAnimal(IAnimal) {
+        num_owners: u32,
+    }
+    
+    
+    impl IDomesticAnimal for BritishShortHairCat {
+        fn train(&self) -> HRESULT {
+            println!("Training...");
+            NOERROR
+        }
+    }
+    
+    impl ICat for BritishShortHairCat {
+        fn ignore_humans(&self) -> HRESULT {
+            println!("Ignoring Humans...");
+            NOERROR
+        }
+    }
+    
+    impl IAnimal for BritishShortHairCat {
+        fn eat(&self) -> HRESULT {
+            println!("Eating...");
+            NOERROR
+        }
     }
 }
-
-impl ICat for BritishShortHairCat {
-    unsafe fn ignore_humans(&self) -> HRESULT {
-        println!("Ignoring Humans...");
-        NOERROR
-    }
-}
-
-impl IAnimal for BritishShortHairCat {
-    unsafe fn eat(&self) -> HRESULT {
-        println!("Eating...");
-        NOERROR
-    }
-}
 ```
 
-3. You will have to define a constructor with the below signature. This provides us with a standard constructor to instantiate your COM component.
+3. You must implement the `Default` trait from the standard library which is used by a class's class factory for instantiating the class.
+Note: that a `new` associated function is defined for you which takes all the user defined values of the class.
 ```rust
-fn new() -> Box<BritishShortHairCat>
-```
-Within this constructor, you need to
-- Call the provided `BritishShortHairCat::allocate()` function, passing in your user fields in the order they were declared. **IMPORTANT**
-- The `allocate` function in this case has the signature:
-```rust
-fn allocate(num_owners: u32) -> Box<BritishShortHairCat>
-```
-
-```rust
-impl BritishShortHairCat {
-    pub(crate) fn new() -> Box<BritishShortHairCat> {
-        let num_owners = 20;
-        BritishShortHairCat::allocate(num_owners)
+impl Default for BritishShortHairCat {
+    fn default() -> BritishShortHairCat {
+        /// `BritishShortHairCat::new` was defined for us and takes the `num_owners` as its only argument
+        BritishShortHairCat::new(20)
     }
 }
 ```
