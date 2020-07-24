@@ -2,6 +2,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Ident;
 
+use super::co_class::Interface;
+
 pub struct IUnknownAbi {
     class_name: Ident,
     offset: usize,
@@ -18,9 +20,9 @@ impl IUnknownAbi {
         let class_name = &self.class_name;
 
         quote! {
-            unsafe extern "stdcall" fn add_ref(this_ptr: #this_ptr) -> u32 {
+            unsafe extern "stdcall" fn add_ref(this: #this_ptr) -> u32 {
                 #munge
-                #class_name::add_ref(this)
+                #class_name::add_ref(&this)
             }
         }
     }
@@ -31,9 +33,9 @@ impl IUnknownAbi {
         let class_name = &self.class_name;
 
         quote! {
-            unsafe extern "stdcall" fn release(this_ptr: #this_ptr) -> u32 {
+            unsafe extern "stdcall" fn release(this: #this_ptr) -> u32 {
                 #munge
-                #class_name::release(this)
+                #class_name::release(&this)
             }
         }
     }
@@ -46,12 +48,12 @@ impl IUnknownAbi {
 
         quote! {
             unsafe extern "stdcall" fn query_interface(
-                this_ptr: #this_ptr,
+                this: #this_ptr,
                 riid: *const com::sys::IID,
                 ppv: *mut *mut std::ffi::c_void
             ) -> com::sys::HRESULT {
                 #munge
-                #class_name::query_interface(this, riid, ppv)
+                #class_name::query_interface(&this, riid, ppv)
             }
         }
     }
@@ -61,8 +63,8 @@ impl IUnknownAbi {
         let class_name = &self.class_name;
 
         quote! {
-            let this_ptr = this_ptr.as_ptr().sub(#offset);
-            let this = &(*(&this_ptr as *const _ as *const #class_name));
+            let this = this.as_ptr().sub(#offset);
+            let this = ::std::mem::ManuallyDrop::new(::std::boxed::Box::from_raw(this as *mut _ as *mut #class_name));
         }
     }
 }
@@ -87,7 +89,7 @@ impl IUnknown {
         }
     }
 
-    pub fn to_release_tokens(&self, interface_idents: &[&syn::Path]) -> TokenStream {
+    pub fn to_release_tokens(&self, interface_idents: &[Interface]) -> TokenStream {
         let class_name = &self.class_name;
         let ref_count_ident = crate::utils::ref_count_ident();
 
@@ -113,7 +115,7 @@ impl IUnknown {
         }
     }
 
-    pub fn to_query_interface_tokens(&self, interface_idents: &[&syn::Path]) -> TokenStream {
+    pub fn to_query_interface_tokens(&self, interface_idents: &[Interface]) -> TokenStream {
         // Generate match arms for implemented interfaces
         let base_match_arms = Self::gen_base_match_arms(interface_idents);
 
@@ -126,7 +128,7 @@ impl IUnknown {
                 let riid = &*riid;
 
                 if riid == &com::interfaces::iunknown::IID_IUNKNOWN {
-                    *ppv = &self.__0 as *const _ as *mut std::ffi::c_void;
+                    *ppv = self as *const _ as *mut std::ffi::c_void;
                 } #base_match_arms else {
                     *ppv = std::ptr::null_mut::<std::ffi::c_void>();
                     return com::sys::E_NOINTERFACE;
@@ -138,19 +140,19 @@ impl IUnknown {
         }
     }
 
-    pub fn gen_base_match_arms(interface_idents: &[&syn::Path]) -> TokenStream {
+    pub fn gen_base_match_arms(interface_idents: &[Interface]) -> TokenStream {
         // Generate match arms for implemented interfaces
         let base_match_arms = interface_idents
             .iter()
             .enumerate()
             .map(|(index, interface)| {
+                let interface = &interface.path;
                 let match_condition =
                     quote!(<#interface as com::ComInterface>::is_iid_in_inheritance_chain(riid));
-                let vptr_field_ident = quote::format_ident!("__{}", index);
 
                 quote!(
                     else if #match_condition {
-                        *ppv = &self.#vptr_field_ident as *const _ as *mut std::ffi::c_void;
+                        *ppv = (self as *const _ as *mut usize).add(#index) as *mut ::std::ffi::c_void;
                     }
                 )
             });

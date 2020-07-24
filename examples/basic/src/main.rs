@@ -2,7 +2,7 @@ use std::process::Command;
 
 fn main() {
     let mut child_proc = Command::new("cmd")
-        .args(&["/C", "cls && cargo build --all --release"])
+        .args(&["/C", "cargo build --all --release"])
         .spawn()
         .expect("Something went wrong!");
 

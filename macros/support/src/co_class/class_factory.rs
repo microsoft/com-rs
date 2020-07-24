@@ -24,7 +24,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
                         return com::sys::CLASS_E_NOAGGREGATION;
                     }
 
-                    let mut instance = <#co_class_name as ::std::default::Default>::default();
+                    let mut instance = ::std::boxed::Box::new(<#co_class_name as ::std::default::Default>::default());
                     instance.add_ref();
                     let hr = instance.query_interface(riid, ppv);
                     instance.release();

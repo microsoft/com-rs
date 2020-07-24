@@ -10,7 +10,7 @@ pub struct CoClass {
     pub class_factory: bool,
     pub docs: Vec<syn::Attribute>,
     pub visibility: syn::Visibility,
-    pub interfaces: HashMap<syn::Path, Interface>,
+    pub interfaces: Vec<Interface>,
     pub methods: HashMap<syn::Path, Vec<syn::ImplItemMethod>>,
     pub fields: Vec<syn::Field>,
 }
@@ -30,7 +30,7 @@ impl CoClass {
         input: syn::parse::ParseStream,
         docs: Vec<syn::Attribute>,
     ) -> syn::Result<Self> {
-        let mut interfaces = HashMap::new();
+        let mut interfaces: Vec<Interface> = Vec::new();
         let visibility = input.parse::<syn::Visibility>()?;
         let class_factory = input.peek(keywords::classfactory);
         if class_factory {
@@ -48,11 +48,12 @@ impl CoClass {
                 path: path.clone(),
                 parent: None,
             };
-            if let Some(_) = interfaces.insert(path.clone(), interface) {
+            if interfaces.iter().any(|i| i.path == path) {
                 return Err(syn::Error::new(path.span(), "interface was redefined"));
             }
+            interfaces.push(interface);
 
-            let mut current = interfaces.get_mut(&path).unwrap();
+            let mut current = interfaces.last_mut().unwrap();
             while input.peek(syn::token::Paren) {
                 let contents;
                 syn::parenthesized!(contents in input);
@@ -100,11 +101,12 @@ impl CoClass {
         let name = &self.name;
         let vis = &self.visibility;
 
-        let interfaces = self.interfaces.keys().collect::<Vec<_>>();
-        let interface_fields = interfaces.iter().enumerate().map(|(index, base)| {
+        let interfaces = &self.interfaces;
+        let interface_fields = interfaces.iter().enumerate().map(|(index, interface)| {
+            let interface_name = &interface.path;
             let field_ident = quote::format_ident!("__{}", index);
             quote! {
-                #field_ident: ::std::ptr::NonNull<<#base as ::com::ComInterface>::VTable>
+                #field_ident: ::std::ptr::NonNull<<#interface_name as ::com::ComInterface>::VTable>
             }
         });
         let ref_count_ident = crate::utils::ref_count_ident();
@@ -115,12 +117,13 @@ impl CoClass {
 
         let iunknown = super::iunknown_impl::IUnknown::new(name.clone());
         let add_ref = iunknown.to_add_ref_tokens();
-        let release = iunknown.to_release_tokens(&interfaces);
-        let query_interface = iunknown.to_query_interface_tokens(&interfaces);
+        let release = iunknown.to_release_tokens(interfaces);
+        let query_interface = iunknown.to_query_interface_tokens(interfaces);
         let constructor = super::co_class_constructor::generate(self);
 
         quote!(
             #(#docs)*
+            #[derive(Debug)]
             #[repr(C)]
             #vis struct #name {
                 #(#interface_fields,)*
@@ -217,14 +220,14 @@ mod keywords {
 }
 
 pub struct Interface {
-    path: syn::Path,
-    parent: Option<Box<Interface>>,
+    pub path: syn::Path,
+    pub parent: Option<Box<Interface>>,
 }
 
 impl Interface {
     /// Creates an intialized VTable for the interface
     pub fn to_initialized_vtable_tokens(&self, co_class: &CoClass, offset: usize) -> TokenStream {
-        let co_class_name = &co_class.name;
+        let class_name = &co_class.name;
         let vtable_ident = self.vtable_ident();
         let vtable_type = self.to_vtable_type_tokens();
         let parent = match self.parent.as_ref() {
@@ -249,7 +252,8 @@ impl Interface {
             let method = quote! {
                 unsafe extern "stdcall" fn #name(this: ::std::ptr::NonNull<::std::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
                     let this = this.as_ptr().sub(#offset);
-                    #co_class_name::#name(&*(this as *mut #co_class_name), #(#args),*)
+                    let this = ::std::mem::ManuallyDrop::new(::std::boxed::Box::from_raw(this as *mut _ as *mut #class_name));
+                    #class_name::#name(&this, #(#args),*)
                 }
             };
             let field_name = Ident::new(&crate::utils::snake_to_camel(&name.to_string()), proc_macro2::Span::call_site());

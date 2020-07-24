@@ -1,4 +1,4 @@
-use super::CoClass;
+use super::{co_class::Interface, CoClass};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -13,7 +13,7 @@ pub fn generate(co_class: &CoClass) -> TokenStream {
     let interface_inits = gen_vpointer_inits(co_class);
 
     // Syntax for instantiating the fields of the struct.
-    let interfaces = &co_class.interfaces.keys().collect::<Vec<_>>();
+    let interfaces = &co_class.interfaces;
     let interface_fields = gen_allocate_interface_fields(interfaces);
     let ref_count_field = gen_allocate_ref_count_field();
     let user_fields = gen_allocate_user_fields(co_class);
@@ -47,7 +47,7 @@ pub fn gen_allocate_ref_count_field() -> TokenStream {
 }
 
 // Generate the vptr field idents needed in the instantiation syntax of the COM struct.
-pub fn gen_allocate_interface_fields(interface_idents: &[&syn::Path]) -> TokenStream {
+pub fn gen_allocate_interface_fields(interface_idents: &[Interface]) -> TokenStream {
     let base_fields = interface_idents
         .iter()
         .enumerate()
@@ -61,12 +61,12 @@ pub fn gen_vpointer_inits(co_class: &CoClass) -> TokenStream {
     let interface_inits = co_class.interfaces
         .iter()
         .enumerate()
-        .map(move |(index, (_, interface))| {
+        .map(move |(index,  interface)| {
             let interface = interface.to_initialized_vtable_tokens(co_class, index);
             let vptr_field_ident = quote::format_ident!("__{}", index);
-            quote!(
+            quote! {
                 let #vptr_field_ident = unsafe { ::std::ptr::NonNull::new_unchecked(Box::into_raw(Box::new(#interface))) };
-            )
+            }
         });
 
     quote!(#(#interface_inits)*)
