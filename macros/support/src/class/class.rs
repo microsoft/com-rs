@@ -135,7 +135,6 @@ impl Class {
 
         quote!(
             #(#docs)*
-            #[derive(Debug)]
             #[repr(C)]
             #vis struct #name {
                 #(#interface_fields,)*
@@ -314,7 +313,7 @@ impl Interface {
 
     fn vtable_ident(&self) -> proc_macro2::Ident {
         let name = &self.path;
-        quote::format_ident!("{}VTable", name.get_ident().unwrap())
+        quote::format_ident!("{}VTable", name.segments.last().unwrap().ident)
     }
 
     fn iunknown_tokens(class: &Class, offset: usize) -> TokenStream {

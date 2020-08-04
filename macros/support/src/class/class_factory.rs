@@ -9,11 +9,10 @@ pub fn generate(class: &Class) -> TokenStream {
     let class_factory_ident = crate::utils::class_factory_ident(&class.name);
     let class_name = &class.name;
     quote! {
-        use ::com::interfaces::IClassFactory;
         ::com::class! {
-            pub factory #class_factory_ident: IClassFactory {}
+            pub factory #class_factory_ident: ::com::interfaces::IClassFactory {}
 
-            impl IClassFactory for #class_factory_ident {
+            impl ::com::interfaces::IClassFactory for #class_factory_ident {
                 unsafe fn CreateInstance(
                     &self,
                     aggr: *mut std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::Interface>::VTable>,
