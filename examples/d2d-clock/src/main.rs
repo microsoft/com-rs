@@ -69,7 +69,7 @@ fn main() {
 
     // Create factories
     let d2d_factory = create_d2d_factory();
-    let dxgi_factory = create_dxgi_factory();
+    let _dxgi_factory = create_dxgi_factory();
 
     let dpi = get_dpi(&d2d_factory);
     let device_independent_resources = DeviceIndependentResources::new(&d2d_factory);
@@ -96,7 +96,7 @@ fn main() {
                 window_id,
             } if window_id == window.id() => *control_flow = ControlFlow::Exit,
             Event::WindowEvent {
-                event: WindowEvent::Resized(size),
+                event: WindowEvent::Resized(_size),
                 ..
             } => clock.render(),
             Event::RedrawRequested(window_id) if window_id == window.id() => {
@@ -279,7 +279,7 @@ impl Clock {
 
             let second_angle = ((time.wSecond + time.wMilliseconds) as f64 / 1000.0) * 6.0;
             let minute_angle = time.wMinute as f64 * 6.0 + second_angle / 60.0;
-            let hour_angle = (time.wHour % 12) as f64 * 30.0 + minute_angle / 12.0;
+            let _hour_angle = (time.wHour % 12) as f64 * 30.0 + minute_angle / 12.0;
 
             let mut swing = 0.0;
             HR!(self
