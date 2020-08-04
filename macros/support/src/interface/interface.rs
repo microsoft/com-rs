@@ -48,10 +48,12 @@ impl Interface {
         let deref = self.deref_impl();
         let drop = self.drop_impl();
         let clone = self.clone_impl();
+        let safe_query = self.safe_query();
 
         quote! {
             impl #interface_name {
                 #(#methods)*
+                #safe_query
             }
             #deref
             #drop
@@ -103,6 +105,23 @@ impl Interface {
                         inner: self.inner
                     }
                 }
+            }
+        }
+    }
+
+    fn safe_query(&self) -> TokenStream {
+        if self.is_iunknown() {
+            return TokenStream::new();
+        }
+        let vis = &self.visibility;
+        quote! {
+            /// A safe version of `QueryInterface`.
+            ///
+            /// If the backing class implements the interface `I` then a `Some`
+            /// containing an `ComPtr` pointing to that interface will be returned
+            /// otherwise `None` will be returned.
+            #vis fn get_interface<I: ::com::Interface>(&self) -> Option<I> {
+                <Self as ::com::Interface>::as_iunknown(self).get_interface()
             }
         }
     }
