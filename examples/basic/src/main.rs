@@ -12,7 +12,7 @@ fn main() {
     }
 
     let mut child_proc = Command::new("cmd")
-        .args(&["/C", "regsvr32 /s target/release/server.dll"])
+        .args(&["/C", "regsvr32 /s ../../target/release/server.dll"])
         .spawn()
         .expect("Something went wrong!");
     if !child_proc.wait().unwrap().success() {

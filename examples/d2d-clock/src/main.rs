@@ -7,7 +7,6 @@ use winapi::shared::{
     dxgiformat::DXGI_FORMAT_B8G8R8A8_UNORM,
     dxgitype::DXGI_USAGE_RENDER_TARGET_OUTPUT,
     minwindef::{FLOAT, UINT},
-    ntdef::LARGE_INTEGER,
     windef::HWND,
     winerror::{DXGI_ERROR_UNSUPPORTED, DXGI_STATUS_OCCLUDED, S_OK},
 };
@@ -21,8 +20,7 @@ use winapi::um::{
     minwinbase::SYSTEMTIME,
     profileapi::{QueryPerformanceCounter, QueryPerformanceFrequency},
     sysinfoapi::GetLocalTime,
-    winnt::GUID_SESSION_DISPLAY_STATUS,
-    winnt::HRESULT,
+    winnt::{self, GUID_SESSION_DISPLAY_STATUS, HRESULT},
     winuser::{RegisterPowerSettingNotification, DEVICE_NOTIFY_WINDOW_HANDLE},
 };
 
@@ -501,7 +499,7 @@ fn get_dpi(factory: &ID2D1Factory1) -> f32 {
 }
 
 struct DeviceIndependentResources {
-    animation_frequency: LARGE_INTEGER,
+    animation_frequency: winnt::LARGE_INTEGER,
     animation_manager: IUIAnimationManager,
     style: ID2D1StrokeStyle1,
     animation_variable: IUIAnimationVariable,
@@ -528,7 +526,7 @@ impl DeviceIndependentResources {
         let animation_manager =
             com::runtime::create_instance::<IUIAnimationManager>(&class_id).unwrap();
 
-        let mut animation_frequency = LARGE_INTEGER::default();
+        let mut animation_frequency = winnt::LARGE_INTEGER::default();
         let mut animation_variable = None;
 
         let class_id = com::CLSID {
@@ -655,8 +653,8 @@ fn create_device_size_resources(target: &ID2D1DeviceContext, dpi: f32) -> ID2D1B
     clock.unwrap().into()
 }
 
-fn get_time(frequency: LARGE_INTEGER) -> f64 {
-    let mut time = LARGE_INTEGER::default();
+fn get_time(frequency: winnt::LARGE_INTEGER) -> f64 {
+    let mut time = winnt::LARGE_INTEGER::default();
     unsafe {
         check_bool!(QueryPerformanceCounter(&mut time));
         *time.QuadPart() as f64 / *frequency.QuadPart() as f64
