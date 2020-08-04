@@ -1,30 +1,20 @@
-use com_macros_support::co_class::expand_co_class;
-use com_macros_support::com_interface::{expand_com_interface, expand_derive};
+use com_macros_support::interface::expand_interfacess;
+use com_macros_support::Class;
+use com_macros_support::Interfaces;
 
 extern crate proc_macro;
 use proc_macro::TokenStream;
-use syn::{AttributeArgs, ItemStruct, ItemTrait};
 
 // All the Macro exports declared here. Delegates to respective crate for expansion.
-#[proc_macro_attribute]
-pub fn com_interface(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let iid_string: syn::LitStr =
-        syn::parse(attr.clone()).expect("[com_interface] parameter must be a GUID string");
-    let input = syn::parse_macro_input!(item as ItemTrait);
+#[proc_macro]
+pub fn interfaces(item: TokenStream) -> TokenStream {
+    let input = syn::parse_macro_input!(item as Interfaces);
 
-    expand_com_interface(iid_string, input).into()
+    expand_interfacess(input).into()
 }
 
-#[proc_macro_derive(VTable)]
-pub fn derive_vtable(item: TokenStream) -> TokenStream {
-    let input = syn::parse_macro_input!(item as ItemStruct);
-    expand_derive(input).into()
-}
-
-// Macro entry points.
-#[proc_macro_attribute]
-pub fn co_class(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let input = syn::parse_macro_input!(item as ItemStruct);
-    let attr_args = syn::parse_macro_input!(attr as AttributeArgs);
-    expand_co_class(&input, &attr_args).into()
+#[proc_macro]
+pub fn class(input: TokenStream) -> TokenStream {
+    let class = syn::parse_macro_input!(input as Class);
+    class.to_tokens().into()
 }

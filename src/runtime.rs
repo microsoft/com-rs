@@ -1,6 +1,6 @@
 //! COM runtime facilities
 //!
-//! This includes initializing the COM runtime as well as creating instances of CoClasses
+//! This includes initializing the COM runtime as well as creating instances of COM classes
 use crate::sys::{
     CoCreateInstance, CoGetClassObject, CoIncrementMTAUsage, CoInitializeEx, CoUninitialize,
     CLSCTX_INPROC_SERVER, CLSID, COINIT_APARTMENTTHREADED, COINIT_MULTITHREADED, FAILED, HRESULT,
@@ -8,7 +8,7 @@ use crate::sys::{
 };
 use std::ffi::c_void;
 
-use crate::{ComInterface, ComPtr, ComRc};
+use crate::Interface;
 
 /// Initialize a new multithreaded apartment (MTA) runtime. This will ensure
 /// that an MTA is running for the process. Every new thread will implicitly
@@ -95,52 +95,47 @@ impl Drop for ApartmentRuntime {
 /// Get the class object with the associated [`CLSID`]
 ///
 /// Calls `CoGetClassObject` internally
-pub fn get_class_object<T: ComInterface + ?Sized>(class_id: &CLSID) -> Result<ComRc<T>, HRESULT> {
-    let mut class = std::ptr::null_mut::<c_void>();
+pub fn get_class_object<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
+    let mut class = None;
     let hr = unsafe {
         CoGetClassObject(
             class_id as *const CLSID,
             CLSCTX_INPROC_SERVER,
             std::ptr::null_mut::<c_void>(),
             &T::IID as *const IID,
-            &mut class as *mut *mut c_void,
+            &mut class as *mut _ as _,
         )
     };
     if FAILED(hr) {
         return Err(hr);
     }
 
-    Ok(unsafe { ComRc::from_raw(class as *mut *mut _) })
+    Ok(class.unwrap())
 }
 
-/// Create an instance of a CoClass with the associated class id
+/// Create an instance of a COM class with the associated class id
 ///
 /// Calls `CoCreateInstance` internally
-pub fn create_instance<T: ComInterface + ?Sized>(class_id: &CLSID) -> Result<ComRc<T>, HRESULT> {
-    unsafe {
-        Ok(ComRc::new(create_raw_instance::<T>(
-            class_id,
-            std::ptr::null_mut(),
-        )?))
-    }
+pub fn create_instance<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
+    unsafe { Ok(create_raw_instance::<T>(class_id, std::ptr::null_mut())?) }
 }
 
 /// A helper for creating both regular and aggregated instances
-unsafe fn create_raw_instance<T: ComInterface + ?Sized>(
+unsafe fn create_raw_instance<T: Interface>(
     class_id: &CLSID,
     outer: *mut c_void,
-) -> Result<ComPtr<T>, HRESULT> {
-    let mut instance = std::ptr::null_mut::<c_void>();
+) -> Result<T, HRESULT> {
+    let mut instance = None;
     let hr = CoCreateInstance(
         class_id as *const CLSID,
         outer,
         CLSCTX_INPROC_SERVER,
         &T::IID as *const IID,
-        &mut instance as *mut *mut c_void,
+        &mut instance as *mut _ as _,
     );
     if FAILED(hr) {
         return Err(hr);
     }
 
-    Ok(ComPtr::new(instance as *mut _))
+    Ok(instance.unwrap())
 }

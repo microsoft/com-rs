@@ -1,38 +1,46 @@
-use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal};
+use interface::{ianimal::IAnimal, icat::ICat, idomesticanimal::IDomesticAnimal, Food};
 
-use com::co_class;
+use com::class;
 use com::sys::{HRESULT, NOERROR};
 
-/// The implementation class
-/// https://en.wikipedia.org/wiki/British_Shorthair
-#[co_class(implements(ICat, IDomesticAnimal))]
-pub struct BritishShortHairCat {
-    num_owners: u32,
-}
+class! {
+    /// The implementation class
+    /// https://en.wikipedia.org/wiki/British_Shorthair
+    pub class BritishShortHairCat: IDomesticAnimal(IAnimal), ICat(IAnimal) {
+        happiness: std::cell::Cell<usize>,
+    }
 
-impl IDomesticAnimal for BritishShortHairCat {
-    unsafe fn train(&self) -> HRESULT {
-        println!("Training...");
-        NOERROR
+    impl IDomesticAnimal for BritishShortHairCat {
+        fn train(&self) -> HRESULT {
+            println!("Training...");
+            NOERROR
+        }
+    }
+
+    impl ICat for BritishShortHairCat {
+        fn ignore_humans(&self) -> HRESULT {
+            println!("Ignoring Humans...");
+            NOERROR
+        }
+    }
+
+    impl IAnimal for BritishShortHairCat {
+        fn eat(&self, food: *const Food) -> HRESULT {
+            assert!(!food.is_null());
+            let food = unsafe { *food };
+            println!("Eating...");
+            self.happiness.set(self.happiness.get() + food.deliciousness);
+            NOERROR
+        }
+
+        fn happiness(&self) ->usize {
+            self.happiness.get()
+        }
     }
 }
 
-impl ICat for BritishShortHairCat {
-    unsafe fn ignore_humans(&self) -> HRESULT {
-        println!("Ignoring Humans...");
-        NOERROR
-    }
-}
-
-impl IAnimal for BritishShortHairCat {
-    unsafe fn eat(&self) -> HRESULT {
-        println!("Eating...");
-        NOERROR
-    }
-}
-
-impl BritishShortHairCat {
-    pub(crate) fn new() -> Box<BritishShortHairCat> {
-        BritishShortHairCat::allocate(20)
+impl Default for BritishShortHairCat {
+    fn default() -> BritishShortHairCat {
+        BritishShortHairCat::new(std::cell::Cell::new(10))
     }
 }

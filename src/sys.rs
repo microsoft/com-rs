@@ -31,7 +31,7 @@ pub const E_NOINTERFACE: HRESULT = -0x7FFF_BFFE;
 /// Invalid pointer
 pub const E_POINTER: HRESULT = -0x7FFF_BFFD;
 
-/// No aggregation for CoClass
+/// No aggregation for class
 pub const CLASS_E_NOAGGREGATION: HRESULT = -0x7FFB_FEF0;
 /// Class is not available
 pub const CLASS_E_CLASSNOTAVAILABLE: HRESULT = -0x7FFB_FEEF;

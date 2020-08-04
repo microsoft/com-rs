@@ -5,7 +5,7 @@ authors = ["Microsoft Corp"]
 edition = "2018"
 
 [dependencies]
-com = { path = "../../.." }
+com = { path = "../../..", features = ["production"] }
 interface = { path = "../interface" }
 
 [lib]

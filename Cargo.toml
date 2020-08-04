@@ -15,12 +15,15 @@ readme = "./README.md"
 [dependencies]
 com_macros = { version = "0.2", path = "macros" }
 
+[features]
+production = []
+
 [[test]]
 name = "tests"
 path = "tests/progress.rs"
 
 [dev-dependencies]
-trybuild = "1.0.13"
+trybuild = "1.0"
 
 [package.metadata.docs.rs]
 default-target = "x86_64-pc-windows-msvc"
@@ -29,4 +32,9 @@ default-target = "x86_64-pc-windows-msvc"
 members = [
     "macros",
     "macros/support",
+    "examples/basic",
+    "examples/basic/server",
+    "examples/basic/client",
+    "examples/basic/interface",
+    "examples/d2d-clock"
 ]
