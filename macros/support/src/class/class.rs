@@ -2,7 +2,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
 pub struct Class {
@@ -23,6 +23,21 @@ impl Class {
         out.push(super::class_factory::generate(self));
 
         TokenStream::from_iter(out)
+    }
+
+    /// Get the paths of all interfaces including parent interfaces
+    fn interfaces_paths<'a>(&'a self) -> HashSet<&'a syn::Path> {
+        fn get_interface<'a>(interface: &'a Interface, result: &mut HashSet<&'a syn::Path>) {
+            result.insert(&interface.path);
+            if let Some(i) = &interface.parent {
+                get_interface(i, result);
+            }
+        }
+        let mut result = HashSet::new();
+        for i in &self.interfaces {
+            get_interface(i, &mut result)
+        }
+        result
     }
 
     /// Parse the class macro syntax (without the `impl`s)
@@ -198,7 +213,24 @@ impl syn::parse::Parse for Class {
             }
         }
         let mut class = match class {
-            Some(c) => c,
+            Some(c) => {
+                let mut interface_paths = c.interfaces_paths();
+                for i in methods.keys() {
+                    if !interface_paths.remove(i) {
+                        return Err(syn::Error::new(
+                            i.span().clone(),
+                            "impl for a non-declared interface",
+                        ));
+                    }
+                }
+                if let Some(i) = interface_paths.into_iter().next() {
+                    return Err(syn::Error::new(
+                        i.span().clone(),
+                        "impl for interface is missing",
+                    ));
+                }
+                c
+            }
             None => {
                 return Err(syn::Error::new(
                     input.span().clone(),

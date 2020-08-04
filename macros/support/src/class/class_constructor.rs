@@ -32,14 +32,14 @@ pub fn generate(class: &Class) -> TokenStream {
 }
 
 // User field input as parameters to the allocate function.
-pub fn gen_allocate_user_fields(class: &Class) -> TokenStream {
+fn gen_allocate_user_fields(class: &Class) -> TokenStream {
     let field_idents = class.fields.iter().map(|f| &f.ident);
 
     quote!(#(#field_idents,)*)
 }
 
 // Reference count field initialisation.
-pub fn gen_allocate_ref_count_field() -> TokenStream {
+fn gen_allocate_ref_count_field() -> TokenStream {
     let ref_count_ident = crate::utils::ref_count_ident();
     quote!(
         #ref_count_ident: std::cell::Cell::new(0),
@@ -47,7 +47,7 @@ pub fn gen_allocate_ref_count_field() -> TokenStream {
 }
 
 // Generate the vptr field idents needed in the instantiation syntax of the COM struct.
-pub fn gen_allocate_interface_fields(interface_idents: &[Interface]) -> TokenStream {
+fn gen_allocate_interface_fields(interface_idents: &[Interface]) -> TokenStream {
     let base_fields = interface_idents
         .iter()
         .enumerate()
@@ -56,8 +56,8 @@ pub fn gen_allocate_interface_fields(interface_idents: &[Interface]) -> TokenStr
     quote!(#(#base_fields,)*)
 }
 
-// Initialise VTables with the correct adjustor thunks, through the vtable! macro.
-pub fn gen_vpointer_inits(class: &Class) -> TokenStream {
+// Initialise VTables with the correct adjustor thunks
+fn gen_vpointer_inits(class: &Class) -> TokenStream {
     let interface_inits = class.interfaces
         .iter()
         .enumerate()
