@@ -22,7 +22,7 @@ impl IUnknownAbi {
         quote! {
             unsafe extern "stdcall" fn add_ref(this: #this_ptr) -> u32 {
                 #munge
-                #class_name::add_ref(&this)
+                #class_name::add_ref(&munged)
             }
         }
     }
@@ -35,25 +35,28 @@ impl IUnknownAbi {
         quote! {
             unsafe extern "stdcall" fn release(this: #this_ptr) -> u32 {
                 #munge
-                #class_name::release(&this)
+                let count = #class_name::release(&munged);
+                if count == 0 {
+                    let _ = ::std::mem::ManuallyDrop::into_inner(munged);
+                }
+                count
             }
         }
     }
 
     pub fn to_query_interface_tokens(&self) -> TokenStream {
         let class_name = &self.class_name;
-        // Generate match arms for implemented interfaces
         let this_ptr = this_ptr_type();
         let munge = self.pointer_munging();
 
         quote! {
             unsafe extern "stdcall" fn query_interface(
                 this: #this_ptr,
-                riid: *const com::sys::IID,
-                ppv: *mut *mut std::ffi::c_void
-            ) -> com::sys::HRESULT {
+                riid: *const ::com::sys::IID,
+                ppv: *mut *mut ::std::ffi::c_void
+            ) -> ::com::sys::HRESULT {
                 #munge
-                #class_name::query_interface(&this, riid, ppv)
+                #class_name::query_interface(&munged, riid, ppv)
             }
         }
     }
@@ -63,25 +66,23 @@ impl IUnknownAbi {
         let class_name = &self.class_name;
 
         quote! {
-            let this = this.as_ptr().sub(#offset);
-            let this = ::std::mem::ManuallyDrop::new(::std::boxed::Box::from_raw(this as *mut _ as *mut #class_name));
+            let munged = this.as_ptr().sub(#offset);
+            let munged = ::std::mem::ManuallyDrop::new(::std::boxed::Box::from_raw(munged as *mut _ as *mut #class_name).into());
         }
     }
 }
 
-pub struct IUnknown {
-    class_name: Ident,
-}
+pub struct IUnknown;
 
 impl IUnknown {
-    pub fn new(class_name: Ident) -> Self {
-        Self { class_name }
+    pub fn new() -> Self {
+        Self
     }
 
     pub fn to_add_ref_tokens(&self) -> TokenStream {
         let ref_count_ident = crate::utils::ref_count_ident();
         quote! {
-            pub unsafe fn add_ref(&self) -> u32 {
+            pub unsafe fn add_ref(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> u32 {
                 let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
                 self.#ref_count_ident.set(value);
                 value
@@ -89,73 +90,58 @@ impl IUnknown {
         }
     }
 
-    pub fn to_release_tokens(&self, interface_idents: &[Interface]) -> TokenStream {
-        let class_name = &self.class_name;
+    pub fn to_release_tokens(&self) -> TokenStream {
         let ref_count_ident = crate::utils::ref_count_ident();
 
-        let vptr_drops = interface_idents.iter().enumerate().map(|(index, _)| {
-            let vptr_field_ident = quote::format_ident!("__{}", index);
-            quote! {
-                Box::from_raw(self.#vptr_field_ident.as_ptr());
-            }
-        });
-
         quote! {
-            pub unsafe fn release(&self) -> u32 {
+            pub unsafe fn release(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> u32 {
                 let value = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
                 self.#ref_count_ident.set(value);
-                let #ref_count_ident = self.#ref_count_ident.get();
-                if #ref_count_ident == 0 {
-                    #(#vptr_drops)*
-                    Box::from_raw(self as *const _ as *mut #class_name);
-                }
-
-                #ref_count_ident
+                value
             }
         }
     }
 
-    pub fn to_query_interface_tokens(&self, interface_idents: &[Interface]) -> TokenStream {
+    pub fn to_query_interface_tokens(&self, interfaces: &[Interface]) -> TokenStream {
         // Generate match arms for implemented interfaces
-        let base_match_arms = Self::gen_base_match_arms(interface_idents);
+        let base_match_arms = Self::gen_base_match_arms(interfaces);
 
         quote! {
             pub unsafe fn query_interface(
-                &self,
-                riid: *const com::sys::IID,
-                ppv: *mut *mut std::ffi::c_void
-            ) -> com::sys::HRESULT {
+                self: &::std::pin::Pin<::std::boxed::Box<Self>>,
+                riid: *const ::com::sys::IID,
+                ppv: *mut *mut ::std::ffi::c_void
+            ) -> ::com::sys::HRESULT {
                 let riid = &*riid;
 
-                if riid == &com::interfaces::iunknown::IID_IUNKNOWN {
-                    *ppv = self as *const _ as *mut std::ffi::c_void;
+                if riid == &::com::interfaces::iunknown::IID_IUNKNOWN {
+                    // Cast the &Pin<Box<T>> as a pointer and then dereference
+                    // it to get the Pin<Box> as a pointer
+                    *ppv = *(self as *const _ as *const *mut ::std::ffi::c_void);
                 } #base_match_arms else {
-                    *ppv = std::ptr::null_mut::<std::ffi::c_void>();
-                    return com::sys::E_NOINTERFACE;
+                    *ppv = ::std::ptr::null_mut::<::std::ffi::c_void>();
+                    return ::com::sys::E_NOINTERFACE;
                 }
 
                 self.add_ref();
-                com::sys::NOERROR
+                ::com::sys::NOERROR
             }
         }
     }
 
-    pub fn gen_base_match_arms(interface_idents: &[Interface]) -> TokenStream {
+    pub fn gen_base_match_arms(interfaces: &[Interface]) -> TokenStream {
         // Generate match arms for implemented interfaces
-        let base_match_arms = interface_idents
-            .iter()
-            .enumerate()
-            .map(|(index, interface)| {
-                let interface = &interface.path;
-                let match_condition =
-                    quote!(<#interface as com::Interface>::is_iid_in_inheritance_chain(riid));
+        let base_match_arms = interfaces.iter().enumerate().map(|(index, interface)| {
+            let interface = &interface.path;
 
-                quote!(
-                    else if #match_condition {
-                        *ppv = (self as *const _ as *mut usize).add(#index) as *mut ::std::ffi::c_void;
-                    }
-                )
-            });
+            quote! {
+                else if <#interface as ::com::Interface>::is_iid_in_inheritance_chain(riid) {
+                    // Cast the &Pin<Box<T>> as a pointer and then dereference
+                    // it to get the Pin<Box> as a pointer
+                    *ppv = (*(self as *const _ as *const *mut usize)).add(#index) as *mut ::std::ffi::c_void;
+                }
+            }
+        });
 
         quote!(#(#base_match_arms)*)
     }

@@ -23,12 +23,11 @@ pub fn generate(class: &Class) -> TokenStream {
                         return com::sys::CLASS_E_NOAGGREGATION;
                     }
 
-                    let mut instance = ::std::boxed::Box::new(<#class_name as ::std::default::Default>::default());
+                    let mut instance = ::std::mem::ManuallyDrop::new(::std::boxed::Box::pin(<#class_name as ::std::default::Default>::default()));
                     instance.add_ref();
                     let hr = instance.query_interface(riid, ppv);
                     instance.release();
 
-                    core::mem::forget(instance);
                     hr
                 }
 

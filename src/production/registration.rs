@@ -200,69 +200,59 @@ pub fn dll_unregister_server(relevant_keys: &mut Vec<RegistryKeyInfo>) -> HRESUL
 macro_rules! inproc_dll_module {
     (($class_id_one:ident, $class_type_one:ty), $(($class_id:ident, $class_type:ty)),*) => {
         #[no_mangle]
-        extern "stdcall" fn DllGetClassObject(class_id: *const com::sys::CLSID, iid: *const com::sys::IID, result: *mut *mut std::ffi::c_void) -> com::sys::HRESULT {
-            use com::interfaces::IUnknown;
+        unsafe extern "stdcall" fn DllGetClassObject(class_id: *const ::com::sys::CLSID, iid: *const ::com::sys::IID, result: *mut *mut ::std::ffi::c_void) -> ::com::sys::HRESULT {
+            use ::com::interfaces::IUnknown;
             assert!(!class_id.is_null(), "class id passed to DllGetClassObject should never be null");
 
             let class_id = unsafe { &*class_id };
             if class_id == &$class_id_one {
-                let mut instance = Box::new(<$class_type_one as ::com::production::Class>::Factory::new());
-                let hr = unsafe {
-                    instance.add_ref();
-                    let hr = instance.query_interface(iid, result);
-                    instance.release();
-                    hr
-                };
-                Box::into_raw(instance);
-
+                let mut instance = ::std::mem::ManuallyDrop::new(::std::boxed::Box::pin(<$class_type_one as ::com::production::Class>::Factory::new()));
+                instance.add_ref();
+                let hr = instance.query_interface(iid, result);
+                instance.release();
                 hr
             } $(else if class_id == &$class_id {
-                let mut instance = Box::new(<$class_type_one as ::com::production::Class>::Factory::new());
-                let hr = unsafe {
-                    instance.add_ref();
-                    let hr = instance.query_interface(iid, result);
-                    instance.release();
-                    hr
-                };
-                Box::into_raw(instance);
-
+                let mut instance = ::std::mem::ManuallyDrop::new(::std::boxed::Box::pin(<$class_type_one as ::com::production::Class>::Factory::new()));
+                instance.add_ref();
+                let hr = instance.query_interface(iid, result);
+                instance.release();
                 hr
             })* else {
-                com::sys::CLASS_E_CLASSNOTAVAILABLE
+                ::com::sys::CLASS_E_CLASSNOTAVAILABLE
             }
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllRegisterServer() -> com::sys::HRESULT {
-            com::production::registration::dll_register_server(&mut get_relevant_registry_keys())
+        extern "stdcall" fn DllRegisterServer() -> ::com::sys::HRESULT {
+            ::com::production::registration::dll_register_server(&mut get_relevant_registry_keys())
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllUnregisterServer() -> com::sys::HRESULT {
-            com::production::registration::dll_unregister_server(&mut get_relevant_registry_keys())
+        extern "stdcall" fn DllUnregisterServer() -> ::com::sys::HRESULT {
+            ::com::production::registration::dll_unregister_server(&mut get_relevant_registry_keys())
         }
 
-        fn get_relevant_registry_keys() -> Vec<com::production::registration::RegistryKeyInfo> {
-            use com::production::registration::RegistryKeyInfo;
-            let file_path = com::production::registration::get_dll_file_path();
+        fn get_relevant_registry_keys() -> Vec<::com::production::registration::RegistryKeyInfo> {
+            use ::com::production::registration::RegistryKeyInfo;
+            let file_path = ::com::production::registration::get_dll_file_path();
             vec![
                 RegistryKeyInfo::new(
-                    &com::production::registration::class_key_path($class_id_one),
+                    &::com::production::registration::class_key_path($class_id_one),
                     "",
                     stringify!($class_type_one),
                 ),
                 RegistryKeyInfo::new(
-                    &com::production::registration::class_inproc_key_path($class_id_one),
+                    &::com::production::registration::class_inproc_key_path($class_id_one),
                     "",
                     &file_path,
                 ),
                 $(RegistryKeyInfo::new(
-                    &com::production::registration::class_key_path($class_id),
+                    &::com::production::registration::class_key_path($class_id),
                     "",
                     stringify!($class_type),
                 ),
                 RegistryKeyInfo::new(
-                    &com::production::registration::class_inproc_key_path($class_id),
+                    &::com::production::registration::class_inproc_key_path($class_id),
                     "",
                     &file_path,
                 )),*

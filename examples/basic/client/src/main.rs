@@ -8,6 +8,7 @@ use interface::{Food, IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS}
 fn main() {
     init_apartment(ApartmentType::SingleThreaded)
         .unwrap_or_else(|hr| panic!("Failed to initialize COM Library{:x}", hr));
+    println!("Initialized apartment");
 
     let factory = get_class_object::<IClassFactory>(&CLSID_CAT_CLASS)
         .unwrap_or_else(|hr| panic!("Failed to get cat class object 0x{:x}", hr));

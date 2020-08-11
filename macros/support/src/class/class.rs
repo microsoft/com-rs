@@ -127,9 +127,9 @@ impl Class {
         let docs = &self.docs;
         let methods = self.methods.values().flat_map(|ms| ms);
 
-        let iunknown = super::iunknown_impl::IUnknown::new(name.clone());
+        let iunknown = super::iunknown_impl::IUnknown::new();
         let add_ref = iunknown.to_add_ref_tokens();
-        let release = iunknown.to_release_tokens(interfaces);
+        let release = iunknown.to_release_tokens();
         let query_interface = iunknown.to_query_interface_tokens(interfaces);
         let constructor = super::class_constructor::generate(self);
 
@@ -317,8 +317,7 @@ impl Interface {
     }
 
     fn iunknown_tokens(class: &Class, offset: usize) -> TokenStream {
-        let name = &class.name;
-        let iunknown = super::iunknown_impl::IUnknownAbi::new(name.clone(), offset);
+        let iunknown = super::iunknown_impl::IUnknownAbi::new(class.name.clone(), offset);
         let add_ref = iunknown.to_add_ref_tokens();
         let release = iunknown.to_release_tokens();
         let query_interface = iunknown.to_query_interface_tokens();

@@ -7,43 +7,47 @@ pub fn generate(class: &Class) -> TokenStream {
     let name = &class.name;
     let vis = &class.visibility;
 
-    // Allocate function signature
-    let allocate_parameters = &class.fields;
+    let parameters = &class.fields;
+    let user_fields = class.fields.iter().map(|f| &f.ident);
 
     let interface_inits = gen_vpointer_inits(class);
+    let ref_count_ident = crate::utils::ref_count_ident();
 
-    // Syntax for instantiating the fields of the struct.
     let interfaces = &class.interfaces;
     let interface_fields = gen_allocate_interface_fields(interfaces);
-    let ref_count_field = gen_allocate_ref_count_field();
-    let user_fields = gen_allocate_user_fields(class);
 
     quote! {
-        #vis fn new(#(#allocate_parameters),*) -> #name {
+        #vis fn new(#(#parameters),*) -> #name {
             #interface_inits
 
             #name {
                 #interface_fields
-                #ref_count_field
-                #user_fields
+                #ref_count_ident: std::cell::Cell::new(0),
+                #(#user_fields),*
             }
         }
+
+        #vis fn allocate<T: ::com::Interface>(instance: Self) -> Option<T> {
+            let instance = ::std::boxed::Box::pin(instance);
+            let mut result = None;
+            let hr = unsafe {
+                instance.add_ref();
+                let hr = instance.query_interface(&T::IID, &mut result as *mut _ as _);
+                instance.release();
+                hr
+            };
+
+            if ::com::sys::FAILED(hr) {
+                assert!(
+                    hr == ::com::sys::E_NOINTERFACE || hr == ::com::sys::E_POINTER,
+                    "QueryInterface returned non-standard error"
+                );
+                return None;
+            }
+            debug_assert!(result.is_some());
+            result
+        }
     }
-}
-
-// User field input as parameters to the allocate function.
-fn gen_allocate_user_fields(class: &Class) -> TokenStream {
-    let field_idents = class.fields.iter().map(|f| &f.ident);
-
-    quote!(#(#field_idents,)*)
-}
-
-// Reference count field initialisation.
-fn gen_allocate_ref_count_field() -> TokenStream {
-    let ref_count_ident = crate::utils::ref_count_ident();
-    quote!(
-        #ref_count_ident: std::cell::Cell::new(0),
-    )
 }
 
 // Generate the vptr field idents needed in the instantiation syntax of the COM struct.
