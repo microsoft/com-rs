@@ -84,9 +84,7 @@ impl Interface {
         quote! {
             impl Drop for #name {
                 fn drop(&mut self) {
-                    unsafe {
-                        <Self as ::com::Interface>::as_iunknown(self).release();
-                    }
+                    unsafe { <Self as ::com::Interface>::as_iunknown(self).release(); }
                 }
             }
         }
