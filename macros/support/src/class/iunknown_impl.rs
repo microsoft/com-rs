@@ -36,7 +36,7 @@ impl IUnknownAbi {
             unsafe extern "stdcall" fn release(this: #this_ptr) -> u32 {
                 #munge
                 let count = #class_name::release(&munged);
-                if count == 0 {
+                if count == 1 {
                     let _ = ::std::mem::ManuallyDrop::into_inner(munged);
                 }
                 count
@@ -97,6 +97,7 @@ impl IUnknown {
             pub unsafe fn release(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> u32 {
                 let value = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
                 self.#ref_count_ident.set(value);
+                debug_assert!(value != 0, "The class's ref count was decreased past one");
                 value
             }
         }
@@ -129,7 +130,7 @@ impl IUnknown {
         }
     }
 
-    pub fn gen_base_match_arms(interfaces: &[Interface]) -> TokenStream {
+    fn gen_base_match_arms(interfaces: &[Interface]) -> TokenStream {
         // Generate match arms for implemented interfaces
         let base_match_arms = interfaces.iter().enumerate().map(|(index, interface)| {
             let interface = &interface.path;
@@ -144,6 +145,25 @@ impl IUnknown {
         });
 
         quote!(#(#base_match_arms)*)
+    }
+
+    pub fn to_query_tokens(&self) -> TokenStream {
+        quote! {
+            pub fn query<T: ::com::Interface>(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> Option<T> {
+                let mut result = None;
+                let hr = unsafe { self.query_interface(&T::IID, &mut result as *mut _ as _) };
+
+                if ::com::sys::FAILED(hr) {
+                    assert!(
+                        hr == ::com::sys::E_NOINTERFACE || hr == ::com::sys::E_POINTER,
+                        "QueryInterface returned non-standard error"
+                    );
+                    return None;
+                }
+                debug_assert!(result.is_some(), "Successful call to query_interface yielded a null pointer");
+                result
+            }
+        }
     }
 }
 

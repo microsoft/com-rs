@@ -22,30 +22,14 @@ pub fn generate(class: &Class) -> TokenStream {
 
             #name {
                 #interface_fields
-                #ref_count_ident: std::cell::Cell::new(0),
+                #ref_count_ident: std::cell::Cell::new(1),
                 #(#user_fields),*
             }
         }
 
         #vis fn allocate<T: ::com::Interface>(instance: Self) -> Option<T> {
-            let instance = ::std::boxed::Box::pin(instance);
-            let mut result = None;
-            let hr = unsafe {
-                instance.add_ref();
-                let hr = instance.query_interface(&T::IID, &mut result as *mut _ as _);
-                instance.release();
-                hr
-            };
-
-            if ::com::sys::FAILED(hr) {
-                assert!(
-                    hr == ::com::sys::E_NOINTERFACE || hr == ::com::sys::E_POINTER,
-                    "QueryInterface returned non-standard error"
-                );
-                return None;
-            }
-            debug_assert!(result.is_some());
-            result
+            let instance = ::std::mem::ManuallyDrop::new(::std::boxed::Box::pin(instance));
+            instance.query()
         }
     }
 }

@@ -131,6 +131,7 @@ impl Class {
         let add_ref = iunknown.to_add_ref_tokens();
         let release = iunknown.to_release_tokens();
         let query_interface = iunknown.to_query_interface_tokens(interfaces);
+        let query = iunknown.to_query_tokens();
         let constructor = super::class_constructor::generate(self);
 
         quote!(
@@ -147,6 +148,7 @@ impl Class {
                 #add_ref
                 #release
                 #query_interface
+                #query
             }
         )
     }
