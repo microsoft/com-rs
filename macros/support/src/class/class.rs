@@ -123,7 +123,13 @@ impl Class {
         });
         let ref_count_ident = crate::utils::ref_count_ident();
 
-        let user_fields = &self.fields;
+        let user_fields = self.fields.iter().map(|f| {
+            let name = &f.ident;
+            let ty = &f.ty;
+            quote! {
+                #name: ::std::mem::ManuallyDrop<#ty>
+            }
+        });
         let docs = &self.docs;
         let methods = self.methods.values().flat_map(|ms| ms);
 
@@ -133,6 +139,18 @@ impl Class {
         let query_interface = iunknown.to_query_interface_tokens(interfaces);
         let query = iunknown.to_query_tokens();
         let constructor = super::class_constructor::generate(self);
+        let interface_drops = interfaces.iter().enumerate().map(|(index, _)| {
+            let field_ident = quote::format_ident!("__{}", index);
+            quote! {
+                let _ = ::std::boxed::Box::from_raw(self.#field_ident.as_ptr());
+            }
+        });
+        let user_fields_drops = self.fields.iter().map(|f| {
+            let name = &f.ident;
+            quote! {
+                ::std::mem::ManuallyDrop::drop(&mut self.#name);
+            }
+        });
 
         quote!(
             #(#docs)*
@@ -149,6 +167,19 @@ impl Class {
                 #release
                 #query_interface
                 #query
+            }
+            impl ::std::ops::Drop for #name {
+                fn drop(&mut self) {
+                    let new_count = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
+                    self.#ref_count_ident.set(new_count);
+                    if new_count == 0 {
+                        //Drop everything
+                        unsafe {
+                            #(#interface_drops)*
+                            #(#user_fields_drops)*
+                        }
+                    }
+                }
             }
         )
     }

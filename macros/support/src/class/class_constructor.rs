@@ -8,7 +8,12 @@ pub fn generate(class: &Class) -> TokenStream {
     let vis = &class.visibility;
 
     let parameters = &class.fields;
-    let user_fields = class.fields.iter().map(|f| &f.ident);
+    let user_fields = class.fields.iter().map(|f| {
+        let name = &f.ident;
+        quote! {
+            #name: ::std::mem::ManuallyDrop::new(#name)
+        }
+    });
 
     let interface_inits = gen_vpointer_inits(class);
     let ref_count_ident = crate::utils::ref_count_ident();
