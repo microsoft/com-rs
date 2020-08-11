@@ -24,11 +24,7 @@ pub fn generate(class: &Class) -> TokenStream {
                     }
 
                     let mut instance = ::std::mem::ManuallyDrop::new(::std::boxed::Box::pin(<#class_name as ::std::default::Default>::default()));
-                    instance.add_ref();
-                    let hr = instance.query_interface(riid, ppv);
-                    instance.release();
-
-                    hr
+                    instance.query_interface(riid, ppv)
                 }
 
                 unsafe fn LockServer(&self, _increment: com::sys::BOOL) -> com::sys::HRESULT {
