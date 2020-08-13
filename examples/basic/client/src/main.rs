@@ -40,11 +40,14 @@ fn main() {
         .expect("Failed to get IDomesticAnimal");
     println!("Got IDomesticAnimal");
 
-    // Get a handle to an `ICat` and call a method on that interface
+    // Safely query across interface hierarchies
+    // Get a handle to an `ICat` from an `IDomesticAnimal` even though they
+    // belong to different interface hierarchies and have different vtables
     let new_cat = domestic_animal
         .get_interface::<ICat>()
         .expect("Failed to get ICat");
     println!("Got ICat");
+    // Call a method on the interface `ICat` interface
     unsafe { new_cat.ignore_humans() };
 
     // Get another handle to a `IDomesticAnimal` and call a method on it
