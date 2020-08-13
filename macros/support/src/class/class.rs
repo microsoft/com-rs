@@ -139,6 +139,8 @@ impl Class {
         let query_interface = iunknown.to_query_interface_tokens(interfaces);
         let query = iunknown.to_query_tokens();
         let constructor = super::class_constructor::generate(self);
+        let default_constructor = super::class_constructor::generate_default(self);
+        let unsafe_constructor = super::class_constructor::generate_unsafe(self);
         let interface_drops = interfaces.iter().enumerate().map(|(index, _)| {
             let field_ident = quote::format_ident!("__{}", index);
             quote! {
@@ -152,7 +154,8 @@ impl Class {
             }
         });
 
-        quote!(
+        quote! {
+            use super::*;
             #(#docs)*
             #[repr(C)]
             #vis struct #name {
@@ -162,6 +165,8 @@ impl Class {
             }
             impl #name {
                 #constructor
+                #default_constructor
+                #unsafe_constructor
                 #(#methods)*
                 #add_ref
                 #release
@@ -181,7 +186,7 @@ impl Class {
                     }
                 }
             }
-        )
+        }
     }
 
     pub fn to_class_trait_impl_tokens(&self) -> TokenStream {

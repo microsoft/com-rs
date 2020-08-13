@@ -19,12 +19,12 @@ pub fn generate(class: &Class) -> TokenStream {
                     riid: *const com::sys::IID,
                     ppv: *mut *mut std::ffi::c_void,
                 ) -> com::sys::HRESULT {
+                    assert!(!riid.is_null(), "iid passed to CreateInstance was null");
                     if aggr != std::ptr::null_mut() {
                         return com::sys::CLASS_E_NOAGGREGATION;
                     }
 
-                    let mut instance = ::std::mem::ManuallyDrop::new(::std::boxed::Box::pin(<#class_name as ::std::default::Default>::default()));
-                    instance.query_interface(riid, ppv)
+                    #class_name::allocate_to_interface(riid, ppv)
                 }
 
                 unsafe fn LockServer(&self, _increment: com::sys::BOOL) -> com::sys::HRESULT {

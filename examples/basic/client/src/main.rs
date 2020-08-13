@@ -31,7 +31,7 @@ fn main() {
     // Call some functions on the `IAnimal` interface
     let food = Food { deliciousness: 10 };
     unsafe { animal.eat(&food) };
-    assert!(unsafe { animal.happiness() } == 20);
+    assert!(unsafe { animal.happiness() } == 10);
 
     // Get a handle to new interface `IDomesticAnimal` which is actually implemented
     // in a different VTable from `IAnimal`
