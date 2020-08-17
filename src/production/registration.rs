@@ -1,9 +1,8 @@
 //! Helpers for registering COM servers
 
 use crate::sys::{
-    GetModuleFileNameA, GetModuleHandleA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA,
-    RegSetValueExA, CLSID, ERROR_SUCCESS, FAILED, GUID, HKEY, HRESULT, LSTATUS, SELFREG_E_CLASS,
-    S_OK,
+    GetModuleFileNameA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA, RegSetValueExA, CLSID,
+    ERROR_SUCCESS, FAILED, GUID, HKEY, HRESULT, LSTATUS, SELFREG_E_CLASS, S_OK,
 };
 
 use std::convert::TryInto;
@@ -109,16 +108,12 @@ fn set_class_key(key_handle: HKEY, key_info: &RegistryKeyInfo) -> Result<HKEY, L
 fn add_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
     let key_handle = match create_class_key(key_info) {
         Ok(key_handle) => key_handle,
-        Err(e) => {
-            return e;
-        }
+        Err(e) => return e,
     };
 
     let key_handle = match set_class_key(key_handle, key_info) {
         Ok(key_handle) => key_handle,
-        Err(e) => {
-            return e;
-        }
+        Err(e) => return e,
     };
 
     unsafe { RegCloseKey(key_handle) }
@@ -129,18 +124,16 @@ fn remove_class_key(key_info: &RegistryKeyInfo) -> LSTATUS {
 }
 
 #[doc(hidden)]
-pub fn get_dll_file_path() -> String {
+pub unsafe fn get_dll_file_path(hmodule: *mut c_void) -> String {
     const MAX_FILE_PATH_LENGTH: usize = 260;
 
     let mut path = [0u8; MAX_FILE_PATH_LENGTH];
 
-    let len = unsafe {
-        GetModuleFileNameA(
-            GetModuleHandleA(b"server.dll\0".as_ptr() as *const _),
-            path.as_mut_ptr() as *mut _,
-            MAX_FILE_PATH_LENGTH as _,
-        )
-    };
+    let len = GetModuleFileNameA(
+        hmodule,
+        path.as_mut_ptr() as *mut _,
+        MAX_FILE_PATH_LENGTH as _,
+    );
 
     String::from_utf8(path[..len as usize].to_vec()).unwrap()
 }
@@ -199,6 +192,16 @@ pub fn dll_unregister_server(relevant_keys: &mut Vec<RegistryKeyInfo>) -> HRESUL
 #[macro_export]
 macro_rules! inproc_dll_module {
     (($class_id_one:ident, $class_type_one:ty), $(($class_id:ident, $class_type:ty)),*) => {
+        static mut _HMODULE: *mut ::std::ffi::c_void = ::std::ptr::null_mut();
+        #[no_mangle]
+        unsafe extern "stdcall" fn DllMain(hinstance: *mut ::std::ffi::c_void, fdw_reason: u32, reserved: *mut ::std::ffi::c_void) -> i32 {
+            const DLL_PROCESS_ATTACH: u32 = 1;
+            if fdw_reason == DLL_PROCESS_ATTACH {
+                unsafe { _HMODULE = hinstance; }
+            }
+            1
+        }
+
         #[no_mangle]
         unsafe extern "stdcall" fn DllGetClassObject(class_id: *const ::com::sys::CLSID, iid: *const ::com::sys::IID, result: *mut *mut ::std::ffi::c_void) -> ::com::sys::HRESULT {
             use ::com::interfaces::IUnknown;
@@ -226,7 +229,7 @@ macro_rules! inproc_dll_module {
 
         fn get_relevant_registry_keys() -> Vec<::com::production::registration::RegistryKeyInfo> {
             use ::com::production::registration::RegistryKeyInfo;
-            let file_path = ::com::production::registration::get_dll_file_path();
+            let file_path = unsafe { ::com::production::registration::get_dll_file_path(_HMODULE) };
             vec![
                 RegistryKeyInfo::new(
                     &::com::production::registration::class_key_path($class_id_one),
