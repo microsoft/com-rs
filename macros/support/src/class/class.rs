@@ -7,7 +7,7 @@ use std::iter::FromIterator;
 
 pub struct Class {
     pub name: Ident,
-    pub class_factory: bool,
+    pub has_class_factory: bool,
     pub docs: Vec<syn::Attribute>,
     pub visibility: syn::Visibility,
     pub interfaces: Vec<Interface>,
@@ -41,16 +41,15 @@ impl Class {
     }
 
     /// Parse the class macro syntax (without the `impl`s)
-    fn parse_class(input: syn::parse::ParseStream, docs: Vec<syn::Attribute>) -> syn::Result<Self> {
+    fn parse_class(
+        input: syn::parse::ParseStream,
+        docs: Vec<syn::Attribute>,
+        has_class_factory: bool,
+    ) -> syn::Result<Self> {
         let mut interfaces: Vec<Interface> = Vec::new();
         let visibility = input.parse::<syn::Visibility>()?;
-        let class_factory = input.peek(keywords::factory);
-        if class_factory {
-            let _ = input.parse::<keywords::factory>()?;
-        } else {
-            let _ = input.parse::<keywords::class>()?;
-        };
 
+        let _ = input.parse::<keywords::class>()?;
         let name = input.parse::<Ident>()?;
         let _ = input.parse::<syn::Token!(:)>()?;
 
@@ -90,7 +89,7 @@ impl Class {
 
         Ok(Class {
             name,
-            class_factory,
+            has_class_factory,
             docs,
             visibility,
             interfaces,
@@ -139,7 +138,6 @@ impl Class {
         let query_interface = iunknown.to_query_interface_tokens(interfaces);
         let query = iunknown.to_query_tokens();
         let constructor = super::class_constructor::generate(self);
-        let default_constructor = super::class_constructor::generate_default(self);
         let unsafe_constructor = super::class_constructor::generate_unsafe(self);
         let interface_drops = interfaces.iter().enumerate().map(|(index, _)| {
             let field_ident = quote::format_ident!("__{}", index);
@@ -165,7 +163,6 @@ impl Class {
             }
             impl #name {
                 #constructor
-                #default_constructor
                 #unsafe_constructor
                 #(#methods)*
                 #add_ref
@@ -190,7 +187,7 @@ impl Class {
     }
 
     pub fn to_class_trait_impl_tokens(&self) -> TokenStream {
-        if self.class_factory {
+        if !self.has_class_factory {
             return TokenStream::new();
         }
 
@@ -210,13 +207,21 @@ impl syn::parse::Parse for Class {
         let mut class = None;
         let mut methods: HashMap<syn::Path, Vec<syn::ImplItemMethod>> = HashMap::new();
         while !input.is_empty() {
-            let docs = input.call(syn::Attribute::parse_outer)?;
-            if let Some(a) = docs.iter().find(|a| !a.path.is_ident("doc")) {
-                return Err(syn::Error::new(a.path.span(), "Unrecognized attribute"));
+            let attributes = input.call(syn::Attribute::parse_outer)?;
+            let mut docs = Vec::with_capacity(attributes.len());
+            let mut has_class_factory = true;
+            for attr in attributes {
+                if attr.path.is_ident("doc") {
+                    docs.push(attr)
+                } else if attr.path.is_ident("no_class_factory") {
+                    has_class_factory = false;
+                } else {
+                    return Err(syn::Error::new(attr.path.span(), "Unrecognized attribute"));
+                }
             }
 
             if !input.peek(syn::Token!(impl)) {
-                class = Some(Self::parse_class(input, docs)?);
+                class = Some(Self::parse_class(input, docs, has_class_factory)?);
             } else {
                 let item = input.parse::<syn::ItemImpl>()?;
                 // TODO: ensure that class idents line up
