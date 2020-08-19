@@ -9,6 +9,10 @@ pub fn generate(class: &Class) -> TokenStream {
 
     let class_factory_ident = crate::utils::class_factory_ident(&class.name);
     let class_name = &class.name;
+    let user_fields = class.fields.iter().map(|f| {
+        let ty = &f.ty;
+        quote! { <#ty as ::std::default::Default>::default() }
+    });
     quote! {
         ::com::class! {
             #[no_class_factory]
@@ -26,7 +30,8 @@ pub fn generate(class: &Class) -> TokenStream {
                         return ::com::sys::CLASS_E_NOAGGREGATION;
                     }
 
-                    #class_name::allocate_to_interface(riid, ppv)
+                    let instance = #class_name::allocate(#(#user_fields)*,);
+                    instance.query_interface(riid, ppv)
                 }
 
                 unsafe fn LockServer(&self, _increment: com::sys::BOOL) -> com::sys::HRESULT {

@@ -30,15 +30,13 @@ impl IUnknownAbi {
     pub fn to_release_tokens(&self) -> TokenStream {
         let this_ptr = this_ptr_type();
         let munge = self.pointer_munging();
-        let class_name = &self.class_name;
+        let ref_count_ident = crate::utils::ref_count_ident();
 
         quote! {
             unsafe extern "stdcall" fn release(this: #this_ptr) -> u32 {
                 #munge
-                let count = #class_name::release(&munged);
-                if count == 1 {
-                    let _ = ::std::mem::ManuallyDrop::into_inner(munged);
-                }
+                let count = munged.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
+                let _ = ::std::mem::ManuallyDrop::into_inner(munged);
                 count
             }
         }
@@ -67,7 +65,7 @@ impl IUnknownAbi {
 
         quote! {
             let munged = this.as_ptr().sub(#offset);
-            let munged = ::std::mem::ManuallyDrop::new(::std::boxed::Box::from_raw(munged as *mut _ as *mut #class_name).into());
+            let munged: ::std::mem::ManuallyDrop<::std::pin::Pin<::std::boxed::Box<#class_name>>> = ::std::mem::ManuallyDrop::new(::std::boxed::Box::from_raw(munged as *mut _ as *mut #class_name).into());
         }
     }
 }
