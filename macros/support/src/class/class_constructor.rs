@@ -11,7 +11,7 @@ pub fn generate(class: &Class) -> TokenStream {
     let user_fields = class.fields.iter().map(|f| {
         let name = &f.ident;
         quote! {
-            #name: ::std::mem::ManuallyDrop::new(#name)
+            #name
         }
     });
 
@@ -27,14 +27,15 @@ pub fn generate(class: &Class) -> TokenStream {
         /// This allocates the class on the heap and pins it. This is because COM classes
         /// must have a stable location in memory. Once a COM class is instantiated somewhere
         /// it must stay there.
-        #vis fn allocate(#(#parameters),*) -> ::std::pin::Pin<::std::boxed::Box<Self>> {
+        #vis fn allocate(#(#parameters),*) -> ::com::production::ClassAllocation<Self> {
             #interface_inits
             let instance = #name {
                 #interface_fields
-                #ref_count_ident: std::cell::Cell::new(1),
+                #ref_count_ident: ::std::cell::Cell::new(1),
                 #(#user_fields),*
             };
-            ::std::boxed::Box::pin(instance)
+            let instance = ::std::boxed::Box::pin(instance);
+            ::com::production::ClassAllocation::new(instance)
         }
     }
 }
@@ -58,7 +59,7 @@ fn gen_vpointer_inits(class: &Class) -> TokenStream {
             let interface = interface.to_initialized_vtable_tokens(class, index);
             let vptr_field_ident = quote::format_ident!("__{}", index);
             quote! {
-                let #vptr_field_ident = unsafe { ::std::ptr::NonNull::new_unchecked(Box::into_raw(Box::new(#interface))) };
+                let #vptr_field_ident = unsafe { ::std::ptr::NonNull::new_unchecked(::std::boxed::Box::into_raw(::std::boxed::Box::new(#interface))) };
             }
         });
 

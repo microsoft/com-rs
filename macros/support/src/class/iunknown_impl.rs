@@ -16,36 +16,32 @@ impl IUnknownAbi {
 
     pub fn to_add_ref_tokens(&self) -> TokenStream {
         let this_ptr = this_ptr_type();
-        let munge = self.pointer_munging();
-        let class_name = &self.class_name;
+        let munge = self.borrowed_pointer_munging();
 
         quote! {
             unsafe extern "stdcall" fn add_ref(this: #this_ptr) -> u32 {
                 #munge
-                #class_name::add_ref(&munged)
+                munged.add_ref()
             }
         }
     }
 
     pub fn to_release_tokens(&self) -> TokenStream {
         let this_ptr = this_ptr_type();
-        let munge = self.pointer_munging();
+        let munge = self.owned_pointer_munging();
         let ref_count_ident = crate::utils::ref_count_ident();
 
         quote! {
             unsafe extern "stdcall" fn release(this: #this_ptr) -> u32 {
                 #munge
-                let count = munged.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
-                let _ = ::std::mem::ManuallyDrop::into_inner(munged);
-                count
+                munged.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count")
             }
         }
     }
 
     pub fn to_query_interface_tokens(&self) -> TokenStream {
-        let class_name = &self.class_name;
         let this_ptr = this_ptr_type();
-        let munge = self.pointer_munging();
+        let munge = self.borrowed_pointer_munging();
 
         quote! {
             unsafe extern "stdcall" fn query_interface(
@@ -54,18 +50,27 @@ impl IUnknownAbi {
                 ppv: *mut *mut ::std::ffi::c_void
             ) -> ::com::sys::HRESULT {
                 #munge
-                #class_name::query_interface(&munged, riid, ppv)
+                munged.query_interface(riid, ppv)
             }
         }
     }
 
-    fn pointer_munging(&self) -> TokenStream {
+    fn owned_pointer_munging(&self) -> TokenStream {
         let offset = self.offset;
         let class_name = &self.class_name;
 
         quote! {
             let munged = this.as_ptr().sub(#offset);
-            let munged: ::std::mem::ManuallyDrop<::std::pin::Pin<::std::boxed::Box<#class_name>>> = ::std::mem::ManuallyDrop::new(::std::boxed::Box::from_raw(munged as *mut _ as *mut #class_name).into());
+            let munged = ::com::production::ClassAllocation::from_raw(munged as *mut _ as *mut #class_name);
+        }
+    }
+
+    fn borrowed_pointer_munging(&self) -> TokenStream {
+        let owned = self.owned_pointer_munging();
+
+        quote! {
+            #owned
+            let munged = ::std::mem::ManuallyDrop::new(munged);
         }
     }
 }
@@ -83,19 +88,6 @@ impl IUnknown {
             pub unsafe fn add_ref(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> u32 {
                 let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
                 self.#ref_count_ident.set(value);
-                value
-            }
-        }
-    }
-
-    pub fn to_release_tokens(&self) -> TokenStream {
-        let ref_count_ident = crate::utils::ref_count_ident();
-
-        quote! {
-            pub unsafe fn release(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> u32 {
-                let value = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
-                self.#ref_count_ident.set(value);
-                debug_assert!(value != 0, "The class's ref count was decreased past one");
                 value
             }
         }

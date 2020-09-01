@@ -122,19 +122,12 @@ impl Class {
         });
         let ref_count_ident = crate::utils::ref_count_ident();
 
-        let user_fields = self.fields.iter().map(|f| {
-            let name = &f.ident;
-            let ty = &f.ty;
-            quote! {
-                #name: ::std::mem::ManuallyDrop<#ty>
-            }
-        });
+        let user_fields = &self.fields;
         let docs = &self.docs;
         let methods = self.methods.values().flat_map(|ms| ms);
 
         let iunknown = super::iunknown_impl::IUnknown::new();
         let add_ref = iunknown.to_add_ref_tokens();
-        let release = iunknown.to_release_tokens();
         let query_interface = iunknown.to_query_interface_tokens(interfaces);
         let query = iunknown.to_query_tokens();
         let constructor = super::class_constructor::generate(self);
@@ -142,12 +135,6 @@ impl Class {
             let field_ident = quote::format_ident!("__{}", index);
             quote! {
                 let _ = ::std::boxed::Box::from_raw(self.#field_ident.as_ptr());
-            }
-        });
-        let user_fields_drops = self.fields.iter().map(|f| {
-            let name = &f.ident;
-            quote! {
-                ::std::mem::ManuallyDrop::drop(&mut self.#name);
             }
         });
 
@@ -164,20 +151,13 @@ impl Class {
                 #constructor
                 #(#methods)*
                 #add_ref
-                #release
                 #query_interface
                 #query
             }
             impl ::std::ops::Drop for #name {
                 fn drop(&mut self) {
-                    let new_count = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
-                    self.#ref_count_ident.set(new_count);
-                    if new_count == 0 {
-                        //Drop everything
-                        unsafe {
-                            #(#interface_drops)*
-                            #(#user_fields_drops)*
-                        }
+                    unsafe {
+                        #(#interface_drops)*
                     }
                 }
             }
@@ -185,16 +165,24 @@ impl Class {
     }
 
     pub fn to_class_trait_impl_tokens(&self) -> TokenStream {
-        if !self.has_class_factory {
-            return TokenStream::new();
-        }
-
         let name = &self.name;
-        let factory = crate::utils::class_factory_ident(name);
+        let factory = if self.has_class_factory {
+            let ident = crate::utils::class_factory_ident(name);
+            quote! { #ident }
+        } else {
+            quote! { () }
+        };
+        let ref_count_ident = crate::utils::ref_count_ident();
 
         quote! {
             unsafe impl com::production::Class for #name {
                 type Factory = #factory;
+
+                fn dec_ref_count(&self) -> u32 {
+                    let count = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
+                    self.#ref_count_ident.set(count);
+                    count
+                }
             }
         }
     }
