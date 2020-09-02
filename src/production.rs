@@ -3,4 +3,4 @@ mod class;
 pub mod registration;
 
 #[doc(inline)]
-pub use class::Class;
+pub use class::{Class, ClassAllocation};

@@ -38,9 +38,3 @@ class! {
         }
     }
 }
-
-impl Default for BritishShortHairCat {
-    fn default() -> BritishShortHairCat {
-        BritishShortHairCat::new(std::cell::Cell::new(10))
-    }
-}
