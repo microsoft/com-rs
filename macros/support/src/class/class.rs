@@ -309,7 +309,7 @@ impl Interface {
             let method = quote! {
                 unsafe extern "stdcall" fn #name(this: ::std::ptr::NonNull<::std::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
                     let this = this.as_ptr().sub(#offset);
-                    let this = ::std::mem::ManuallyDrop::new(::std::pin::Pin::new(::std::boxed::Box::from_raw(this as *mut _ as *mut #class_name)));
+                    let this = ::std::mem::ManuallyDrop::new(::com::production::ClassAllocation::from_raw(this as *mut _ as *mut #class_name));
                     #class_name::#name(&this, #(#args),*)
                 }
             };

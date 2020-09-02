@@ -38,7 +38,8 @@ impl<T: Class> ClassAllocation<T> {
     /// Create an allocated class from a raw pointer
     ///
     /// # Safety
-    /// Must be a valid pointer to an allocated COM class.
+    /// Must be a valid, owned pointer to an allocated COM class. This returns an owned `ClassAllocation`
+    /// which will drop the wrapped COM class when it is dropped.
     pub unsafe fn from_raw(raw: *mut T) -> Self {
         let inner = std::mem::ManuallyDrop::new(Box::from_raw(raw).into());
         Self { inner }
@@ -61,5 +62,14 @@ impl<T: Class> Drop for ClassAllocation<T> {
                 std::mem::ManuallyDrop::drop(&mut self.inner);
             }
         }
+    }
+}
+
+impl<T: Class> std::fmt::Debug for ClassAllocation<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let ptr = self.inner.as_ref().get_ref() as *const T;
+        f.debug_struct("ClassAllocation")
+            .field("ptr", &ptr)
+            .finish()
     }
 }
