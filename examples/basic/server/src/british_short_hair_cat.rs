@@ -11,29 +11,29 @@ class! {
     }
 
     impl IDomesticAnimal for BritishShortHairCat {
-        fn train(&self) -> HRESULT {
+        fn Train(&self) -> HRESULT {
             println!("Training...");
             NOERROR
         }
     }
 
     impl ICat for BritishShortHairCat {
-        fn ignore_humans(&self) -> HRESULT {
+        fn IgnoreHumans(&self) -> HRESULT {
             println!("Ignoring Humans...");
             NOERROR
         }
     }
 
     impl IAnimal for BritishShortHairCat {
-        fn eat(&self, food: *const Food) -> HRESULT {
+        fn Eat(&self, food: *const Food) -> HRESULT {
             assert!(!food.is_null());
             let food = unsafe { *food };
-            println!("Eating...");
+            println!("Eating food with deliciousness level {}...", food.deliciousness);
             self.happiness.set(self.happiness.get() + food.deliciousness);
             NOERROR
         }
 
-        fn happiness(&self) ->usize {
+        fn Happiness(&self) ->usize {
             self.happiness.get()
         }
     }

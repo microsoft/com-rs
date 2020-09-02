@@ -210,10 +210,10 @@ macro_rules! inproc_dll_module {
             let class_id = unsafe { &*class_id };
             if class_id == &$class_id_one {
                 let instance = <$class_type_one as ::com::production::Class>::Factory::allocate();
-                instance.query_interface(&*iid, result)
+                instance.QueryInterface(&*iid, result)
             } $(else if class_id == &$class_id {
                 let instance = <$class_type_one as ::com::production::Class>::Factory::allocate();
-                instance.query_interface(&*iid, result)
+                instance.QueryInterface(&*iid, result)
             })* else {
                 ::com::sys::CLASS_E_CLASSNOTAVAILABLE
             }

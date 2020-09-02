@@ -19,9 +19,9 @@ impl IUnknownAbi {
         let munge = self.borrowed_pointer_munging();
 
         quote! {
-            unsafe extern "stdcall" fn add_ref(this: #this_ptr) -> u32 {
+            unsafe extern "stdcall" fn AddRef(this: #this_ptr) -> u32 {
                 #munge
-                munged.add_ref()
+                munged.AddRef()
             }
         }
     }
@@ -32,7 +32,7 @@ impl IUnknownAbi {
         let ref_count_ident = crate::utils::ref_count_ident();
 
         quote! {
-            unsafe extern "stdcall" fn release(this: #this_ptr) -> u32 {
+            unsafe extern "stdcall" fn Release(this: #this_ptr) -> u32 {
                 #munge
                 munged.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count")
             }
@@ -44,13 +44,13 @@ impl IUnknownAbi {
         let munge = self.borrowed_pointer_munging();
 
         quote! {
-            unsafe extern "stdcall" fn query_interface(
+            unsafe extern "stdcall" fn QueryInterface(
                 this: #this_ptr,
                 riid: *const ::com::sys::IID,
                 ppv: *mut *mut ::std::ffi::c_void
             ) -> ::com::sys::HRESULT {
                 #munge
-                munged.query_interface(riid, ppv)
+                munged.QueryInterface(riid, ppv)
             }
         }
     }
@@ -85,7 +85,7 @@ impl IUnknown {
     pub fn to_add_ref_tokens(&self) -> TokenStream {
         let ref_count_ident = crate::utils::ref_count_ident();
         quote! {
-            pub unsafe fn add_ref(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> u32 {
+            pub unsafe fn AddRef(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> u32 {
                 let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
                 self.#ref_count_ident.set(value);
                 value
@@ -98,7 +98,7 @@ impl IUnknown {
         let base_match_arms = Self::gen_base_match_arms(interfaces);
 
         quote! {
-            pub unsafe fn query_interface(
+            pub unsafe fn QueryInterface(
                 self: &::std::pin::Pin<::std::boxed::Box<Self>>,
                 riid: *const ::com::sys::IID,
                 ppv: *mut *mut ::std::ffi::c_void
@@ -114,7 +114,7 @@ impl IUnknown {
                     return ::com::sys::E_NOINTERFACE;
                 }
 
-                self.add_ref();
+                self.AddRef();
                 ::com::sys::NOERROR
             }
         }
@@ -135,25 +135,6 @@ impl IUnknown {
         });
 
         quote!(#(#base_match_arms)*)
-    }
-
-    pub fn to_query_tokens(&self) -> TokenStream {
-        quote! {
-            pub fn query<T: ::com::Interface>(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> Option<T> {
-                let mut result = None;
-                let hr = unsafe { self.query_interface(&T::IID, &mut result as *mut _ as _) };
-
-                if ::com::sys::FAILED(hr) {
-                    assert!(
-                        hr == ::com::sys::E_NOINTERFACE || hr == ::com::sys::E_POINTER,
-                        "QueryInterface returned non-standard error"
-                    );
-                    return None;
-                }
-                debug_assert!(result.is_some(), "Successful call to query_interface yielded a null pointer");
-                result
-            }
-        }
     }
 }
 

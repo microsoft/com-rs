@@ -82,7 +82,7 @@ impl Interface {
         quote! {
             impl Drop for #name {
                 fn drop(&mut self) {
-                    unsafe { <Self as ::com::Interface>::as_iunknown(self).release(); }
+                    unsafe { <Self as ::com::Interface>::as_iunknown(self).Release(); }
                 }
             }
         }
@@ -95,7 +95,7 @@ impl Interface {
             impl ::std::clone::Clone for #name {
                 fn clone(&self) -> Self {
                     unsafe {
-                        <Self as ::com::Interface>::as_iunknown(self).add_ref();
+                        <Self as ::com::Interface>::as_iunknown(self).AddRef();
                     }
                     Self {
                         inner: self.inner
@@ -315,6 +315,7 @@ impl InterfaceMethod {
         let docs = &self.docs;
         let vis = &self.visibility;
         return quote! {
+            #[allow(non_snake_case)]
             #(#docs)*
             #vis unsafe fn #outer_method_ident<#(#generics),*>(&self, #(#args),*) #return_type {
                 #(#into)*

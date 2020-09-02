@@ -27,7 +27,7 @@ interface to be safe.
 com::interfaces! {
     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
     pub unsafe interface IAnimal: IUnknown {
-        fn eat(&self) -> HRESULT;
+        fn Eat(&self) -> HRESULT;
     }
 }
 ```
@@ -51,7 +51,7 @@ impl IAnimal {
     // in the interface is still valid.
     // This is likely to be the case as interface automatically keeps 
     // track of its reference count.
-    pub unsafe fn eat(&self) -> HRESULT {
+    pub unsafe fn Eat(&self) -> HRESULT {
         let interface_ptr = <Self as com::AbiTransferable>::get_abi(self);
         (interface_ptr.as_ref().as_ref().Eat)(interface_ptr)
     }
@@ -71,7 +71,7 @@ impl std::ops::Deref for IAnimal {
 impl Drop for IAnimal {
     fn drop(&mut self) {
         unsafe {
-            <Self as com::Interface>::as_iunknown(self).release();
+            <Self as com::Interface>::as_iunknown(self).Release();
         }
     }
 }
@@ -80,7 +80,7 @@ impl Drop for IAnimal {
 impl ::std::clone::Clone for IAnimal {
     fn clone(&self) -> Self {
         unsafe {
-            <Self as com::Interface>::as_iunknown(self).add_ref();
+            <Self as com::Interface>::as_iunknown(self).AddRef();
         }
         Self { inner: self.inner }
     }

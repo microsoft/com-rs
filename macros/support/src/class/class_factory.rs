@@ -31,7 +31,7 @@ pub fn generate(class: &Class) -> TokenStream {
                     }
 
                     let instance = #class_name::allocate(#(#user_fields)*,);
-                    instance.query_interface(riid, ppv)
+                    instance.QueryInterface(riid, ppv)
                 }
 
                 unsafe fn LockServer(&self, _increment: com::sys::BOOL) -> com::sys::HRESULT {
