@@ -64,9 +64,10 @@ let mut cat = create_instance::<IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get
 // All IAnimal methods will be available.
 // Because we are crossing an FFI boundary, all COM interfaces are marked as unsafe.
 // It is the job of the programmer to ensure that invariants beyond what the COM library guarantees are upheld.
-// See the unsafe documentation for more info.
 unsafe { cat.Eat(); }
 ```
+
+For more information on usage and safety, take a look at the [docs](./docs).
 
 ### Producing a COM component
 
@@ -107,6 +108,8 @@ com::class! {
     }
 }
 ```
+
+For more information on usage and safety, take a look at the [docs](./docs).
 
 ## Safety
 
