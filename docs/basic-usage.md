@@ -16,8 +16,8 @@ typedef struct Data
 interface IMyInterface : IUnknown
 {
     HRESULT MyMethod(
-        [in] const Data *my_data,
-        [in] long n,
+        const Data *my_data,
+        INT32 n,
         [out] IMyOtherInterface **other
     );
 }
@@ -44,7 +44,7 @@ com::interfaces! {
     unsafe interface IMyInterface: IUnknown {
         fn MyMethod(
             my_data: &Data,
-            n: i64, // C's long is equivalent to Rust's i64
+            n: i32, // INT32 is equivalent to Rust's i32
             // This is the largest translation difference.
             // com-rs'rs interface types are equivalent to a non-null `IInterface *const` 
             // In this case, since `other` is an [out] arg, we want to be able to pass a pointer to
@@ -78,7 +78,7 @@ let my_interface = unsafe { getInterface() };
 let data = Data { x: 10.0, y: 4.0 };
 let mut my_other_interface = None;
 unsafe { my_interface.MyMethod(&data, 100, &mut my_other_interface) };
-unsafe { my_other_interface.MyOtherMethod() };
+unsafe { my_other_interface.unwrap().MyOtherMethod() };
 ```
 
 Of course, you may want to use Windows APIs for getting a registered COM component. Safe wrappers to such APIs can be found in `com::runtime`.
