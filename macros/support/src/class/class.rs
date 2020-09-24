@@ -124,12 +124,16 @@ impl Class {
 
         let user_fields = &self.fields;
         let docs = &self.docs;
-        let methods = self.methods.values().flat_map(|ms| ms);
+        let methods = self.methods.values().flat_map(|ms| ms).map(|m| {
+            quote! {
+                #[allow(non_snake_case)]
+                #m
+            }
+        });
 
         let iunknown = super::iunknown_impl::IUnknown::new();
         let add_ref = iunknown.to_add_ref_tokens();
         let query_interface = iunknown.to_query_interface_tokens(interfaces);
-        let query = iunknown.to_query_tokens();
         let constructor = super::class_constructor::generate(self);
         let interface_drops = interfaces.iter().enumerate().map(|(index, _)| {
             let field_ident = quote::format_ident!("__{}", index);
@@ -152,7 +156,6 @@ impl Class {
                 #(#methods)*
                 #add_ref
                 #query_interface
-                #query
             }
             impl ::std::ops::Drop for #name {
                 fn drop(&mut self) {
@@ -307,6 +310,7 @@ impl Interface {
             });
             let ret = &m.sig.output;
             let method = quote! {
+                #[allow(non_snake_case)]
                 unsafe extern "stdcall" fn #name(this: ::std::ptr::NonNull<::std::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
                     let this = this.as_ptr().sub(#offset);
                     let this = ::std::mem::ManuallyDrop::new(::com::production::ClassAllocation::from_raw(this as *mut _ as *mut #class_name));
@@ -357,9 +361,9 @@ impl Interface {
                 #release
                 #query_interface
                 IUknownVTable {
-                    AddRef: add_ref,
-                    Release: release,
-                    QueryInterface: query_interface,
+                    AddRef,
+                    Release,
+                    QueryInterface,
                 }
             }
         }

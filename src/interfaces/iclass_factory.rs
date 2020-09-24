@@ -10,23 +10,25 @@ interfaces! {
     #[uuid("00000001-0000-0000-c000-000000000046")]
     pub unsafe interface IClassFactory: IUnknown {
         /// the [CreateInstance](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iclassfactory-createinstance) COM method
-        pub unsafe fn create_instance(
+        pub unsafe fn CreateInstance(
             &self,
             aggr: Option<IUnknown>,
             riid: *const GUID,
             ppv: *mut *mut c_void,
         ) -> HRESULT;
         /// the [LockServer](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iclassfactory-lockserver) COM method
-        pub unsafe fn lock_server(&self, increment: BOOL) -> HRESULT;
+        pub unsafe fn LockServer(&self, increment: BOOL) -> HRESULT;
     }
 }
 
 impl IClassFactory {
-    /// Get an instance of the associated Co Class
-    pub fn get_instance<T: Interface>(&self) -> Option<T> {
+    /// Create an instance of the associated class
+    ///
+    /// This is a safe wrapper around `CreateInstance`
+    pub fn create_instance<T: Interface>(&self) -> Option<T> {
         let mut ppv = None;
         let hr =
-            unsafe { self.create_instance(None, &T::IID, &mut ppv as *mut _ as *mut *mut c_void) };
+            unsafe { self.CreateInstance(None, &T::IID, &mut ppv as *mut _ as *mut *mut c_void) };
         if FAILED(hr) {
             // TODO: decide what failures are possible
             return None;

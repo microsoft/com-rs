@@ -27,18 +27,18 @@ To both consume or produce a COM component through an interface, you will first 
 com::interfaces! {
     #[uuid("00000000-0000-0000-C000-000000000046")]
     pub unsafe interface IUnknown {
-        fn query_interface(
+        fn QueryInterface(
             &self,
             riid: *const IID,
             ppv: *mut *mut c_void
         ) -> HRESULT;
-        fn add_ref(&self) -> u32;
-        fn release(&self) -> u32;
+        fn AddRef(&self) -> u32;
+        fn Release(&self) -> u32;
     }
 
     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
     pub unsafe interface IAnimal: IUnknown {
-        fn eat(&self) -> HRESULT;
+        fn Eat(&self) -> HRESULT;
     }
 }
 ```
@@ -58,15 +58,16 @@ init_runtime().expect("Failed to initialize COM Library");
 // Get a COM instance's interface pointer, by specifying
 // - The CLSID of the COM component
 // - The interface of the COM component that you want
-// create_instance returns a ComRc<dyn IAnimal> in this case.
+// create_instance returns an IAnimal interface in this case.
 let mut cat = create_instance::<IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
 
 // All IAnimal methods will be available.
 // Because we are crossing an FFI boundary, all COM interfaces are marked as unsafe.
 // It is the job of the programmer to ensure that invariants beyond what the COM library guarantees are upheld.
-// See the unsafe documentation for more info.
-unsafe { cat.eat(); }
+unsafe { cat.Eat(); }
 ```
+
+For more information on usage and safety, take a look at the [docs](./docs).
 
 ### Producing a COM component
 
@@ -86,21 +87,21 @@ com::class! {
     
     
     impl IDomesticAnimal for BritishShortHairCat {
-        fn train(&self) -> HRESULT {
+        fn Train(&self) -> HRESULT {
             println!("Training...");
             NOERROR
         }
     }
     
     impl ICat for BritishShortHairCat {
-        fn ignore_humans(&self) -> HRESULT {
+        fn IgnoreHumans(&self) -> HRESULT {
             println!("Ignoring Humans...");
             NOERROR
         }
     }
     
     impl IAnimal for BritishShortHairCat {
-        fn eat(&self) -> HRESULT {
+        fn Eat(&self) -> HRESULT {
             println!("Eating...");
             NOERROR
         }
@@ -108,16 +109,7 @@ com::class! {
 }
 ```
 
-3. You must implement the `Default` trait from the standard library which is used by a class's class factory for instantiating the class.
-Note: that a `new` associated function is defined for you which takes all the user defined values of the class.
-```rust
-impl Default for BritishShortHairCat {
-    fn default() -> BritishShortHairCat {
-        /// `BritishShortHairCat::new` was defined for us and takes the `num_owners` as its only argument
-        BritishShortHairCat::new(20)
-    }
-}
-```
+For more information on usage and safety, take a look at the [docs](./docs).
 
 ## Safety
 

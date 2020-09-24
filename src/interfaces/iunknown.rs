@@ -13,12 +13,12 @@ interfaces! {
         /// The COM [`QueryInterface` Method]
         ///
         /// This method normally should not be called directly. Interfaces that implement
-        /// `IUnknown` also implement [`IUnknown::get_interface`] which is a safe wrapper around
-        /// `IUnknown::query_interface`.
+        /// `IUnknown` also implement [`IUnknown::query_interface`] which is a safe wrapper around
+        /// `IUnknown::QueryInterface`.
         ///
         /// [`QueryInterface` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)
-        /// [`IUnknown::get_interface`]: trait.IUnknown.html#method.get_interface
-        pub unsafe fn query_interface(&self, riid: *const GUID, ppv: *mut *mut c_void) -> HRESULT;
+        /// [`IUnknown::query_interface`]: trait.IUnknown.html#method.query_interface
+        pub unsafe fn QueryInterface(&self, riid: *const GUID, ppv: *mut *mut c_void) -> HRESULT;
 
         /// The COM [`AddRef` Method]
         ///
@@ -27,7 +27,7 @@ interfaces! {
         ///
         /// [`AddRef` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
         /// [`ComPtr`]: struct.ComPtr.html
-        pub unsafe fn add_ref(&self) -> u32;
+        pub unsafe fn AddRef(&self) -> u32;
 
         /// The COM [`Release` Method]
         ///
@@ -36,7 +36,7 @@ interfaces! {
         ///
         /// [`Release` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
         /// [`ComPtr`]: struct.ComPtr.html
-        pub unsafe fn release(&self) -> u32;
+        pub unsafe fn Release(&self) -> u32;
     }
 
 }
@@ -47,10 +47,10 @@ impl IUnknown {
     /// If the backing class implements the interface `I` then a `Some`
     /// containing an `ComPtr` pointing to that interface will be returned
     /// otherwise `None` will be returned.
-    pub fn get_interface<I: Interface>(&self) -> Option<I> {
+    pub fn query_interface<I: Interface>(&self) -> Option<I> {
         let mut ppv = None;
         let hr = unsafe {
-            self.query_interface(
+            self.QueryInterface(
                 &I::IID as *const IID,
                 &mut ppv as *mut _ as *mut *mut c_void,
             )

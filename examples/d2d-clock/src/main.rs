@@ -154,13 +154,13 @@ impl Clock {
     }
 
     fn render(&mut self) {
-        unsafe { self.device_dependent_resources.target.begin_draw() };
+        unsafe { self.device_dependent_resources.target.BeginDraw() };
         self.draw();
         let hr = unsafe {
             self.device_dependent_resources
                 .target
-                .end_draw(std::ptr::null_mut(), std::ptr::null_mut());
-            self.device_dependent_resources.swap_chain.present(1, 0)
+                .EndDraw(std::ptr::null_mut(), std::ptr::null_mut());
+            self.device_dependent_resources.swap_chain.Present(1, 0)
         };
 
         match hr {
@@ -193,10 +193,10 @@ impl Clock {
             HR!(self
                 .device_independent_resources
                 .animation_manager
-                .update(time, std::ptr::null_mut()));
+                .Update(time, std::ptr::null_mut()));
 
             let target = &self.device_dependent_resources.target;
-            target.set_unit_mode(D2D1_UNIT_MODE_PIXELS);
+            target.SetUnitMode(D2D1_UNIT_MODE_PIXELS);
 
             let color_white = D2D1_COLOR_F {
                 r: 1.0,
@@ -204,17 +204,17 @@ impl Clock {
                 b: 1.0,
                 a: 1.0,
             };
-            target.clear(&color_white);
-            target.set_unit_mode(D2D1_UNIT_MODE_DIPS);
+            target.Clear(&color_white);
+            target.SetUnitMode(D2D1_UNIT_MODE_DIPS);
 
             let mut previous = None;
-            target.get_target(&mut previous);
+            target.GetTarget(&mut previous);
             let clock = &self.device_dependent_resources.clock;
-            target.set_target(clock);
-            target.clear(std::ptr::null());
+            target.SetTarget(clock);
+            target.Clear(std::ptr::null());
             self.draw_clock();
             let target = &self.device_dependent_resources.target;
-            target.set_target(previous.unwrap());
+            target.SetTarget(previous.unwrap());
 
             let clock = &self.device_dependent_resources.clock;
 
@@ -224,7 +224,7 @@ impl Clock {
             transform.matrix[2][0] = offset.width;
             transform.matrix[2][1] = offset.height;
 
-            target.set_transform(&transform);
+            target.SetTransform(&transform);
 
             // target.draw_image(
             //     self.shadow.get(),
@@ -235,9 +235,9 @@ impl Clock {
             let mut identity = D2D_MATRIX_3X2_F::default();
             identity.matrix[0][0] = 1.0;
             identity.matrix[1][1] = 1.0;
-            target.set_transform(&identity);
+            target.SetTransform(&identity);
 
-            target.draw_image(
+            target.DrawImage(
                 clock,
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
@@ -251,7 +251,7 @@ impl Clock {
         let target = &self.device_dependent_resources.target;
         unsafe {
             let mut size = std::mem::zeroed();
-            target.get_size(&mut size);
+            target.GetSize(&mut size);
             let radius = 200.0f32.max(size.width.min(size.height) / 2.0 - 50.0);
             let offset = d2d1::D2D1_SIZE_F {
                 width: 2.0,
@@ -262,8 +262,8 @@ impl Clock {
             translation.matrix[1][1] = 1.0;
             translation.matrix[2][0] = size.width / offset.width;
             translation.matrix[2][1] = size.height / offset.height;
-            target.set_transform(&translation);
-            target.get_transform(&mut translation);
+            target.SetTransform(&translation);
+            target.GetTransform(&mut translation);
 
             let brush = &self.device_dependent_resources.brush;
             let ellipse = D2D1_ELLIPSE {
@@ -272,7 +272,7 @@ impl Clock {
                 radiusY: 50.0,
             };
 
-            target.draw_ellipse(&ellipse, brush, radius / 20.0, None);
+            target.DrawEllipse(&ellipse, brush, radius / 20.0, None);
 
             let mut time = SYSTEMTIME::default();
             GetLocalTime(&mut time);
@@ -285,7 +285,7 @@ impl Clock {
             HR!(self
                 .device_independent_resources
                 .animation_variable
-                .get_value(&mut swing));
+                .GetValue(&mut swing));
 
             if 1.0 > swing {
                 // static secondPrevious: f64 = second_angle;
@@ -308,14 +308,14 @@ impl Clock {
                 &mut rotation,
             );
             let transform = rotation; //* self.orientation * translation;
-            target.set_transform(&transform);
+            target.SetTransform(&transform);
 
             let zero = d2d1::D2D1_POINT_2F { x: 0.0, y: 0.0 };
             let end = d2d1::D2D1_POINT_2F {
                 x: 0.0,
                 y: -(radius * 0.75),
             };
-            target.draw_line(
+            target.DrawLine(
                 zero,
                 end,
                 &self.device_dependent_resources.brush,
@@ -325,7 +325,7 @@ impl Clock {
 
             // m_target->SetTransform(Matrix3x2F::Rotation(minuteAngle) * m_orientation * translation);
 
-            target.draw_line(
+            target.DrawLine(
                 zero,
                 end,
                 &self.device_dependent_resources.brush,
@@ -339,7 +339,7 @@ impl Clock {
                 x: 0.0,
                 y: -(radius * 0.5),
             };
-            target.draw_line(
+            target.DrawLine(
                 zero,
                 end,
                 &self.device_dependent_resources.brush,
@@ -353,7 +353,7 @@ impl Clock {
 fn create_swapchain_bitmap(swap_chain: &IDXGISwapChain1, target: &ID2D1DeviceContext) {
     let mut surface: Option<IDXGISurface> = None;
     unsafe {
-        HR!(swap_chain.get_buffer(
+        HR!(swap_chain.GetBuffer(
             0,
             &IDXGISurface::IID,
             &mut surface as *mut _ as *mut *mut c_void,
@@ -368,8 +368,8 @@ fn create_swapchain_bitmap(swap_chain: &IDXGISwapChain1, target: &ID2D1DeviceCon
 
         let mut bitmap = None;
 
-        HR!(target.create_bitmap_from_dxgi_surface(surface.unwrap(), &props, &mut bitmap));
-        target.set_target(bitmap.unwrap());
+        HR!(target.CreateBitmapFromDxgiSurface(surface.unwrap(), &props, &mut bitmap));
+        target.SetTarget(bitmap.unwrap());
     }
 }
 
@@ -386,7 +386,7 @@ fn create_swapchain(device: &ID3D11Device, window: HWND) -> IDXGISwapChain1 {
     let mut swap_chain = None;
 
     unsafe {
-        HR!(factory.create_swap_chain_for_hwnd(
+        HR!(factory.CreateSwapChainForHwnd(
             device,
             window,
             &props,
@@ -400,12 +400,12 @@ fn create_swapchain(device: &ID3D11Device, window: HWND) -> IDXGISwapChain1 {
 }
 
 fn get_dxgi_factory(device: &ID3D11Device) -> IDXGIFactory2 {
-    let dxdevice = device.get_interface::<IDXGIDevice>().unwrap();
+    let dxdevice = device.query_interface::<IDXGIDevice>().unwrap();
     let mut adapter = None;
     unsafe {
-        HR!(dxdevice.get_adapter(&mut adapter));
+        HR!(dxdevice.GetAdapter(&mut adapter));
         let mut parent = None;
-        HR!(adapter.unwrap().get_parent(
+        HR!(adapter.unwrap().GetParent(
             &IDXGIFactory2::IID,
             &mut parent as *mut _ as *mut *mut c_void
         ));
@@ -414,16 +414,16 @@ fn get_dxgi_factory(device: &ID3D11Device) -> IDXGIFactory2 {
 }
 
 fn create_render_target(factory: &ID2D1Factory1, device: &mut ID3D11Device) -> ID2D1DeviceContext {
-    let dxdevice = device.get_interface::<IDXGIDevice>();
+    let dxdevice = device.query_interface::<IDXGIDevice>();
 
     let mut d2device = None;
     let target = unsafe {
-        HR!(factory.create_device(&dxdevice, &mut d2device));
+        HR!(factory.CreateDevice(&dxdevice, &mut d2device));
         let mut target = None;
 
         HR!(d2device
             .unwrap()
-            .create_device_context(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &mut target));
+            .CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &mut target));
         target
     };
 
@@ -493,7 +493,7 @@ fn get_dpi(factory: &ID2D1Factory1) -> f32 {
     let mut dpix: f32 = 0.0;
     let mut dpiy: f32 = 0.0;
     unsafe {
-        factory.get_desktop_dpi(&mut dpix, &mut dpiy);
+        factory.GetDesktopDpi(&mut dpix, &mut dpiy);
     }
     dpix
 }
@@ -513,7 +513,7 @@ impl DeviceIndependentResources {
 
         let mut style = None;
         unsafe {
-            HR!(factory.create_stroke_style(&style_props, std::ptr::null_mut(), 0, &mut style));
+            HR!(factory.CreateStrokeStyle(&style_props, std::ptr::null_mut(), 0, &mut style));
         }
         let style = style.unwrap();
 
@@ -542,20 +542,14 @@ impl DeviceIndependentResources {
         unsafe {
             check_bool!(QueryPerformanceFrequency(&mut animation_frequency));
 
-            HR!(library.create_accelerate_decelerate_transition(
-                5.0,
-                1.0,
-                0.2,
-                0.8,
-                &mut transition,
-            ));
+            HR!(library.CreateAccelerateDecelerateTransition(5.0, 1.0, 0.2, 0.8, &mut transition,));
 
-            HR!(animation_manager.create_animation_variable(0.0, &mut animation_variable));
+            HR!(animation_manager.CreateAnimationVariable(0.0, &mut animation_variable));
         }
         let animation_variable = animation_variable.unwrap();
 
         unsafe {
-            HR!(animation_manager.schedule_transition(
+            HR!(animation_manager.ScheduleTransition(
                 &animation_variable,
                 transition.unwrap(),
                 get_time(animation_frequency)
@@ -585,7 +579,7 @@ impl DeviceDependentResources {
         let swap_chain = create_swapchain(&device, window);
         create_swapchain_bitmap(&swap_chain, &target);
 
-        unsafe { target.set_dpi(dpi, dpi) };
+        unsafe { target.SetDpi(dpi, dpi) };
 
         let brush = create_device_resources(&target);
         let clock = create_device_size_resources(&target, dpi);
@@ -611,7 +605,7 @@ fn create_device_resources(target: &ID2D1DeviceContext) -> ID2D1SolidColorBrush 
 
     let mut brush = None;
     unsafe {
-        HR!(target.create_solid_color_brush(&color_orange, &props, &mut brush));
+        HR!(target.CreateSolidColorBrush(&color_orange, &props, &mut brush));
     }
     brush.unwrap()
 }
@@ -619,7 +613,7 @@ fn create_device_resources(target: &ID2D1DeviceContext) -> ID2D1SolidColorBrush 
 fn create_device_size_resources(target: &ID2D1DeviceContext, dpi: f32) -> ID2D1Bitmap1 {
     let size = unsafe {
         let mut size = std::mem::zeroed();
-        target.get_size(&mut size);
+        target.GetSize(&mut size);
         size
     };
     let size = D2D_SIZE_U {
@@ -639,7 +633,7 @@ fn create_device_size_resources(target: &ID2D1DeviceContext, dpi: f32) -> ID2D1B
     };
     let mut clock = None;
     unsafe {
-        HR!(target.create_bitmap(size, std::ptr::null(), 0, &props, &mut clock));
+        HR!(target.CreateBitmap(size, std::ptr::null(), 0, &props, &mut clock));
     }
 
     // m_shadow = nullptr;
@@ -664,8 +658,8 @@ fn get_time(frequency: winnt::LARGE_INTEGER) -> f64 {
 interfaces! {
     #[uuid("06152247-6f50-465a-9245-118bfd3b6007")]
     unsafe interface ID2D1Factory: IUnknown {
-        fn reload_system_metrics(&self) -> HRESULT;
-        fn get_desktop_dpi(&self, dpi_x: *mut FLOAT, dpi_y: *mut FLOAT);
+        fn ReloadSystemMetrics(&self) -> HRESULT;
+        fn GetDesktopDpi(&self, dpi_x: *mut FLOAT, dpi_y: *mut FLOAT);
         // ununsed functions
         fn f0(&self);
         fn f1(&self);
@@ -683,12 +677,12 @@ interfaces! {
 
     #[uuid("bb12d362-daee-4b9a-aa1d-14ba401cfa1f")]
     unsafe interface ID2D1Factory1: ID2D1Factory {
-        fn create_device(
+        fn CreateDevice(
             &self,
             dxgi_device: Option<IDXGIDevice>,
             d2d_device: *mut Option<ID2D1Device>,
         ) -> HRESULT;
-        fn create_stroke_style(
+        fn CreateStrokeStyle(
             &self,
             stroke_style_properties: *const D2D1_STROKE_STYLE_PROPERTIES1,
             dashes: *const FLOAT,
@@ -700,7 +694,7 @@ interfaces! {
     #[uuid("50c83a1c-e072-4c48-87b0-3630fa36a6d0")]
     unsafe interface IDXGIFactory2: IDXGIFactory1 {
         fn f0(&self);
-        fn create_swap_chain_for_hwnd(
+        fn CreateSwapChainForHwnd(
             &self,
             p_device: IUnknown,
             hwnd: HWND,
@@ -728,7 +722,7 @@ interfaces! {
 
     #[uuid("e8f7fe7a-191c-466d-ad95-975678bda998")]
     unsafe interface ID2D1DeviceContext: ID2D1RenderTarget {
-        fn create_bitmap(
+        fn CreateBitmap(
             &self,
             #[pass_through]
             size: d2d1::D2D1_SIZE_U,
@@ -741,7 +735,7 @@ interfaces! {
         fn f1(&self);
         fn f2(&self);
         fn f3(&self);
-        fn create_bitmap_from_dxgi_surface(
+        fn CreateBitmapFromDxgiSurface(
             &self,
             surface: IDXGISurface,
             bitmap_properties: *const D2D1_BITMAP_PROPERTIES1,
@@ -758,16 +752,16 @@ interfaces! {
         fn f12(&self);
         fn f13(&self);
         fn f14(&self);
-        fn set_target(&self, image: ID2D1Image);
-        fn get_target(&self, image: *mut Option<ID2D1Image>);
+        fn SetTarget(&self, image: ID2D1Image);
+        fn GetTarget(&self, image: *mut Option<ID2D1Image>);
         fn f15(&self);
         fn f16(&self);
         fn f17(&self);
         fn f18(&self);
-        fn set_unit_mode(&self, unit_mode: D2D1_UNIT_MODE);
+        fn SetUnitMode(&self, unit_mode: D2D1_UNIT_MODE);
         fn f19(&self);
         fn f20(&self);
-        fn draw_image(
+        fn DrawImage(
             &self,
             image: ID2D1Image,
             target_offset: *const d2d1::D2D1_POINT_2F,
@@ -781,7 +775,7 @@ interfaces! {
 
     #[uuid("47dd575d-ac05-4cdd-8049-9b02cd16f44c")]
     unsafe interface ID2D1Device: ID2D1Resource {
-        fn create_device_context(
+        fn CreateDeviceContext(
             &self,
             options: D2D1_DEVICE_CONTEXT_OPTIONS,
             device_context: *mut Option<ID2D1DeviceContext>,
@@ -794,7 +788,7 @@ interfaces! {
         fn f1(&self);
         fn f2(&self);
         fn f3(&self);
-        fn create_solid_color_brush(
+        fn CreateSolidColorBrush(
             &self,
             color: *const D2D1_COLOR_F,
             brush_props: *const D2D1_BRUSH_PROPERTIES,
@@ -806,7 +800,7 @@ interfaces! {
         fn f7(&self);
         fn f8(&self);
         fn f9(&self);
-        fn draw_line(
+        fn DrawLine(
             &self,
             #[pass_through]
             point0: d2d1::D2D1_POINT_2F,
@@ -820,7 +814,7 @@ interfaces! {
         fn f11(&self);
         fn f12(&self);
         fn f13(&self);
-        fn draw_ellipse(
+        fn DrawEllipse(
             &self,
             ellipse: *const D2D1_ELLIPSE,
             brush: ID2D1Brush,
@@ -836,8 +830,8 @@ interfaces! {
         fn f20(&self);
         fn f21(&self);
         fn f22(&self);
-        fn set_transform(&self, transform: *const d2d1::D2D1_MATRIX_3X2_F);
-        fn get_transform(&self, transform: *mut d2d1::D2D1_MATRIX_3X2_F);
+        fn SetTransform(&self, transform: *const d2d1::D2D1_MATRIX_3X2_F);
+        fn GetTransform(&self, transform: *mut d2d1::D2D1_MATRIX_3X2_F);
         fn f23(&self);
         fn f24(&self);
         fn f25(&self);
@@ -853,17 +847,17 @@ interfaces! {
         fn f35(&self);
         fn f36(&self);
         fn f37(&self);
-        fn clear(&self, clear_color: *const D2D1_COLOR_F);
-        fn begin_draw(&self);
-        fn end_draw(
+        fn Clear(&self, clear_color: *const D2D1_COLOR_F);
+        fn BeginDraw(&self);
+        fn EndDraw(
             &self,
             tag1: *mut D2D1_TAG,
             tag2: *mut D2D1_TAG,
         );
         fn f38(&self);
-        fn set_dpi(&self, dpix: f32, dpiy: f32);
+        fn SetDpi(&self, dpix: f32, dpiy: f32);
         fn f39(&self);
-        fn get_size(&self, ret: *mut d2d1::D2D1_SIZE_F) ;
+        fn GetSize(&self, ret: *mut d2d1::D2D1_SIZE_F) ;
         fn f40(&self);
         fn f41(&self);
         fn f42(&self);
@@ -879,7 +873,7 @@ interfaces! {
 
     #[uuid("54ec77fa-1377-44e6-8c32-88fd5f44c84c")]
     unsafe interface IDXGIDevice: IDXGIObject {
-        fn get_adapter(&self, adapter: *mut Option<IDXGIAdapter>) -> HRESULT;
+        fn GetAdapter(&self, adapter: *mut Option<IDXGIAdapter>) -> HRESULT;
         fn f0(&self);
         fn f1(&self);
         fn f2(&self);
@@ -890,7 +884,7 @@ interfaces! {
         fn f0(&self);
         fn f1(&self);
         fn f2(&self);
-        fn get_parent(
+        fn GetParent(
             &self,
             refid: *const com::IID,
             pparent: *mut *mut c_void,
@@ -902,12 +896,12 @@ interfaces! {
 
     #[uuid("310d36a0-d2e7-4c0a-aa04-6a9d23b8886a")]
     unsafe interface IDXGISwapChain: IDXGIDeviceSubObject {
-        fn present(
+        fn Present(
             &self,
             sync_interval: UINT,
             flags: UINT,
         ) -> HRESULT;
-        fn get_buffer(
+        fn GetBuffer(
             &self,
             buffer: UINT,
             riid: *const com::IID,
@@ -944,12 +938,12 @@ interfaces! {
 
     #[uuid("9169896C-AC8D-4e7d-94E5-67FA4DC2F2E8")]
     unsafe interface IUIAnimationManager: IUnknown {
-        fn create_animation_variable(
+        fn CreateAnimationVariable(
             &self,
             initial_value: f64,
             out: *mut Option<IUIAnimationVariable>,
         ) -> HRESULT;
-        fn schedule_transition(
+        fn ScheduleTransition(
             &self,
             var: IUIAnimationVariable,
             transition: IUIAnimationTransition,
@@ -958,7 +952,7 @@ interfaces! {
         fn f0(&self);
         fn f1(&self);
         fn f2(&self);
-        fn update(&self, time_now: UI_ANIMATION_SECONDS, _ptr: *mut c_void)
+        fn Update(&self, time_now: UI_ANIMATION_SECONDS, _ptr: *mut c_void)
             -> HRESULT;
     }
 
@@ -976,7 +970,7 @@ interfaces! {
 
     #[uuid("8CEEB155-2849-4ce5-9448-91FF70E1E4D9")]
     unsafe interface IUIAnimationVariable: IUnknown {
-        fn get_value(&self, value: *mut f64) -> HRESULT;
+        fn GetValue(&self, value: *mut f64) -> HRESULT;
     }
 
     #[uuid("CA5A14B1-D24F-48b8-8FE4-C78169BA954E")]
@@ -988,7 +982,7 @@ interfaces! {
         fn f4(&self);
         fn f5(&self);
         fn f6(&self);
-        pub fn create_accelerate_decelerate_transition(
+        pub fn CreateAccelerateDecelerateTransition(
             &self,
             duration: UI_ANIMATION_SECONDS,
             fin: f64,
