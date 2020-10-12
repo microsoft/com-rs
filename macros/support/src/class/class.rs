@@ -13,6 +13,7 @@ pub struct Class {
     pub interfaces: Vec<Interface>,
     pub methods: HashMap<syn::Path, Vec<syn::ImplItemMethod>>,
     pub fields: Vec<syn::Field>,
+    pub impl_debug: bool,
 }
 
 impl Class {
@@ -95,6 +96,7 @@ impl Class {
             interfaces,
             methods: HashMap::new(),
             fields,
+            impl_debug: false,
         })
     }
 
@@ -141,6 +143,7 @@ impl Class {
                 let _ = ::std::boxed::Box::from_raw(self.#field_ident.as_ptr());
             }
         });
+        let debug = self.debug();
 
         quote! {
             use super::*;
@@ -157,6 +160,7 @@ impl Class {
                 #add_ref
                 #query_interface
             }
+            #debug
             impl ::std::ops::Drop for #name {
                 fn drop(&mut self) {
                     unsafe {
@@ -189,12 +193,37 @@ impl Class {
             }
         }
     }
+
+    fn debug(&self) -> TokenStream {
+        if !self.impl_debug {
+            return TokenStream::new();
+        }
+
+        let name = &self.name;
+        let fields = self.fields.iter().map(|f| {
+            let name = f.ident.as_ref().unwrap();
+            quote! {
+                .field(::std::stringify!(#name), &self.#name)
+            }
+        });
+
+        quote! {
+            impl ::std::fmt::Debug for #name {
+                 fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                    f.debug_struct(::std::stringify!(#name))
+                        #(#fields)*
+                        .finish()
+                    }
+            }
+        }
+    }
 }
 
 impl syn::parse::Parse for Class {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let mut class = None;
         let mut methods: HashMap<syn::Path, Vec<syn::ImplItemMethod>> = HashMap::new();
+        let mut impl_debug = false;
         while !input.is_empty() {
             let attributes = input.call(syn::Attribute::parse_outer)?;
             let mut docs = Vec::with_capacity(attributes.len());
@@ -204,6 +233,9 @@ impl syn::parse::Parse for Class {
                     docs.push(attr)
                 } else if attr.path.is_ident("no_class_factory") {
                     has_class_factory = false;
+                } else if attr.path.is_ident("derive") {
+                    parse_derive_debug(&attr)?;
+                    impl_debug = true;
                 } else {
                     return Err(syn::Error::new(attr.path.span(), "Unrecognized attribute"));
                 }
@@ -269,8 +301,24 @@ impl syn::parse::Parse for Class {
                 ));
             }
         };
+        class.impl_debug = impl_debug;
         class.methods = methods;
         Ok(class)
+    }
+}
+
+fn parse_derive_debug(attr: &syn::Attribute) -> syn::Result<()> {
+    match attr.parse_meta() {
+        Ok(syn::Meta::List(l))
+            if matches!(l.nested.iter().next(), Some(syn::NestedMeta::Meta(syn::Meta::Path(p))) if p.is_ident("Debug"))
+                && l.nested.len() == 1 =>
+        {
+            Ok(())
+        }
+        _ => Err(syn::Error::new(
+            attr.tokens.span(),
+            "Unrecognized derive attribute",
+        )),
     }
 }
 
