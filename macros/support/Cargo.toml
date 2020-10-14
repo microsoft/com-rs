@@ -1,6 +1,6 @@
 [package]
 name = "com_macros_support"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Microsoft Corp."]
 edition = "2018"
 description = """

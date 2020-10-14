@@ -1,3 +1,9 @@
+# 0.3.0 (2020-04-03)
+
+### Changed
+
+The public API for this crate has changed considerably since the previous version. Please take a look at the README and docs folder for information on how to use this crate.
+
 # 0.2.0 (2020-04-03)
 
 ### Fixes
