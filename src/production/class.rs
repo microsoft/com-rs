@@ -65,11 +65,9 @@ impl<T: Class> Drop for ClassAllocation<T> {
     }
 }
 
-impl<T: Class> std::fmt::Debug for ClassAllocation<T> {
+impl<T: Class + std::fmt::Debug> std::fmt::Debug for ClassAllocation<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ptr = self.inner.as_ref().get_ref() as *const T;
-        f.debug_struct("ClassAllocation")
-            .field("ptr", &ptr)
-            .finish()
+        let inner = self.inner.as_ref().get_ref();
+        write!(f, "{:?}", inner)
     }
 }
