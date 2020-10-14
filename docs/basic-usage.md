@@ -50,7 +50,7 @@ com::interfaces! {
             // In this case, since `other` is an [out] arg, we want to be able to pass a pointer to
             // NULL which can then be set to the interface pointer. We model this by wrapping
             // the interface type in an `Option`. In other words `Option<IMyOtherInterface>` is equivalent
-            // to a nullable `IIterface *const` (not the single pointer). Because we want `MyMethod` to 
+            // to a nullable `IIterface *const` (note the single pointer). Because we want `MyMethod` to 
             // write to `other`, we pass a `&mut`.
             other: &mut Option<IMyOtherInterface>
         ) -> com::sys::HRESULT;
@@ -85,4 +85,49 @@ Of course, you may want to use Windows APIs for getting a registered COM compone
 
 ## Classes
 
-TODO: document how to use COM classes
+Implementing COM classes is fairly straight forward. The following information is needed:
+```rust
+class! {
+    // Make sure that the interfaces the class implements are all listed where parent interfaces
+    // are specified between `()` after their child interface. If no parent is specified for an 
+    // interface, it is assumed to be `IUnknown`. Multiple interface hierarchies can be specified
+    // each separated by a comma.
+    pub class MyCass: ISomeInterface(ISomeParentInterface(ISomeGrandparentInterface)) {
+        // You can have as many inner fields as you want.
+        inner_field: std::cell::Cell<usize>,
+    }
+
+    impl ISomeInterface for MyClass {
+        fn SomeMethod(&self) -> HRESULT {
+            NOERROR
+        }
+    }
+
+    impl ISomeParentInterface for MyClass {
+        fn SomeOtherMethod(&self) -> HRESULT {
+            NOERROR
+        }
+    }
+
+    impl ISomeGrandparentInterface for MyClass {
+        fn SomeReallyOtherMethod(&self) -> HRESULT {
+            NOERROR
+        }
+    }
+}
+```
+
+Most users of class's will simply want to export that class from their DLL. This can be done using:
+
+```rust
+com::inproc_dll_module![(CLSID_CAT_CLASS, BritishShortHairCat),];
+```
+
+This automatically exposes a `DllGetClassObject` function from the DLL that the COM runtime can use to instantiate class objects.
+
+If you need to manually allocate your class object (e.g., when you want to return an interface pointer to a newly allocated class object from a COM method), you can allocate that class object and query for a given interface like so:
+
+```rust
+let instance = MyClass::allocate(inner_field_value);
+let interface_handle = instance.query_interface::<ISomeInterface>();
+```
