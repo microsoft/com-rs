@@ -227,10 +227,6 @@ impl Class {
                 let hr = unsafe { self.QueryInterface(&T::IID, &mut result as *mut _ as _) };
 
                 if ::com::sys::FAILED(hr) {
-                    assert!(
-                        hr == ::com::sys::E_NOINTERFACE || hr == ::com::sys::E_POINTER,
-                        "QueryInterface returned non-standard error"
-                    );
                     return None;
                 }
                 debug_assert!(result.is_some(), "Successful call to query_interface yielded a null pointer");
