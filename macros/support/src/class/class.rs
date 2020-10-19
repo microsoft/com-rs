@@ -144,6 +144,7 @@ impl Class {
             }
         });
         let debug = self.debug();
+        let safe_query_interface = self.safe_query_interface();
 
         quote! {
             use super::*;
@@ -159,6 +160,7 @@ impl Class {
                 #(#methods)*
                 #add_ref
                 #query_interface
+                #safe_query_interface
             }
             #debug
             impl ::std::ops::Drop for #name {
@@ -214,6 +216,25 @@ impl Class {
                         #(#fields)*
                         .finish()
                     }
+            }
+        }
+    }
+
+    fn safe_query_interface(&self) -> TokenStream {
+        quote! {
+            pub fn query_interface<T: ::com::Interface>(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> Option<T> {
+                let mut result = None;
+                let hr = unsafe { self.QueryInterface(&T::IID, &mut result as *mut _ as _) };
+
+                if ::com::sys::FAILED(hr) {
+                    assert!(
+                        hr == ::com::sys::E_NOINTERFACE || hr == ::com::sys::E_POINTER,
+                        "QueryInterface returned non-standard error"
+                    );
+                    return None;
+                }
+                debug_assert!(result.is_some(), "Successful call to query_interface yielded a null pointer");
+                result
             }
         }
     }
