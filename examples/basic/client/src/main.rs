@@ -1,11 +1,16 @@
-use com::{
-    interfaces::iclass_factory::IClassFactory,
-    interfaces::iunknown::IUnknown,
-    runtime::{create_instance, get_class_object, init_apartment, ApartmentType},
-};
-use interface::{Food, IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS};
-
 fn main() {
+    #[cfg(windows)]
+    run()
+}
+
+#[cfg(windows)]
+fn run() {
+    use com::{
+        interfaces::iclass_factory::IClassFactory,
+        interfaces::iunknown::IUnknown,
+        runtime::{create_instance, get_class_object, init_apartment, ApartmentType},
+    };
+    use interface::{Food, IAnimal, ICat, IDomesticAnimal, IExample, CLSID_CAT_CLASS};
     // Initialize the COM apartment
     init_apartment(ApartmentType::SingleThreaded)
         .unwrap_or_else(|hr| panic!("Failed to initialize COM Library{:x}", hr));

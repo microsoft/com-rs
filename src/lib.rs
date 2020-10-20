@@ -22,6 +22,7 @@ mod abi_transferable;
 mod interface;
 pub mod interfaces;
 mod param;
+#[cfg(windows)]
 pub mod runtime;
 pub mod sys;
 
