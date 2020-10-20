@@ -87,6 +87,7 @@ impl std::fmt::Debug for GUID {
     }
 }
 
+#[cfg(windows)]
 #[link(name = "ole32")]
 extern "system" {
     pub fn CoIncrementMTAUsage(cookie: *mut c_void) -> HRESULT;
