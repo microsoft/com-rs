@@ -5,7 +5,6 @@ use com_macros_support::Interfaces;
 extern crate proc_macro;
 use proc_macro::TokenStream;
 
-// All the Macro exports declared here. Delegates to respective crate for expansion.
 #[proc_macro]
 pub fn interfaces(item: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(item as Interfaces);

@@ -9,11 +9,37 @@
 //! com::interfaces! {
 //!     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
 //!     pub unsafe interface IAnimal: com::interfaces::IUnknown {
-//!         unsafe fn eat(&self) -> com::sys::HRESULT;
+//!         unsafe fn Eat(&self) -> com::sys::HRESULT;
 //!     }
 //! }
 //! # fn main() {}
 //! ```
+//!
+//!  To define a COM implementation class:
+//!
+//! ```rust,no_run
+//! # com::interfaces! {
+//! #     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
+//! #     pub unsafe interface IAnimal: com::interfaces::IUnknown {
+//! #         unsafe fn Eat(&self) -> com::sys::HRESULT;
+//! #     }
+//! # }
+//! com::class! {
+//!     pub class BritishShortHairCat: IAnimal {
+//!         num_owners: u32,
+//!     }
+//!     
+//!     impl IAnimal for BritishShortHairCat {
+//!         fn Eat(&self) -> com::sys::HRESULT {
+//!             println!("Eating...");
+//!             com::sys::NOERROR
+//!         }
+//!     }
+//! }
+//! # fn main() {}
+//! ```
+//!
+//! See the examples directory in the repository for more examples.
 //!
 
 #![deny(missing_docs)]
@@ -39,8 +65,47 @@ pub use param::Param;
 #[doc(inline)]
 pub use sys::{CLSID, IID};
 
+/// Declare COM interfaces
+///
+/// # Example
+/// ```rust,no_run
+/// /// Define an IAnimal interface
+/// com::interfaces! {
+///     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
+///     pub unsafe interface IAnimal: com::interfaces::IUnknown {
+///         unsafe fn Eat(&self) -> com::sys::HRESULT;
+///     }
+/// }
+/// # fn main() {}
+/// ```
 pub use com_macros::interfaces;
 
+/// Declare COM implementation classes
+///
+/// # Example
+/// ```rust,no_run
+/// use com::sys::{HRESULT, NOERROR};
+/// # com::interfaces! {
+/// #     #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
+/// #     pub unsafe interface IAnimal: com::interfaces::IUnknown {
+/// #         unsafe fn Eat(&self) -> com::sys::HRESULT;
+/// #     }
+/// # }
+///
+/// com::class! {
+///     pub class BritishShortHairCat: IAnimal {
+///         num_owners: u32,
+///     }
+///     
+///     impl IAnimal for BritishShortHairCat {
+///         fn Eat(&self) -> HRESULT {
+///             println!("Eating...");
+///             NOERROR
+///         }
+///     }
+/// }
+/// # fn main() {}
+/// ```
 #[cfg(feature = "production")]
 pub use com_macros::class;
 

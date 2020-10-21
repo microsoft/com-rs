@@ -147,7 +147,6 @@ impl Class {
         let safe_query_interface = self.safe_query_interface();
 
         quote! {
-            use super::*;
             #(#docs)*
             #[repr(C)]
             #vis struct #name {
