@@ -15,7 +15,7 @@
 //! # fn main() {}
 //! ```
 //!
-//!  To define a COM implementation class:
+//! To define a COM implementation class:
 //!
 //! ```rust,no_run
 //! # com::interfaces! {
@@ -28,7 +28,7 @@
 //!     pub class BritishShortHairCat: IAnimal {
 //!         num_owners: u32,
 //!     }
-//!     
+//!
 //!     impl IAnimal for BritishShortHairCat {
 //!         fn Eat(&self) -> com::sys::HRESULT {
 //!             println!("Eating...");
@@ -96,7 +96,7 @@ pub use com_macros::interfaces;
 ///     pub class BritishShortHairCat: IAnimal {
 ///         num_owners: u32,
 ///     }
-///     
+///
 ///     impl IAnimal for BritishShortHairCat {
 ///         fn Eat(&self) -> HRESULT {
 ///             println!("Eating...");
