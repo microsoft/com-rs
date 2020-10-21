@@ -85,7 +85,6 @@ com::class! {
         num_owners: u32,
     }
     
-    
     impl IDomesticAnimal for BritishShortHairCat {
         fn Train(&self) -> HRESULT {
             println!("Training...");

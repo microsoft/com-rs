@@ -1,8 +1,8 @@
-/// Types that are safe to transfer over a WinRT API boundary.
+/// Types that are safe to transfer over a COM API boundary.
 ///
 /// # Safety
 /// Implementing types only have associated `Abi` types that are
-/// safe to transfer over a WinRT boundary. Implementing types
+/// safe to transfer over a COM FFI boundary. Implementing types
 /// must also be exactly equivalent to their associated types
 /// in layout and abi such that it is safe to transmute between the
 /// two types.
