@@ -1,6 +1,6 @@
 [package]
 name = "com_macros"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Microsoft Corp."]
 edition = "2018"
 description = """
@@ -17,4 +17,4 @@ proc-macro = true
 [dependencies]
 syn = { version = "1.0", features = ["full"] }
 proc-macro2 = "1.0"
-com_macros_support = { version = "0.2", path = "support" }
+com_macros_support = { version = "0.3", path = "support" }
