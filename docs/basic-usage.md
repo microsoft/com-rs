@@ -28,7 +28,7 @@ interface IMyOtherInterface : IMyInterface
 }
 ```
 
-We must translate this IDL direclty into Rust code using `com::interfaces!` macro.
+We must translate this IDL directly into Rust code using `com::interfaces!` macro.
 
 Take note that each method and argument must be in the same exact order and must have the same in-memory properties as the types declared in the IDL.
 
