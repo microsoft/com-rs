@@ -41,9 +41,11 @@ struct Data {
 }
 
 com::interfaces! {
+    #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
     unsafe interface IMyInterface: IUnknown {
         fn MyMethod(
-            my_data: &Data,
+            &self,
+            my_data: *const Data,
             n: i32, // INT32 is equivalent to Rust's i32
             // This is the largest translation difference.
             // com-rs'rs interface types are equivalent to a non-null `IInterface *const` 
@@ -51,13 +53,14 @@ com::interfaces! {
             // NULL which can then be set to the interface pointer. We model this by wrapping
             // the interface type in an `Option`. In other words `Option<IMyOtherInterface>` is equivalent
             // to a nullable `IIterface *const` (note the single pointer). Because we want `MyMethod` to 
-            // write to `other`, we pass a `&mut`.
-            other: &mut Option<IMyOtherInterface>
+            // write to `other`, we pass a `*mut`.
+            other: *mut Option<IMyOtherInterface>
         ) -> com::sys::HRESULT;
     }
 
+    #[uuid("EFF8970E-C50F-45E0-9284-291CE5A6F772")]
     unsafe interface IMyOtherInterface: IMyInterface {
-        fn MyOtherMethod() -> com::sys::HRESULT;
+        fn MyOtherMethod(&self) -> com::sys::HRESULT;
     }
 }
 ```
