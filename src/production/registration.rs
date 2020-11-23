@@ -150,7 +150,7 @@ pub fn class_inproc_key_path(clsid: CLSID) -> String {
 
 fn guid_to_string(guid: &GUID) -> String {
     format!(
-        "{{{:04X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
+        "{{{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
         guid.data1,
         guid.data2,
         guid.data3,
