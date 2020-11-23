@@ -2,7 +2,7 @@
 
 use crate::sys::{
     GetModuleFileNameA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA, RegSetValueExA, CLSID,
-    ERROR_SUCCESS, FAILED, GUID, HKEY, HRESULT, LSTATUS, SELFREG_E_CLASS, S_OK,
+    ERROR_SUCCESS, FAILED, HKEY, HRESULT, LSTATUS, SELFREG_E_CLASS, S_OK,
 };
 
 use std::convert::TryInto;
@@ -140,29 +140,12 @@ pub unsafe fn get_dll_file_path(hmodule: *mut c_void) -> String {
 
 #[doc(hidden)]
 pub fn class_key_path(clsid: CLSID) -> String {
-    format!("CLSID\\{}", guid_to_string(&clsid))
+    format!("CLSID\\{}", clsid)
 }
 
 #[doc(hidden)]
 pub fn class_inproc_key_path(clsid: CLSID) -> String {
-    format!("CLSID\\{}\\InprocServer32", guid_to_string(&clsid))
-}
-
-fn guid_to_string(guid: &GUID) -> String {
-    format!(
-        "{{{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}}}",
-        guid.data1,
-        guid.data2,
-        guid.data3,
-        guid.data4[0],
-        guid.data4[1],
-        guid.data4[2],
-        guid.data4[3],
-        guid.data4[4],
-        guid.data4[5],
-        guid.data4[6],
-        guid.data4[7],
-    )
+    format!("CLSID\\{}\\InprocServer32", clsid)
 }
 
 /// Register the supplied keys with the registry

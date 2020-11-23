@@ -12,7 +12,7 @@ use crate::Interface;
 
 /// Initialize a new multithreaded apartment (MTA) runtime. This will ensure
 /// that an MTA is running for the process. Every new thread will implicitly
-/// be in an MTA unless a different apartment type is chosen (through [`init_apartment`])
+/// be in the MTA unless a different apartment type is chosen (through [`init_apartment`])
 ///
 /// This calls `CoIncrementMTAUsage`
 ///

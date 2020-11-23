@@ -49,16 +49,13 @@ pub const COINIT_APARTMENTTHREADED: u32 = 0x2;
 pub const COINIT_MULTITHREADED: u32 = 0x0;
 
 /// A globally unique identifier
+#[allow(missing_docs)]
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq)]
 pub struct GUID {
-    #[allow(missing_docs)]
     pub data1: u32,
-    #[allow(missing_docs)]
     pub data2: u16,
-    #[allow(missing_docs)]
     pub data3: u16,
-    #[allow(missing_docs)]
     pub data4: [u8; 8],
 }
 
@@ -71,7 +68,7 @@ impl std::fmt::Debug for GUID {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{:08X?}-{:04X?}-{:04X?}-{:02X?}{:02X?}-{:02X?}{:02X?}{:02X?}{:02X?}{:02X?}{:02X?}",
+            "{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
             self.data1,
             self.data2,
             self.data3,
@@ -86,9 +83,15 @@ impl std::fmt::Debug for GUID {
         )
     }
 }
+impl std::fmt::Display for GUID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 #[cfg(windows)]
 #[link(name = "ole32")]
+#[allow(missing_docs)]
 extern "system" {
     pub fn CoIncrementMTAUsage(cookie: *mut c_void) -> HRESULT;
     pub fn RegCreateKeyExA(
