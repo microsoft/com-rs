@@ -120,7 +120,7 @@ class! {
 }
 ```
 
-Most users of class's will simply want to export that class from their DLL. This can be done using:
+Most users of class's will simply want to export that class as a COM server. Currently only declaring in-process servers are supported by com-rs. This can be done using:
 
 ```rust
 com::inproc_dll_module![(CLSID_CAT_CLASS, BritishShortHairCat),];
