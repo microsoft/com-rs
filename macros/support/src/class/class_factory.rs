@@ -30,7 +30,7 @@ pub fn generate(class: &Class) -> TokenStream {
                         return ::com::sys::CLASS_E_NOAGGREGATION;
                     }
 
-                    let instance = #class_name::allocate(#(#user_fields)*,);
+                    let instance = #class_name::allocate(#(#user_fields),*);
                     instance.QueryInterface(riid, ppv)
                 }
 
