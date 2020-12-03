@@ -140,12 +140,12 @@ pub unsafe fn get_dll_file_path(hmodule: *mut c_void) -> String {
 
 #[doc(hidden)]
 pub fn class_key_path(clsid: CLSID) -> String {
-    format!("CLSID\\{}", clsid)
+    format!("CLSID\\{{{}}}", clsid)
 }
 
 #[doc(hidden)]
 pub fn class_inproc_key_path(clsid: CLSID) -> String {
-    format!("CLSID\\{}\\InprocServer32", clsid)
+    format!("CLSID\\{{{}}}\\InprocServer32", clsid)
 }
 
 /// Register the supplied keys with the registry
