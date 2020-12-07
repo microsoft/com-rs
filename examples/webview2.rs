@@ -37,11 +37,20 @@ com::class! {
     }
 }
 
-#[link(name = "WebView2Loader.dll")]
-extern "C" {
-    fn CreateCoreWebView2Environment(
-        environment_created_handler: ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler,
-    );
+// #[link(name = "WebView2Loader.dll")]
+// extern "C" {
+//     fn CreateCoreWebView2Environment(
+//         environment_created_handler: ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler,
+//     );
+// }
+
+// Comment this out and comment the extern symbol in to actually run this
+// Note: this requires the WebView2Loader dll and will only work on Windows
+#[allow(non_snake_case)]
+unsafe fn CreateCoreWebView2Environment(
+    _environment_created_handler: ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler,
+) {
+    panic!("Called stub function")
 }
 
 pub struct Environment {
@@ -51,6 +60,7 @@ pub struct Environment {
 
 impl Environment {
     pub fn create() -> Environment {
+        #[cfg(windows)]
         com::runtime::init_apartment(com::runtime::ApartmentType::SingleThreaded)
             .expect("Failed to initialize COM.");
 
