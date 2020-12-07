@@ -5,6 +5,7 @@ use syn::spanned::Spanned;
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
+#[derive(Debug)]
 pub struct Class {
     pub name: Ident,
     pub has_class_factory: bool,
@@ -343,6 +344,7 @@ mod keywords {
     syn::custom_keyword!(factory);
 }
 
+#[derive(Debug)]
 pub struct Interface {
     pub path: syn::Path,
     pub parent: Option<Box<Interface>>,
@@ -366,10 +368,19 @@ impl Interface {
                     syn::FnArg::Typed(p) => Some(p),
                 }
             });
-            let args = m.sig.inputs.iter().filter_map(|p| {
-                match p {
-                    syn::FnArg::Receiver(_) => None,
-                    syn::FnArg::Typed(p) => Some(&p.pat),
+            let args = params.clone().map(|p| &p.pat);
+            let translation = params.clone().map(|p| {
+                let pat = &p.pat;
+                let typ = &p.ty;
+                quote! {
+                    let #pat = <#typ as ::com::AbiTransferable>::from_abi(#pat);
+                }
+            });
+            let params = params.map(|p| {
+                let pat = &p.pat;
+                let typ = &p.ty;
+                quote! {
+                    #pat: <#typ as ::com::AbiTransferable>::Abi
                 }
             });
             let ret = &m.sig.output;
@@ -378,6 +389,7 @@ impl Interface {
                 unsafe extern "stdcall" fn #name(this: ::std::ptr::NonNull<::std::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
                     let this = this.as_ptr().sub(#offset);
                     let this = ::std::mem::ManuallyDrop::new(::com::production::ClassAllocation::from_raw(this as *mut _ as *mut #class_name));
+                    #(#translation)*
                     #class_name::#name(&this, #(#args),*)
                 }
             };

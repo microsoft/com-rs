@@ -39,3 +39,7 @@ members = [
     "examples/basic/interface",
     "examples/d2d-clock"
 ]
+
+[[example]]
+name = "webview2"
+required-features = ["production"]
