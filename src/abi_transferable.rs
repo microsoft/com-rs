@@ -16,16 +16,9 @@ pub unsafe trait AbiTransferable: Sized {
     fn set_abi(&mut self) -> *mut Self::Abi;
 
     /// Convert into a reference to Self from a reference to the ABI
-    fn from_abi(abi: &Self::Abi) -> &Self {
+    fn from_abi(abi: Self::Abi) -> Self {
         // This must be safe for the implementing type to
         // correctly implement this trait.
-        unsafe { std::mem::transmute_copy(&abi) }
-    }
-
-    /// The mut verison of `from_abi`
-    fn from_mut_abi(abi: &mut Self::Abi) -> &mut Self {
-        // This must be safe for the implementing type to
-        // correctly implement this trait
         unsafe { std::mem::transmute_copy(&abi) }
     }
 
