@@ -25,8 +25,7 @@ com::class! {
         fn invoke(
             &self,
             result: HRESULT,
-            created_environment: ICoreWebView2Environment // error: mismatched types (expects type on next line)
-            // created_environment: std::ptr::NonNull<std::ptr::NonNull<ICoreWebView2EnvironmentVTable>> // works
+            created_environment: ICoreWebView2Environment
         ) -> HRESULT
         {
             if result == S_OK {
@@ -50,7 +49,7 @@ com::class! {
 unsafe fn CreateCoreWebView2Environment(
     _environment_created_handler: ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler,
 ) {
-    panic!("Called stub function")
+    panic!("Called stub function. Uncomment out the extern function from WebViewLoader dll.\n\nNote: this only works on Windows.")
 }
 
 pub struct Environment {
@@ -77,9 +76,12 @@ impl Environment {
         unsafe {
             CreateCoreWebView2Environment(handler_interface);
         }
+        // Dropping handler class early so that `environment` is the only instance of the `Arc<Mutex<Option<ICoreWebView2Environment>>>`
+        drop(handler_class);
 
         Environment {
-            // This should work since the callback is called syncronously
+            // This *should* work assuming the callback is called synchronously.
+            // If this is not the case, then the following will panic.
             raw: Arc::try_unwrap(environment) // Try to unwrap Arc
                 .unwrap() // Ensure Arc unwrap worked
                 .into_inner() // Unwrap Mutex
