@@ -47,7 +47,6 @@
 mod abi_transferable;
 mod interface;
 pub mod interfaces;
-mod param;
 #[cfg(windows)]
 pub mod runtime;
 pub mod sys;
@@ -60,8 +59,6 @@ pub mod production;
 pub use abi_transferable::AbiTransferable;
 #[doc(inline)]
 pub use interface::Interface;
-#[doc(inline)]
-pub use param::Param;
 #[doc(inline)]
 pub use sys::{CLSID, IID};
 

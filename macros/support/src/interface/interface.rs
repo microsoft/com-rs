@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
-use syn::{Attribute, Ident, Path, Visibility};
+use syn::{Attribute, Ident, Path, Visibility, Type};
 
 use super::iid::IID;
 
@@ -285,29 +285,29 @@ impl InterfaceMethod {
         let outer_method_ident = &self.name;
         let return_type = &self.ret;
 
-        let mut generics = Vec::new();
-        if self.args.len() > 0 {
-            generics.push(quote! { 'a })
-        }
         let mut params = vec![quote!(#interface_ptr_ident)];
         let mut args = Vec::new();
         let mut into = Vec::new();
-        for (index, arg) in self.args.iter().enumerate() {
+        for arg in self.args.iter() {
             let pat = &arg.pat;
             let ty = &arg.ty;
-            if arg.pass_through {
-                args.push(quote! { #pat: #ty });
-            } else {
-                let generic = quote::format_ident!("__{}", index);
-                args.push(quote! { #pat: #generic });
-                generics.push(quote! { #generic: ::std::convert::Into<::com::Param<'a, #ty>> });
-
-                // note: we separate the call to `into` and `get_abi` so that the `param`
-                // binding lives to the end of the method.
-                into.push(quote! {
-                    let mut param = #pat.into();
-                    let #pat = param.get_abi();
-                });
+            args.push(quote! { #pat: #ty });
+            if !arg.pass_through {
+                match ty.as_ref() {
+                    Type::Path(_) | Type::Ptr(_) => {
+                        into.push(quote! {
+                            let param = ::std::mem::ManuallyDrop::new(#pat);
+                            let #pat = <#ty as ::com::AbiTransferable>::get_abi(&param);
+                        });
+                    }
+                    Type::Reference(tref) => {
+                        let reft : &Type = &tref.elem;
+                        into.push(quote! {
+                            let #pat = <#reft as ::com::AbiTransferable>::get_abi(#pat);
+                        });
+                    }
+                    _ => panic!("unexpected type")
+                }
             }
             params.push(pat.to_token_stream());
         }
@@ -317,7 +317,7 @@ impl InterfaceMethod {
         return quote! {
             #[allow(non_snake_case)]
             #(#docs)*
-            #vis unsafe fn #outer_method_ident<#(#generics),*>(&self, #(#args),*) #return_type {
+            #vis unsafe fn #outer_method_ident(&self, #(#args),*) #return_type {
                 #(#into)*
                 let #interface_ptr_ident = <Self as ::com::AbiTransferable>::get_abi(self);
                 (#interface_ptr_ident.as_ref().as_ref().#inner_method_ident)(#(#params),*)

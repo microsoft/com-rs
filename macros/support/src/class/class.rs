@@ -1,6 +1,7 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
+use syn::Type;
 
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
@@ -372,13 +373,30 @@ impl Interface {
             let translation = params.clone().map(|p| {
                 let pat = &p.pat;
                 let typ = &p.ty;
-                quote! {
-                    let #pat = <#typ as ::com::AbiTransferable>::from_abi(#pat);
+                match typ.as_ref() {
+                    Type::Path(_) | Type::Ptr(_) => {
+                        quote! {
+                            let #pat = <#typ as ::com::AbiTransferable>::from_abi(#pat);
+                        }
+                    }
+                    Type::Reference(tref) => {
+                        let reft = &tref.elem;
+                        quote! {
+                            let param = ::std::mem::ManuallyDrop::new(<#reft as ::com::AbiTransferable>::from_abi(#pat));
+                            let #pat = &param;
+                        }
+                    }
+                    _ => panic!("unexpected type")
                 }
             });
             let params = params.map(|p| {
                 let pat = &p.pat;
                 let typ = &p.ty;
+                let typ = match typ.as_ref() {
+                    Type::Path(_) | Type::Ptr(_) => typ,
+                    Type::Reference(tref) => &tref.elem,
+                    _ => panic!("unexpected type")
+                };
                 quote! {
                     #pat: <#typ as ::com::AbiTransferable>::Abi
                 }

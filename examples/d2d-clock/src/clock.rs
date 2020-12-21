@@ -213,7 +213,7 @@ impl Clock {
             target.Clear(std::ptr::null());
             self.draw_clock();
             let target = &self.device_dependent_resources.target;
-            target.SetTarget(previous.unwrap());
+            target.SetTarget(&previous.unwrap());
 
             let clock = &self.device_dependent_resources.clock;
 
@@ -271,7 +271,7 @@ impl Clock {
                 radiusY: 50.0,
             };
 
-            target.DrawEllipse(&ellipse, brush, radius / 20.0, None);
+            target.DrawEllipse(&ellipse, brush, radius / 20.0, &None);
 
             let mut time = SYSTEMTIME::default();
             GetLocalTime(&mut time);
@@ -367,8 +367,8 @@ fn create_swapchain_bitmap(swap_chain: &IDXGISwapChain1, target: &ID2D1DeviceCon
 
         let mut bitmap = None;
 
-        HR!(target.CreateBitmapFromDxgiSurface(surface.unwrap(), &props, &mut bitmap));
-        target.SetTarget(bitmap.unwrap());
+        HR!(target.CreateBitmapFromDxgiSurface(&surface.unwrap(), &props, &mut bitmap));
+        target.SetTarget(&bitmap.unwrap());
     }
 }
 
@@ -390,7 +390,7 @@ fn create_swapchain(device: &ID3D11Device, window: HWND) -> IDXGISwapChain1 {
             window,
             &props,
             std::ptr::null_mut(),
-            None,
+            &None,
             &mut swap_chain
         ))
     };
@@ -550,7 +550,7 @@ impl DeviceIndependentResources {
         unsafe {
             HR!(animation_manager.ScheduleTransition(
                 &animation_variable,
-                transition.unwrap(),
+                &transition.unwrap(),
                 get_time(animation_frequency)
             ));
         }
@@ -678,7 +678,7 @@ interfaces! {
     unsafe interface ID2D1Factory1: ID2D1Factory {
         fn CreateDevice(
             &self,
-            dxgi_device: Option<IDXGIDevice>,
+            dxgi_device: &Option<IDXGIDevice>,
             d2d_device: *mut Option<ID2D1Device>,
         ) -> HRESULT;
         fn CreateStrokeStyle(
@@ -695,11 +695,11 @@ interfaces! {
         fn f0(&self);
         fn CreateSwapChainForHwnd(
             &self,
-            p_device: IUnknown,
+            p_device: &IUnknown,
             hwnd: HWND,
             p_desc: *const DXGI_SWAP_CHAIN_DESC1,
             p_fullscreen_desc: *const DXGI_SWAP_CHAIN_FULLSCREEN_DESC,
-            p_restrict_to_output: Option<IDXGIOutput>,
+            p_restrict_to_output: &Option<IDXGIOutput>,
             pp_swapchain: *mut Option<IDXGISwapChain1>,
         ) -> HRESULT;
     }
@@ -736,7 +736,7 @@ interfaces! {
         fn f3(&self);
         fn CreateBitmapFromDxgiSurface(
             &self,
-            surface: IDXGISurface,
+            surface: &IDXGISurface,
             bitmap_properties: *const D2D1_BITMAP_PROPERTIES1,
             bitmap: *mut Option<ID2D1Bitmap1>,
         ) -> HRESULT;
@@ -751,7 +751,7 @@ interfaces! {
         fn f12(&self);
         fn f13(&self);
         fn f14(&self);
-        fn SetTarget(&self, image: ID2D1Image);
+        fn SetTarget(&self, image: &ID2D1Image);
         fn GetTarget(&self, image: *mut Option<ID2D1Image>);
         fn f15(&self);
         fn f16(&self);
@@ -762,7 +762,7 @@ interfaces! {
         fn f20(&self);
         fn DrawImage(
             &self,
-            image: ID2D1Image,
+            image: &ID2D1Image,
             target_offset: *const d2d1::D2D1_POINT_2F,
             image_rectangle: *const d2d1::D2D1_RECT_F,
             #[pass_through]
@@ -805,9 +805,9 @@ interfaces! {
             point0: d2d1::D2D1_POINT_2F,
             #[pass_through]
             point1: d2d1::D2D1_POINT_2F,
-            brush: ID2D1Brush,
+            brush: &ID2D1Brush,
             stroke_width: f32,
-            stroke_type: ID2D1StrokeStyle
+            stroke_type: &ID2D1StrokeStyle
         );
         fn f10(&self);
         fn f11(&self);
@@ -816,9 +816,9 @@ interfaces! {
         fn DrawEllipse(
             &self,
             ellipse: *const D2D1_ELLIPSE,
-            brush: ID2D1Brush,
+            brush: &ID2D1Brush,
             stroke_width: f32,
-            stroke_style: Option<ID2D1StrokeStyle>,
+            stroke_style: &Option<ID2D1StrokeStyle>,
         );
         fn f14(&self);
         fn f15(&self);
@@ -944,8 +944,8 @@ interfaces! {
         ) -> HRESULT;
         fn ScheduleTransition(
             &self,
-            var: IUIAnimationVariable,
-            transition: IUIAnimationTransition,
+            var: &IUIAnimationVariable,
+            transition: &IUIAnimationTransition,
             time_now: UI_ANIMATION_SECONDS,
         ) -> HRESULT;
         fn f0(&self);

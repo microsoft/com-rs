@@ -89,6 +89,10 @@ fn gen_raw_type(p: &super::interface::InterfaceMethodArg) -> syn::Result<TokenSt
         Type::Path(_) | Type::Ptr(_) if !p.pass_through => {
             return Ok(quote!(<#t as ::com::AbiTransferable>::Abi,))
         }
+        Type::Reference(tref) if !p.pass_through => {
+            let reft = &tref.elem;
+            return Ok(quote!(<#reft as ::com::AbiTransferable>::Abi,))
+        }
         Type::Path(_) | Type::Ptr(_) => return Ok(quote!(#t,)),
         Type::Array(_n) => "array type",
         Type::BareFn(_n) => "barefn type",
