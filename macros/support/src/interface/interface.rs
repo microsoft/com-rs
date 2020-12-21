@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::spanned::Spanned;
-use syn::{Attribute, Ident, Path, Visibility, Type};
+use syn::{Attribute, Ident, Path, Type, Visibility};
 
 use super::iid::IID;
 
@@ -301,12 +301,12 @@ impl InterfaceMethod {
                         });
                     }
                     Type::Reference(tref) => {
-                        let reft : &Type = &tref.elem;
+                        let reft = &tref.elem;
                         into.push(quote! {
                             let #pat = <#reft as ::com::AbiTransferable>::get_abi(#pat);
                         });
                     }
-                    _ => panic!("unexpected type")
+                    _ => panic!("unexpected type"),
                 }
             }
             params.push(pat.to_token_stream());

@@ -29,5 +29,7 @@ fn main() {
     let something_instance = SomethingClass::allocate();
     let something = something_instance.query_interface::<ISomething>().unwrap();
 
-    unsafe { something.DoSomething(&empty); }
+    unsafe {
+        something.DoSomething(&empty);
+    }
 }
