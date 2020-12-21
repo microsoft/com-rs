@@ -15,11 +15,13 @@ pub unsafe trait AbiTransferable: Sized {
     /// Set the abi of the implementing type
     fn set_abi(&mut self) -> *mut Self::Abi;
 
-    /// Convert into a reference to Self from a reference to the ABI
-    fn from_abi(abi: Self::Abi) -> Self {
-        // This must be safe for the implementing type to
-        // correctly implement this trait.
-        unsafe { std::mem::transmute_copy(&abi) }
+    /// Convert into an instance of Self from an instance of the ABI
+    ///
+    /// # Safety
+    /// It must be legal to convert from Abi to Self, and the returned value
+    /// must remain valid during its lifetime.
+    unsafe fn from_abi(abi: Self::Abi) -> Self {
+        std::mem::transmute_copy(&abi)
     }
 
     /// Convert a pointer to a `Self::Abi` and and a length to a slice.

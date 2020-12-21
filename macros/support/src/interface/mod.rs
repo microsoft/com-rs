@@ -47,16 +47,6 @@ fn convert_impls(parents: HashMap<Ident, Path>) -> Vec<TokenStream> {
                         unsafe { ::std::mem::transmute(this) }
                     }
                 }
-                impl <'a> ::std::convert::Into<::com::Param<'a, #p>> for #name {
-                    fn into(self) -> ::com::Param<'a, #p> {
-                        ::com::Param::Owned(self.into())
-                    }
-                }
-                impl <'a> ::std::convert::Into<::com::Param<'a, #p>> for &'a #name {
-                    fn into(self) -> ::com::Param<'a, #p> {
-                        ::com::Param::Borrowed(self.into())
-                    }
-                }
             });
             match p.get_ident() {
                 Some(n) => current = n,
