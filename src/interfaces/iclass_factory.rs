@@ -1,7 +1,7 @@
 //! Everything related to the [IClassFactory](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iclassfactory) COM interface
 use crate::interfaces;
 use crate::sys::{BOOL, FAILED, GUID, HRESULT};
-use std::ffi::c_void;
+use core::ffi::c_void;
 
 use crate::{interfaces::iunknown::IUnknown, Interface};
 

@@ -31,14 +31,14 @@ pub unsafe trait Interface: Sized + 'static {
 
     /// Cast the interface pointer to a pointer to IUnknown.
     fn as_iunknown(&self) -> &IUnknown {
-        unsafe { std::mem::transmute(self) }
+        unsafe { core::mem::transmute(self) }
     }
 
     /// Cast the COM interface pointer to a raw pointer
     ///
     /// The returned pointer is only guranteed valid for as long
     /// as the reference to self id valid.
-    fn as_raw(&self) -> std::ptr::NonNull<std::ptr::NonNull<Self::VTable>> {
-        unsafe { std::mem::transmute_copy(self) }
+    fn as_raw(&self) -> core::ptr::NonNull<core::ptr::NonNull<Self::VTable>> {
+        unsafe { core::mem::transmute_copy(self) }
     }
 }

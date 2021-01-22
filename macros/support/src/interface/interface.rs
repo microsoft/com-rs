@@ -26,7 +26,7 @@ impl Interface {
             #[repr(transparent)]
             #[derive(Debug)]
             #vis struct #name {
-                inner: ::std::ptr::NonNull<#vptr>,
+                inner: ::core::ptr::NonNull<#vptr>,
             }
             #impl_block
         }
@@ -67,10 +67,10 @@ impl Interface {
         let name = &self.name;
 
         quote! {
-            impl ::std::ops::Deref for #name {
+            impl ::core::ops::Deref for #name {
                 type Target = <#name as ::com::Interface>::Super;
                 fn deref(&self) -> &Self::Target {
-                    unsafe { ::std::mem::transmute(self) }
+                    unsafe { ::core::mem::transmute(self) }
                 }
             }
         }
@@ -92,7 +92,7 @@ impl Interface {
         let name = &self.name;
 
         quote! {
-            impl ::std::clone::Clone for #name {
+            impl ::core::clone::Clone for #name {
                 fn clone(&self) -> Self {
                     unsafe {
                         <Self as ::com::Interface>::as_iunknown(self).AddRef();
@@ -300,7 +300,7 @@ impl InterfaceMethod {
             } else {
                 let generic = quote::format_ident!("__{}", index);
                 args.push(quote! { #pat: #generic });
-                generics.push(quote! { #generic: ::std::convert::Into<::com::Param<'a, #ty>> });
+                generics.push(quote! { #generic: ::core::convert::Into<::com::Param<'a, #ty>> });
 
                 // note: we separate the call to `into` and `get_abi` so that the `param`
                 // binding lives to the end of the method.

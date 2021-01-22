@@ -1,5 +1,5 @@
 //! Types for interacting with COM related system APIs
-use std::ffi::c_void;
+use core::ffi::c_void;
 
 /// A Windows result code
 pub type HRESULT = i32;
@@ -64,8 +64,8 @@ pub type IID = GUID;
 /// A class ID
 pub type CLSID = GUID;
 
-impl std::fmt::Debug for GUID {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for GUID {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
             "{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
@@ -83,8 +83,8 @@ impl std::fmt::Debug for GUID {
         )
     }
 }
-impl std::fmt::Display for GUID {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for GUID {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{:?}", self)
     }
 }

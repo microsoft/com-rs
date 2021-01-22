@@ -1,14 +1,15 @@
 //! Helpers for registering COM servers
 
+use crate::alloc::{format, string::String, vec::Vec};
 use crate::sys::{
     GetModuleFileNameA, RegCloseKey, RegCreateKeyExA, RegDeleteKeyA, RegSetValueExA, CLSID,
     ERROR_SUCCESS, FAILED, HKEY, HRESULT, LSTATUS, SELFREG_E_CLASS, S_OK,
 };
-
-use std::convert::TryInto;
-use std::ffi::c_void;
+extern crate std;
+use core::convert::TryInto;
+use core::ffi::c_void;
+use core::str;
 use std::ffi::CString;
-use std::str;
 
 #[doc(hidden)]
 pub struct RegistryKeyInfo {
@@ -57,10 +58,10 @@ const HKEY_CLASSES_ROOT: HKEY = 0x8000_0000 as HKEY;
 const KEY_ALL_ACCESS: u32 = 0x000F_003F;
 const REG_OPTION_NON_VOLATILE: u32 = 0x00000000;
 fn create_class_key(key_info: &RegistryKeyInfo) -> Result<HKEY, LSTATUS> {
-    let mut hk_result = std::ptr::null_mut::<c_void>();
-    let lp_class = std::ptr::null_mut::<u8>();
-    let lp_security_attributes = std::ptr::null_mut::<c_void>();
-    let lpdw_disposition = std::ptr::null_mut::<u32>();
+    let mut hk_result = core::ptr::null_mut::<c_void>();
+    let lp_class = core::ptr::null_mut::<u8>();
+    let lp_security_attributes = core::ptr::null_mut::<c_void>();
+    let lpdw_disposition = core::ptr::null_mut::<u32>();
     let result = unsafe {
         RegCreateKeyExA(
             HKEY_CLASSES_ROOT,
@@ -175,9 +176,9 @@ pub fn dll_unregister_server(relevant_keys: &mut Vec<RegistryKeyInfo>) -> HRESUL
 #[macro_export]
 macro_rules! inproc_dll_module {
     (($class_id_one:ident, $class_type_one:ty), $(($class_id:ident, $class_type:ty)),*) => {
-        static mut _HMODULE: *mut ::std::ffi::c_void = ::std::ptr::null_mut();
+        static mut _HMODULE: *mut ::core::ffi::c_void = ::core::ptr::null_mut();
         #[no_mangle]
-        unsafe extern "stdcall" fn DllMain(hinstance: *mut ::std::ffi::c_void, fdw_reason: u32, reserved: *mut ::std::ffi::c_void) -> i32 {
+        unsafe extern "stdcall" fn DllMain(hinstance: *mut ::core::ffi::c_void, fdw_reason: u32, reserved: *mut ::core::ffi::c_void) -> i32 {
             const DLL_PROCESS_ATTACH: u32 = 1;
             if fdw_reason == DLL_PROCESS_ATTACH {
                 unsafe { _HMODULE = hinstance; }
@@ -186,7 +187,7 @@ macro_rules! inproc_dll_module {
         }
 
         #[no_mangle]
-        unsafe extern "stdcall" fn DllGetClassObject(class_id: *const ::com::sys::CLSID, iid: *const ::com::sys::IID, result: *mut *mut ::std::ffi::c_void) -> ::com::sys::HRESULT {
+        unsafe extern "stdcall" fn DllGetClassObject(class_id: *const ::com::sys::CLSID, iid: *const ::com::sys::IID, result: *mut *mut ::core::ffi::c_void) -> ::com::sys::HRESULT {
             use ::com::interfaces::IUnknown;
             assert!(!class_id.is_null(), "class id passed to DllGetClassObject should never be null");
 

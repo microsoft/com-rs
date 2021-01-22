@@ -73,7 +73,7 @@ fn gen_vtable_function_signature(
 fn gen_raw_params(interface_ident: &Ident, method: &InterfaceMethod) -> syn::Result<TokenStream> {
     let vptr_ident = vptr::ident(&interface_ident);
     let mut params = vec![quote!(
-        ::std::ptr::NonNull<#vptr_ident>,
+        ::core::ptr::NonNull<#vptr_ident>,
     )];
 
     for param in method.args.iter() {

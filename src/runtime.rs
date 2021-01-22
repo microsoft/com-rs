@@ -6,7 +6,7 @@ use crate::sys::{
     CLSCTX_INPROC_SERVER, CLSID, COINIT_APARTMENTTHREADED, COINIT_MULTITHREADED, FAILED, HRESULT,
     IID, S_FALSE, S_OK,
 };
-use std::ffi::c_void;
+use core::ffi::c_void;
 
 use crate::Interface;
 
@@ -18,7 +18,7 @@ use crate::Interface;
 ///
 /// This function only needs to be called once per process.
 pub fn init_runtime() -> Result<(), HRESULT> {
-    let mut _cookie = std::ptr::null_mut::<c_void>();
+    let mut _cookie = core::ptr::null_mut::<c_void>();
     match unsafe { CoIncrementMTAUsage(&mut _cookie as *mut _ as *mut _) } {
         // S_OK indicates the runtime was initialized
         S_OK => Ok(()),
@@ -50,7 +50,7 @@ pub enum ApartmentType {
 // with a specific apartment type.
 // TODO: add helpers for establishing a message pump
 pub fn init_apartment(apartment_type: ApartmentType) -> Result<(), HRESULT> {
-    match unsafe { CoInitializeEx(std::ptr::null_mut::<c_void>(), apartment_type as u32) } {
+    match unsafe { CoInitializeEx(core::ptr::null_mut::<c_void>(), apartment_type as u32) } {
         // S_OK indicates the runtime was initialized
         S_OK | S_FALSE => Ok(()),
         // Any other result is considered an error here.
@@ -81,7 +81,7 @@ impl ApartmentRuntime {
     pub fn new(apartment_type: ApartmentType) -> Result<Self, HRESULT> {
         init_apartment(apartment_type)?;
         Ok(Self {
-            _priv: std::ptr::null(),
+            _priv: core::ptr::null(),
         })
     }
 }
@@ -101,7 +101,7 @@ pub fn get_class_object<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
         CoGetClassObject(
             class_id as *const CLSID,
             CLSCTX_INPROC_SERVER,
-            std::ptr::null_mut::<c_void>(),
+            core::ptr::null_mut::<c_void>(),
             &T::IID as *const IID,
             &mut class as *mut _ as _,
         )
@@ -117,7 +117,7 @@ pub fn get_class_object<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
 ///
 /// Calls `CoCreateInstance` internally
 pub fn create_instance<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
-    unsafe { Ok(create_raw_instance::<T>(class_id, std::ptr::null_mut())?) }
+    unsafe { Ok(create_raw_instance::<T>(class_id, core::ptr::null_mut())?) }
 }
 
 /// A helper for creating both regular and aggregated instances
