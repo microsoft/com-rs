@@ -47,7 +47,7 @@ impl IUnknownAbi {
             unsafe extern "stdcall" fn QueryInterface(
                 this: #this_ptr,
                 riid: *const ::com::sys::IID,
-                ppv: *mut *mut ::std::ffi::c_void
+                ppv: *mut *mut ::core::ffi::c_void
             ) -> ::com::sys::HRESULT {
                 #munge
                 munged.QueryInterface(riid, ppv)
@@ -70,7 +70,7 @@ impl IUnknownAbi {
 
         quote! {
             #owned
-            let munged = ::std::mem::ManuallyDrop::new(munged);
+            let munged = ::core::mem::ManuallyDrop::new(munged);
         }
     }
 }
@@ -85,7 +85,7 @@ impl IUnknown {
     pub fn to_add_ref_tokens(&self) -> TokenStream {
         let ref_count_ident = crate::utils::ref_count_ident();
         quote! {
-            pub unsafe fn AddRef(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> u32 {
+            pub unsafe fn AddRef(self: &::core::pin::Pin<::alloc::boxed::Box<Self>>) -> u32 {
                 let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
                 self.#ref_count_ident.set(value);
                 value
@@ -99,18 +99,18 @@ impl IUnknown {
 
         quote! {
             pub unsafe fn QueryInterface(
-                self: &::std::pin::Pin<::std::boxed::Box<Self>>,
+                self: &::core::pin::Pin<::alloc::boxed::Box<Self>>,
                 riid: *const ::com::sys::IID,
-                ppv: *mut *mut ::std::ffi::c_void
+                ppv: *mut *mut ::core::ffi::c_void
             ) -> ::com::sys::HRESULT {
                 let riid = &*riid;
 
                 if riid == &::com::interfaces::iunknown::IID_IUNKNOWN {
                     // Cast the &Pin<Box<T>> as a pointer and then dereference
                     // it to get the Pin<Box> as a pointer
-                    *ppv = *(self as *const _ as *const *mut ::std::ffi::c_void);
+                    *ppv = *(self as *const _ as *const *mut ::core::ffi::c_void);
                 } #base_match_arms else {
-                    *ppv = ::std::ptr::null_mut::<::std::ffi::c_void>();
+                    *ppv = ::core::ptr::null_mut::<::core::ffi::c_void>();
                     return ::com::sys::E_NOINTERFACE;
                 }
 
@@ -129,7 +129,7 @@ impl IUnknown {
                 else if <#interface as ::com::Interface>::is_iid_in_inheritance_chain(riid) {
                     // Cast the &Pin<Box<T>> as a pointer and then dereference
                     // it to get the Pin<Box> as a pointer
-                    *ppv = (*(self as *const _ as *const *mut usize)).add(#index) as *mut ::std::ffi::c_void;
+                    *ppv = (*(self as *const _ as *const *mut usize)).add(#index) as *mut ::core::ffi::c_void;
                 }
             }
         });
@@ -140,6 +140,6 @@ impl IUnknown {
 
 fn this_ptr_type() -> TokenStream {
     quote! {
-        ::std::ptr::NonNull<::std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::Interface>::VTable>>
+        ::core::ptr::NonNull<::core::ptr::NonNull<<::com::interfaces::IUnknown as ::com::Interface>::VTable>>
     }
 }

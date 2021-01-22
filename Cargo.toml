@@ -37,7 +37,8 @@ members = [
     "examples/basic/server",
     "examples/basic/client",
     "examples/basic/interface",
-    "examples/d2d-clock"
+    "examples/d2d-clock",
+    "examples/lib_no_std",
 ]
 
 [[example]]

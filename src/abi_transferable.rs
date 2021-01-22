@@ -116,13 +116,13 @@ unsafe impl<T: crate::Interface> AbiTransferable for Option<T> {
     fn get_abi(&self) -> Self::Abi {
         self.as_ref()
             .map(|p| p.as_raw().as_ptr())
-            .unwrap_or(::std::ptr::null_mut())
+            .unwrap_or(::core::ptr::null_mut())
     }
 
     fn set_abi(&mut self) -> *mut Self::Abi {
         &mut self
             .as_mut()
             .map(|p| p.as_raw().as_ptr())
-            .unwrap_or(::std::ptr::null_mut())
+            .unwrap_or(::core::ptr::null_mut())
     }
 }

@@ -120,7 +120,7 @@ impl Class {
             let interface_name = &interface.path;
             let field_ident = quote::format_ident!("__{}", index);
             quote! {
-                #field_ident: ::std::ptr::NonNull<<#interface_name as ::com::Interface>::VTable>
+                #field_ident: ::core::ptr::NonNull<<#interface_name as ::com::Interface>::VTable>
             }
         });
         let ref_count_ident = crate::utils::ref_count_ident();
@@ -141,7 +141,7 @@ impl Class {
         let interface_drops = interfaces.iter().enumerate().map(|(index, _)| {
             let field_ident = quote::format_ident!("__{}", index);
             quote! {
-                let _ = ::std::boxed::Box::from_raw(self.#field_ident.as_ptr());
+                let _ = ::alloc::boxed::Box::from_raw(self.#field_ident.as_ptr());
             }
         });
         let debug = self.debug();
@@ -152,7 +152,7 @@ impl Class {
             #[repr(C)]
             #vis struct #name {
                 #(#interface_fields,)*
-                #ref_count_ident: ::std::cell::Cell<u32>,
+                #ref_count_ident: ::core::cell::Cell<u32>,
                 #(#user_fields),*
             }
             impl #name {
@@ -163,7 +163,7 @@ impl Class {
                 #safe_query_interface
             }
             #debug
-            impl ::std::ops::Drop for #name {
+            impl ::core::ops::Drop for #name {
                 fn drop(&mut self) {
                     unsafe {
                         #(#interface_drops)*
@@ -205,14 +205,14 @@ impl Class {
         let fields = self.fields.iter().map(|f| {
             let name = f.ident.as_ref().unwrap();
             quote! {
-                .field(::std::stringify!(#name), &self.#name)
+                .field(::core::stringify!(#name), &self.#name)
             }
         });
 
         quote! {
-            impl ::std::fmt::Debug for #name {
-                 fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                    f.debug_struct(::std::stringify!(#name))
+            impl ::core::fmt::Debug for #name {
+                 fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                    f.debug_struct(::core::stringify!(#name))
                         #(#fields)*
                         .finish()
                     }
@@ -222,7 +222,7 @@ impl Class {
 
     fn safe_query_interface(&self) -> TokenStream {
         quote! {
-            pub fn query_interface<T: ::com::Interface>(self: &::std::pin::Pin<::std::boxed::Box<Self>>) -> Option<T> {
+            pub fn query_interface<T: ::com::Interface>(self: &::core::pin::Pin<::alloc::boxed::Box<Self>>) -> Option<T> {
                 let mut result = None;
                 let hr = unsafe { self.QueryInterface(&T::IID, &mut result as *mut _ as _) };
 
@@ -386,9 +386,9 @@ impl Interface {
             let ret = &m.sig.output;
             let method = quote! {
                 #[allow(non_snake_case)]
-                unsafe extern "stdcall" fn #name(this: ::std::ptr::NonNull<::std::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
+                unsafe extern "stdcall" fn #name(this: ::core::ptr::NonNull<::core::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
                     let this = this.as_ptr().sub(#offset);
-                    let this = ::std::mem::ManuallyDrop::new(::com::production::ClassAllocation::from_raw(this as *mut _ as *mut #class_name));
+                    let this = ::core::mem::ManuallyDrop::new(::com::production::ClassAllocation::from_raw(this as *mut _ as *mut #class_name));
                     #(#translation)*
                     #class_name::#name(&this, #(#args),*)
                 }

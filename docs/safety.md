@@ -71,7 +71,7 @@ impl Drop for IAnimal {
 }
 
 // Cloning the interface increases its reference count.
-impl ::std::clone::Clone for IAnimal {
+impl ::core::clone::Clone for IAnimal {
     fn clone(&self) -> Self {
         unsafe {
             <Self as com::Interface>::as_iunknown(self).AddRef();
@@ -113,19 +113,19 @@ impl std::convert::From<IAnimal> for IUnknown {
         unsafe { std::mem::transmute(this) }
     }
 }
-impl<'a> ::std::convert::From<&'a IAnimal> for &'a IUnknown {
+impl<'a> ::core::convert::From<&'a IAnimal> for &'a IUnknown {
     fn from(this: &'a IAnimal) -> Self {
-        unsafe { ::std::mem::transmute(this) }
+        unsafe { ::core::mem::transmute(this) }
     }
 }
 
 // Allow this interface to be passed as a param to method which takes its parent
-impl<'a> ::std::convert::Into<::com::Param<'a, IUnknown>> for IAnimal {
+impl<'a> ::core::convert::Into<::com::Param<'a, IUnknown>> for IAnimal {
     fn into(self) -> ::com::Param<'a, IUnknown> {
         ::com::Param::Owned(self.into())
     }
 }
-impl<'a> ::std::convert::Into<::com::Param<'a, IUnknown>> for &'a IAnimal {
+impl<'a> ::core::convert::Into<::com::Param<'a, IUnknown>> for &'a IAnimal {
     fn into(self) -> ::com::Param<'a, IUnknown> {
         ::com::Param::Borrowed(self.into())
     }
