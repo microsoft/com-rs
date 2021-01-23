@@ -59,7 +59,7 @@ impl std::ops::Deref for IAnimal {
     }
 }
 
-// On drop the interface will call the IUknown::Release method
+// On drop the interface will call the IUnknown::Release method
 impl Drop for IAnimal {
     fn drop(&mut self) {
         // This is safe because we are calling `Release` when the interface handle is no

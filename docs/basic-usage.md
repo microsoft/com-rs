@@ -95,7 +95,7 @@ class! {
     // are specified between `()` after their child interface. If no parent is specified for an 
     // interface, it is assumed to be `IUnknown`. Multiple interface hierarchies can be specified
     // each separated by a comma.
-    pub class MyCass: ISomeInterface(ISomeParentInterface(ISomeGrandparentInterface)) {
+    pub class MyClass: ISomeInterface(ISomeParentInterface(ISomeGrandparentInterface)) {
         // You can have as many inner fields as you want.
         inner_field: std::cell::Cell<usize>,
     }
