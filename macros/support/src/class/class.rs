@@ -431,11 +431,11 @@ impl Interface {
                 #add_ref
                 #release
                 #query_interface
-                IUnknownVTable {
+                ::std::mem::transmute(IUnknownVTable {
                     QueryInterface,
                     AddRef,
                     Release,
-                }
+                })
             }
         }
     }
