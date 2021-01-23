@@ -7,15 +7,20 @@ use super::class::Interface;
 pub struct IUnknownAbi {
     class_name: Ident,
     offset: usize,
+    vtable: TokenStream,
 }
 
 impl IUnknownAbi {
-    pub fn new(class_name: Ident, offset: usize) -> Self {
-        Self { class_name, offset }
+    pub fn new(class_name: Ident, offset: usize, vtable: TokenStream) -> Self {
+        Self {
+            class_name,
+            offset,
+            vtable,
+        }
     }
 
     pub fn to_add_ref_tokens(&self) -> TokenStream {
-        let this_ptr = this_ptr_type();
+        let this_ptr = self.this_ptr_type();
         let munge = self.borrowed_pointer_munging();
 
         quote! {
@@ -27,7 +32,7 @@ impl IUnknownAbi {
     }
 
     pub fn to_release_tokens(&self) -> TokenStream {
-        let this_ptr = this_ptr_type();
+        let this_ptr = self.this_ptr_type();
         let munge = self.owned_pointer_munging();
         let ref_count_ident = crate::utils::ref_count_ident();
 
@@ -40,7 +45,7 @@ impl IUnknownAbi {
     }
 
     pub fn to_query_interface_tokens(&self) -> TokenStream {
-        let this_ptr = this_ptr_type();
+        let this_ptr = self.this_ptr_type();
         let munge = self.borrowed_pointer_munging();
 
         quote! {
@@ -71,6 +76,14 @@ impl IUnknownAbi {
         quote! {
             #owned
             let munged = ::core::mem::ManuallyDrop::new(munged);
+        }
+    }
+
+    fn this_ptr_type(&self) -> TokenStream {
+        let vtable = &self.vtable;
+
+        quote! {
+            ::core::ptr::NonNull<::core::ptr::NonNull<#vtable>>
         }
     }
 }
@@ -135,11 +148,5 @@ impl IUnknown {
         });
 
         quote!(#(#base_match_arms)*)
-    }
-}
-
-fn this_ptr_type() -> TokenStream {
-    quote! {
-        ::core::ptr::NonNull<::core::ptr::NonNull<<::com::interfaces::IUnknown as ::com::Interface>::VTable>>
     }
 }

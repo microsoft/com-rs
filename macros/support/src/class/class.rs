@@ -417,7 +417,11 @@ impl Interface {
     }
 
     fn iunknown_tokens(class: &Class, offset: usize) -> TokenStream {
-        let iunknown = super::iunknown_impl::IUnknownAbi::new(class.name.clone(), offset);
+        let iunknown = super::iunknown_impl::IUnknownAbi::new(
+            class.name.clone(),
+            offset,
+            quote! { IUnknownVTable },
+        );
         let add_ref = iunknown.to_add_ref_tokens();
         let release = iunknown.to_release_tokens();
         let query_interface = iunknown.to_query_interface_tokens();
