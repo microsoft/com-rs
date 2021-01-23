@@ -428,9 +428,9 @@ impl Interface {
                 #release
                 #query_interface
                 IUnknownVTable {
+                    QueryInterface,
                     AddRef,
                     Release,
-                    QueryInterface,
                 }
             }
         }
