@@ -423,11 +423,11 @@ impl Interface {
         let query_interface = iunknown.to_query_interface_tokens();
         quote! {
             {
-                type IUknownVTable = <::com::interfaces::IUnknown as ::com::Interface>::VTable;
+                type IUnknownVTable = <::com::interfaces::IUnknown as ::com::Interface>::VTable;
                 #add_ref
                 #release
                 #query_interface
-                IUknownVTable {
+                IUnknownVTable {
                     AddRef,
                     Release,
                     QueryInterface,
