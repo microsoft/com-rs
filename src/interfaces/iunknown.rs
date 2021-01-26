@@ -4,7 +4,7 @@ use crate::sys::{E_NOINTERFACE, E_POINTER, FAILED};
 use crate::sys::{GUID, HRESULT};
 use crate::{interfaces, Interface, IID};
 
-use std::ffi::c_void;
+use core::ffi::c_void;
 
 interfaces! {
     /// [IUnknown](https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown) COM interface
@@ -23,16 +23,15 @@ interfaces! {
         /// The COM [`AddRef` Method]
         ///
         /// This method normally should not be called directly. This method is used by
-        /// [`ComPtr`] to implement the reference counting mechanism.
+        /// the `Clone` implementation of interfaces to implement the reference counting mechanism.
         ///
         /// [`AddRef` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-addref
-        /// [`ComPtr`]: struct.ComPtr.html
         pub unsafe fn AddRef(&self) -> u32;
 
         /// The COM [`Release` Method]
         ///
         /// This method normally should not be called directly. This method is used by
-        /// [`ComPtr`] to implement the reference counting mechanism.
+        /// the `Drop` implementation of interfaces to implement the reference counting mechanism.
         ///
         /// [`Release` Method]: https://docs.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-release
         /// [`ComPtr`]: struct.ComPtr.html

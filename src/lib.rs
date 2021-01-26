@@ -42,6 +42,7 @@
 //! See the examples directory in the repository for more examples.
 //!
 
+#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![deny(missing_docs)]
 
 mod abi_transferable;
@@ -113,3 +114,8 @@ pub use com_macros::class;
 // whether they are used by some other crate or internally
 #[doc(hidden)]
 extern crate self as com;
+
+// We re-export `alloc` so that we can use `com::alloc::boxed::Box` in generated code,
+// for code that uses `#![no_std]`.
+#[doc(hidden)]
+pub extern crate alloc;

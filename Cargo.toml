@@ -16,7 +16,10 @@ readme = "./README.md"
 com_macros = { version = "0.3", path = "macros" }
 
 [features]
-production = []
+default = ["std"]
+# Production requires std because production::registration uses CString.
+production = ["std"]
+std = []
 
 [[test]]
 name = "tests"
@@ -37,7 +40,8 @@ members = [
     "examples/basic/server",
     "examples/basic/client",
     "examples/basic/interface",
-    "examples/d2d-clock"
+    "examples/d2d-clock",
+    "examples/lib_no_std",
 ]
 
 [[example]]

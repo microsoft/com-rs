@@ -37,22 +37,22 @@ fn convert_impls(parents: HashMap<Ident, Path>) -> Vec<TokenStream> {
         let mut current = &name;
         while let Some(p) = parents.get(current) {
             result.push(quote::quote! {
-                impl ::std::convert::From<#name> for #p {
+                impl ::core::convert::From<#name> for #p {
                     fn from(this: #name) -> Self {
-                        unsafe { ::std::mem::transmute(this) }
+                        unsafe { ::core::mem::transmute(this) }
                     }
                 }
-                impl <'a> ::std::convert::From<&'a #name> for &'a #p {
+                impl <'a> ::core::convert::From<&'a #name> for &'a #p {
                     fn from(this: &'a #name) -> Self {
-                        unsafe { ::std::mem::transmute(this) }
+                        unsafe { ::core::mem::transmute(this) }
                     }
                 }
-                impl <'a> ::std::convert::Into<::com::Param<'a, #p>> for #name {
+                impl <'a> ::core::convert::Into<::com::Param<'a, #p>> for #name {
                     fn into(self) -> ::com::Param<'a, #p> {
                         ::com::Param::Owned(self.into())
                     }
                 }
-                impl <'a> ::std::convert::Into<::com::Param<'a, #p>> for &'a #name {
+                impl <'a> ::core::convert::Into<::com::Param<'a, #p>> for &'a #name {
                     fn into(self) -> ::com::Param<'a, #p> {
                         ::com::Param::Borrowed(self.into())
                     }

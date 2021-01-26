@@ -19,7 +19,7 @@ pub unsafe trait AbiTransferable: Sized {
     fn from_abi(abi: Self::Abi) -> Self {
         // This must be safe for the implementing type to
         // correctly implement this trait.
-        unsafe { std::mem::transmute_copy(&abi) }
+        unsafe { core::mem::transmute_copy(&abi) }
     }
 
     /// Convert a pointer to a `Self::Abi` and and a length to a slice.
@@ -29,7 +29,7 @@ pub unsafe trait AbiTransferable: Sized {
     /// `len` size for the lifetime `'a`. Nothing can mutate that array while
     /// the slice exists.
     unsafe fn slice_from_abi<'a>(abi: *const Self::Abi, len: usize) -> &'a [Self] {
-        std::slice::from_raw_parts(std::mem::transmute_copy(&abi), len)
+        core::slice::from_raw_parts(core::mem::transmute_copy(&abi), len)
     }
 
     /// Convert a pointer to a `Self::Abi` and and a length to a mutable slice.
@@ -38,15 +38,15 @@ pub unsafe trait AbiTransferable: Sized {
     /// The same rules apply as with `slice_from_abi` but no other references into
     /// the slice are allowed while the slice exists.
     unsafe fn slice_from_mut_abi<'a>(abi: *mut Self::Abi, len: usize) -> &'a mut [Self] {
-        std::slice::from_raw_parts_mut(std::mem::transmute_copy(&abi), len)
+        core::slice::from_raw_parts_mut(core::mem::transmute_copy(&abi), len)
     }
 
     /// Converts and consumes the ABI transferable type into its ABI representation.
     fn into_abi(self) -> Self::Abi {
         // This must be safe for the implementing type to
         // correctly implement this trait.
-        let abi = unsafe { std::mem::transmute_copy(&self) };
-        std::mem::forget(self);
+        let abi = unsafe { core::mem::transmute_copy(&self) };
+        core::mem::forget(self);
         abi
     }
 }
@@ -101,7 +101,7 @@ unsafe impl<T> AbiTransferable for *const T {
 }
 
 unsafe impl<T: crate::Interface> AbiTransferable for T {
-    type Abi = std::ptr::NonNull<std::ptr::NonNull<<T as crate::Interface>::VTable>>;
+    type Abi = core::ptr::NonNull<core::ptr::NonNull<<T as crate::Interface>::VTable>>;
     fn get_abi(&self) -> Self::Abi {
         self.as_raw()
     }
@@ -112,17 +112,17 @@ unsafe impl<T: crate::Interface> AbiTransferable for T {
 }
 
 unsafe impl<T: crate::Interface> AbiTransferable for Option<T> {
-    type Abi = *mut std::ptr::NonNull<<T as crate::Interface>::VTable>;
+    type Abi = *mut core::ptr::NonNull<<T as crate::Interface>::VTable>;
     fn get_abi(&self) -> Self::Abi {
         self.as_ref()
             .map(|p| p.as_raw().as_ptr())
-            .unwrap_or(::std::ptr::null_mut())
+            .unwrap_or(::core::ptr::null_mut())
     }
 
     fn set_abi(&mut self) -> *mut Self::Abi {
         &mut self
             .as_mut()
             .map(|p| p.as_raw().as_ptr())
-            .unwrap_or(::std::ptr::null_mut())
+            .unwrap_or(::core::ptr::null_mut())
     }
 }

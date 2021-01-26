@@ -11,7 +11,7 @@ pub fn generate(class: &Class) -> TokenStream {
     let class_name = &class.name;
     let user_fields = class.fields.iter().map(|f| {
         let ty = &f.ty;
-        quote! { <#ty as ::std::default::Default>::default() }
+        quote! { <#ty as ::core::default::Default>::default() }
     });
     quote! {
         ::com::class! {
@@ -21,12 +21,12 @@ pub fn generate(class: &Class) -> TokenStream {
             impl ::com::interfaces::IClassFactory for #class_factory_ident {
                 unsafe fn CreateInstance(
                     &self,
-                    aggr: *mut ::std::ptr::NonNull<<::com::interfaces::IUnknown as ::com::Interface>::VTable>,
+                    aggr: *mut ::core::ptr::NonNull<<::com::interfaces::IUnknown as ::com::Interface>::VTable>,
                     riid: *const ::com::sys::IID,
-                    ppv: *mut *mut ::std::ffi::c_void,
+                    ppv: *mut *mut ::core::ffi::c_void,
                 ) -> ::com::sys::HRESULT {
                     assert!(!riid.is_null(), "iid passed to CreateInstance was null");
-                    if aggr != ::std::ptr::null_mut() {
+                    if aggr != ::core::ptr::null_mut() {
                         return ::com::sys::CLASS_E_NOAGGREGATION;
                     }
 
