@@ -11,11 +11,11 @@ impl IID {
         let iid_value = iid_string.value();
         let mut delimited = iid_value.split('-').fuse();
         let parts = [
-            ensure_length(delimited.next(), 0, 8, &iid_string.span())?,
-            ensure_length(delimited.next(), 1, 4, &iid_string.span())?,
-            ensure_length(delimited.next(), 2, 4, &iid_string.span())?,
-            ensure_length(delimited.next(), 3, 4, &iid_string.span())?,
-            ensure_length(delimited.next(), 4, 12, &iid_string.span())?,
+            ensure_length(delimited.next(), 0, 8, iid_string.span())?,
+            ensure_length(delimited.next(), 1, 4, iid_string.span())?,
+            ensure_length(delimited.next(), 2, 4, iid_string.span())?,
+            ensure_length(delimited.next(), 3, 4, iid_string.span())?,
+            ensure_length(delimited.next(), 4, 12, iid_string.span())?,
         ];
 
         Ok(Self { parts })
@@ -67,13 +67,13 @@ fn ensure_length<'a>(
     part: Option<&'a str>,
     index: usize,
     length: usize,
-    span: &proc_macro2::Span,
+    span: proc_macro2::Span,
 ) -> syn::Result<String> {
     let part = match part {
         Some(p) => p,
         None => {
             return Err(syn::Error::new(
-                span.clone(),
+                span,
                 format!("The IID missing part at index {}", index,),
             ))
         }
@@ -81,7 +81,7 @@ fn ensure_length<'a>(
 
     if part.len() != length {
         return Err(syn::Error::new(
-            span.clone(),
+            span,
             format!(
                 "The IID part at index {} must be {} characters long but was {} characters",
                 index,

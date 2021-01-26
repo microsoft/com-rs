@@ -30,7 +30,7 @@ impl RegistryKeyInfo {
 }
 
 #[doc(hidden)]
-pub fn register_keys(registry_keys_to_add: &Vec<RegistryKeyInfo>) -> HRESULT {
+pub fn register_keys(registry_keys_to_add: &[RegistryKeyInfo]) -> HRESULT {
     for key_info in registry_keys_to_add.iter() {
         let result = add_class_key(&key_info);
         if result as u32 != ERROR_SUCCESS {
@@ -42,7 +42,7 @@ pub fn register_keys(registry_keys_to_add: &Vec<RegistryKeyInfo>) -> HRESULT {
 }
 
 #[doc(hidden)]
-pub fn unregister_keys(registry_keys_to_remove: &Vec<RegistryKeyInfo>) -> HRESULT {
+pub fn unregister_keys(registry_keys_to_remove: &[RegistryKeyInfo]) -> HRESULT {
     let mut hr = S_OK;
     for key_info in registry_keys_to_remove.iter() {
         let result = remove_class_key(&key_info);

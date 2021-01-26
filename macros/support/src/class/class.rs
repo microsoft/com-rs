@@ -127,7 +127,7 @@ impl Class {
 
         let user_fields = &self.fields;
         let docs = &self.docs;
-        let methods = self.methods.values().flat_map(|ms| ms).map(|m| {
+        let methods = self.methods.values().flatten().map(|m| {
             quote! {
                 #[allow(non_snake_case)]
                 #m
@@ -278,17 +278,14 @@ impl syn::parse::Parse for Class {
                     .map(|i| match i {
                         syn::ImplItem::Method(m) => Ok(m),
                         _ => Err(syn::Error::new(
-                            i.span().clone(),
+                            i.span(),
                             "only trait methods are allowed when implementing an interface",
                         )),
                     })
                     .collect::<syn::Result<Vec<_>>>()?;
 
-                if let Some(_) = methods.insert(interface.clone(), ms) {
-                    return Err(syn::Error::new(
-                        interface.span().clone(),
-                        "interface was redefined",
-                    ));
+                if methods.insert(interface.clone(), ms).is_some() {
+                    return Err(syn::Error::new(interface.span(), "interface was redefined"));
                 }
             }
         }
@@ -298,24 +295,18 @@ impl syn::parse::Parse for Class {
                 for i in methods.keys() {
                     if !interface_paths.remove(i) {
                         return Err(syn::Error::new(
-                            i.span().clone(),
+                            i.span(),
                             "impl for a non-declared interface",
                         ));
                     }
                 }
                 if let Some(i) = interface_paths.into_iter().next() {
-                    return Err(syn::Error::new(
-                        i.span().clone(),
-                        "impl for interface is missing",
-                    ));
+                    return Err(syn::Error::new(i.span(), "impl for interface is missing"));
                 }
                 c
             }
             None => {
-                return Err(syn::Error::new(
-                    input.span().clone(),
-                    "no class was defined",
-                ));
+                return Err(syn::Error::new(input.span(), "no class was defined"));
             }
         };
         class.impl_debug = impl_debug;
