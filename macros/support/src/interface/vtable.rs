@@ -66,7 +66,7 @@ fn gen_vtable_function_signature(
     let return_type = &method.ret;
 
     Ok(quote!(
-        unsafe extern "stdcall" fn(#params) #return_type
+        unsafe extern "system" fn(#params) #return_type
     ))
 }
 

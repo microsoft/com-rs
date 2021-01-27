@@ -88,7 +88,7 @@ impl ::core::clone::Clone for IAnimal {
 #[repr(C)]
 pub struct IAnimalVTable {
     pub iunknown_base: <IUnknown as com::Interface>::VTable,
-    pub Eat: unsafe extern "stdcall" fn(std::ptr::NonNull<IAnimalVPtr>) -> HRESULT,
+    pub Eat: unsafe extern "system" fn(std::ptr::NonNull<IAnimalVPtr>) -> HRESULT,
 }
 
 pub type IAnimalVPtr = std::ptr::NonNull<IAnimalVTable>;
