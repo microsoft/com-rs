@@ -1,4 +1,5 @@
 mod iid;
+#[allow(clippy::module_inception)]
 mod interface;
 mod interface_impl;
 mod interfaces;
