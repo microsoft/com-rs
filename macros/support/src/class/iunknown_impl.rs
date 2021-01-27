@@ -19,7 +19,7 @@ impl IUnknownAbi {
         let munge = self.borrowed_pointer_munging();
 
         quote! {
-            unsafe extern "stdcall" fn AddRef(this: #this_ptr) -> u32 {
+            unsafe extern "system" fn AddRef(this: #this_ptr) -> u32 {
                 #munge
                 munged.AddRef()
             }
@@ -32,7 +32,7 @@ impl IUnknownAbi {
         let ref_count_ident = crate::utils::ref_count_ident();
 
         quote! {
-            unsafe extern "stdcall" fn Release(this: #this_ptr) -> u32 {
+            unsafe extern "system" fn Release(this: #this_ptr) -> u32 {
                 #munge
                 munged.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count")
             }
@@ -44,7 +44,7 @@ impl IUnknownAbi {
         let munge = self.borrowed_pointer_munging();
 
         quote! {
-            unsafe extern "stdcall" fn QueryInterface(
+            unsafe extern "system" fn QueryInterface(
                 this: #this_ptr,
                 riid: *const ::com::sys::IID,
                 ppv: *mut *mut ::core::ffi::c_void

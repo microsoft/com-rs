@@ -8,7 +8,7 @@ use crate::sys::IID;
 /// The struct implementing this trait must provide a valid vtable as the
 /// associated VTable type. A vtable is valid if:
 /// * it is `#[repr(C)]`
-/// * the type only contains `extern "stdcall" fn" definitions
+/// * the type only contains `extern "system" fn" definitions
 ///
 /// The implementor must be a transparrently equivalent to a valid interface pointer
 /// for the interface `T`. An interface pointer as the name suggests points to an

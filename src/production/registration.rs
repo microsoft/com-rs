@@ -178,7 +178,7 @@ macro_rules! inproc_dll_module {
     (($class_id_one:ident, $class_type_one:ty), $(($class_id:ident, $class_type:ty)),*) => {
         static mut _HMODULE: *mut ::core::ffi::c_void = ::core::ptr::null_mut();
         #[no_mangle]
-        unsafe extern "stdcall" fn DllMain(hinstance: *mut ::core::ffi::c_void, fdw_reason: u32, reserved: *mut ::core::ffi::c_void) -> i32 {
+        unsafe extern "system" fn DllMain(hinstance: *mut ::core::ffi::c_void, fdw_reason: u32, reserved: *mut ::core::ffi::c_void) -> i32 {
             const DLL_PROCESS_ATTACH: u32 = 1;
             if fdw_reason == DLL_PROCESS_ATTACH {
                 unsafe { _HMODULE = hinstance; }
@@ -187,7 +187,7 @@ macro_rules! inproc_dll_module {
         }
 
         #[no_mangle]
-        unsafe extern "stdcall" fn DllGetClassObject(class_id: *const ::com::sys::CLSID, iid: *const ::com::sys::IID, result: *mut *mut ::core::ffi::c_void) -> ::com::sys::HRESULT {
+        unsafe extern "system" fn DllGetClassObject(class_id: *const ::com::sys::CLSID, iid: *const ::com::sys::IID, result: *mut *mut ::core::ffi::c_void) -> ::com::sys::HRESULT {
             use ::com::interfaces::IUnknown;
             assert!(!class_id.is_null(), "class id passed to DllGetClassObject should never be null");
 
@@ -204,12 +204,12 @@ macro_rules! inproc_dll_module {
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllRegisterServer() -> ::com::sys::HRESULT {
+        extern "system" fn DllRegisterServer() -> ::com::sys::HRESULT {
             ::com::production::registration::dll_register_server(&mut get_relevant_registry_keys())
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllUnregisterServer() -> ::com::sys::HRESULT {
+        extern "system" fn DllUnregisterServer() -> ::com::sys::HRESULT {
             ::com::production::registration::dll_unregister_server(&mut get_relevant_registry_keys())
         }
 
