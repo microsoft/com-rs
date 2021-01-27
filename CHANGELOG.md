@@ -1,3 +1,20 @@
+# 0.4.0 (2021-01-27)
+
+### Fixes
+
+- Clippy warnings have been fixed [#201](https://github.com/microsoft/com-rs/pull/201)
+- A few things which were not properly being converted to their ABI representation now are [#191](https://github.com/microsoft/com-rs/pull/191) 
+- Incorrect CLSID Registry keys [#190](https://github.com/microsoft/com-rs/pull/190)
+- Handle COM classes with multiple fields [#188](https://github.com/microsoft/com-rs/pull/188)
+
+### Added
+
+- Support for `#[no_std]` environments [#199](https://github.com/microsoft/com-rs/pull/199)
+
+### Changed
+
+- The ABI for COM functions is now "system" instead of hard-coding "stdcall" [#203](https://github.com/microsoft/com-rs/pull/203)
+
 # 0.3.0 (2020-04-03)
 
 ### Changed
