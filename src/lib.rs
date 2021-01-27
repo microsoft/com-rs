@@ -42,6 +42,7 @@
 //! See the examples directory in the repository for more examples.
 //!
 
+#![allow(clippy::transmute_ptr_to_ptr)]
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![deny(missing_docs)]
 

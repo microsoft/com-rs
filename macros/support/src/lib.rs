@@ -1,3 +1,5 @@
+#![allow(clippy::needless_lifetimes)]
+
 pub mod class;
 pub mod interface;
 mod utils;

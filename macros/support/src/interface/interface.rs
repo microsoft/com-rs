@@ -122,7 +122,7 @@ impl syn::parse::Parse for Interface {
                 iid = Some(IID::parse(&iid_str.lit)?);
             } else {
                 return Err(syn::Error::new(
-                    path.span().clone(),
+                    path.span(),
                     format!("Unrecognized attribute '{}'", path.to_token_stream()),
                 ));
             }
@@ -142,7 +142,7 @@ impl syn::parse::Parse for Interface {
         };
         let name = input.parse::<Ident>()?;
         let mut parent = None;
-        if name.to_string() != "IUnknown" {
+        if name != "IUnknown" {
             let _ = input.parse::<syn::Token![:]>().map_err(|_| {
                 syn::Error::new(
                     name.span(),
@@ -182,7 +182,7 @@ impl syn::parse::Parse for ParenthsizedStr {
         syn::parenthesized!(lit in input);
         let lit = lit
             .parse()
-            .map_err(|e| syn::Error::new(e.span(), format!("uuids must be string literals")))?;
+            .map_err(|e| syn::Error::new(e.span(), "uuids must be string literals".to_string()))?;
 
         Ok(Self { lit })
     }
@@ -286,7 +286,7 @@ impl InterfaceMethod {
         let return_type = &self.ret;
 
         let mut generics = Vec::new();
-        if self.args.len() > 0 {
+        if !self.args.is_empty() {
             generics.push(quote! { 'a })
         }
         let mut params = vec![quote!(#interface_ptr_ident)];

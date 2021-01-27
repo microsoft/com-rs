@@ -26,7 +26,7 @@ pub fn camel_to_snake(input: &str) -> String {
         if c.is_uppercase() {
             if seen_lowercase {
                 seen_lowercase = false;
-                new.push_str("_");
+                new.push('_');
             }
             new.push_str(&c.to_lowercase().to_string());
         } else {
@@ -42,7 +42,7 @@ pub fn camel_to_snake(input: &str) -> String {
 mod tests {
     #[test]
     fn test_camel_to_snake() {
-        let result = camel_to_snake("IAnimalVTable".into());
+        let result = camel_to_snake("IAnimalVTable");
         assert_eq!(result, "ianimal_vtable".to_owned());
     }
     use super::*;
