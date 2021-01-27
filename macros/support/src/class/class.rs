@@ -386,7 +386,7 @@ impl Interface {
             let ret = &m.sig.output;
             let method = quote! {
                 #[allow(non_snake_case)]
-                unsafe extern "stdcall" fn #name(this: ::core::ptr::NonNull<::core::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
+                unsafe extern "system" fn #name(this: ::core::ptr::NonNull<::core::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
                     let this = this.as_ptr().sub(#offset);
                     let this = ::core::mem::ManuallyDrop::new(::com::production::ClassAllocation::from_raw(this as *mut _ as *mut #class_name));
                     #(#translation)*
