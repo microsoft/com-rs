@@ -6,6 +6,7 @@
 - A few things which were not properly being converted to their ABI representation now are [#191](https://github.com/microsoft/com-rs/pull/191) 
 - Incorrect CLSID Registry keys [#190](https://github.com/microsoft/com-rs/pull/190)
 - Handle COM classes with multiple fields [#188](https://github.com/microsoft/com-rs/pull/188)
+- Keep leading zeros in COM GUID [#187](https://github.com/microsoft/com-rs/pull/187)
 
 ### Added
 
