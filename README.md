@@ -50,7 +50,7 @@ Short explanation: This generates the VTable layout for IUnknown and IAnimal as 
 Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). 
 
 ```rust
-use com::run_time::{create_instance, init_runtime};
+use com::runtime::{create_instance, init_runtime};
 
 // Initialises the COM library
 init_runtime().expect("Failed to initialize COM Library");

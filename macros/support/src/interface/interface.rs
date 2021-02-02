@@ -280,7 +280,6 @@ impl InterfaceMethod {
     fn to_tokens(&self) -> TokenStream {
         let inner_method_ident =
             format_ident!("{}", crate::utils::snake_to_camel(&self.name.to_string()));
-        let interface_ptr_ident = format_ident!("interface_ptr");
 
         let outer_method_ident = &self.name;
         let return_type = &self.ret;
@@ -289,7 +288,7 @@ impl InterfaceMethod {
         if !self.args.is_empty() {
             generics.push(quote! { 'a })
         }
-        let mut params = vec![quote!(#interface_ptr_ident)];
+        let mut params = vec![quote! { self.inner }];
         let mut args = Vec::new();
         let mut into = Vec::new();
         for (index, arg) in self.args.iter().enumerate() {
@@ -319,8 +318,7 @@ impl InterfaceMethod {
             #(#docs)*
             #vis unsafe fn #outer_method_ident<#(#generics),*>(&self, #(#args),*) #return_type {
                 #(#into)*
-                let #interface_ptr_ident = <Self as ::com::AbiTransferable>::get_abi(self);
-                (#interface_ptr_ident.as_ref().as_ref().#inner_method_ident)(#(#params),*)
+                (self.inner.as_ref().as_ref().#inner_method_ident)(#(#params),*)
             }
         };
     }

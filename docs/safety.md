@@ -44,8 +44,7 @@ impl IAnimal {
     // This is likely to be the case as interface automatically keeps 
     // track of its reference count.
     pub unsafe fn Eat(&self) -> HRESULT {
-        let interface_ptr = <Self as com::AbiTransferable>::get_abi(self);
-        (interface_ptr.as_ref().as_ref().Eat)(interface_ptr)
+        (self.inner.as_ref().as_ref().Eat)(self.inner)
     }
 }
 
@@ -59,7 +58,7 @@ impl std::ops::Deref for IAnimal {
     }
 }
 
-// On drop the interface will call the IUknown::Release method
+// On drop the interface will call the IUnknown::Release method
 impl Drop for IAnimal {
     fn drop(&mut self) {
         // This is safe because we are calling `Release` when the interface handle is no
