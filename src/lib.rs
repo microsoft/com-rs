@@ -46,8 +46,7 @@
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 #![deny(missing_docs)]
 
-mod abi_transferable;
-mod interface;
+mod traits;
 pub mod interfaces;
 mod param;
 #[cfg(windows)]
@@ -59,9 +58,9 @@ pub mod sys;
 pub mod production;
 
 #[doc(inline)]
-pub use abi_transferable::AbiTransferable;
+pub use traits::AbiTransferable;
 #[doc(inline)]
-pub use interface::Interface;
+pub use traits::Interface;
 #[doc(inline)]
 pub use param::Param;
 #[doc(inline)]

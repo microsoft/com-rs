@@ -44,8 +44,7 @@ impl IAnimal {
     // This is likely to be the case as interface automatically keeps 
     // track of its reference count.
     pub unsafe fn Eat(&self) -> HRESULT {
-        let interface_ptr = <Self as com::AbiTransferable>::get_abi(self);
-        (interface_ptr.as_ref().as_ref().Eat)(interface_ptr)
+        (self.inner.as_ref().as_ref().Eat)(self.inner)
     }
 }
 

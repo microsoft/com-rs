@@ -1,3 +1,6 @@
+use crate::sys::RawPtr;
+use crate::Interface;
+
 /// Types that are safe to transfer over a COM API boundary.
 ///
 /// # Safety
@@ -11,9 +14,16 @@ pub unsafe trait AbiTransferable: Sized {
     type Abi;
 
     /// Turn the type into the FFI ABI type.
-    fn get_abi(&self) -> Self::Abi;
+    fn get_abi(&self) -> Self::Abi {
+        // It is always safe to interpret an `Abi` type's binary representation (without moving
+        // the value) as the memory layout must be identical.
+        unsafe { std::mem::transmute_copy(self) }
+    }
+
     /// Set the abi of the implementing type
-    fn set_abi(&mut self) -> *mut Self::Abi;
+    fn set_abi(&mut self) -> *mut Self::Abi {
+        self as *mut _ as *mut _
+    }
 
     /// Convert into a reference to Self from a reference to the ABI
     fn from_abi(abi: Self::Abi) -> Self {
@@ -100,29 +110,23 @@ unsafe impl<T> AbiTransferable for *const T {
     }
 }
 
-unsafe impl<T: crate::Interface> AbiTransferable for T {
-    type Abi = core::ptr::NonNull<core::ptr::NonNull<<T as crate::Interface>::VTable>>;
-    fn get_abi(&self) -> Self::Abi {
-        self.as_raw()
-    }
+unsafe impl<T: Interface> AbiTransferable for T {
+    type Abi = RawPtr;
 
     fn set_abi(&mut self) -> *mut Self::Abi {
-        &mut self.as_raw()
+        panic!("set_abi should not be used with interfaces since it implies nullable.");
     }
 }
 
-unsafe impl<T: crate::Interface> AbiTransferable for Option<T> {
-    type Abi = *mut core::ptr::NonNull<<T as crate::Interface>::VTable>;
-    fn get_abi(&self) -> Self::Abi {
-        self.as_ref()
-            .map(|p| p.as_raw().as_ptr())
-            .unwrap_or(::core::ptr::null_mut())
-    }
+unsafe impl<T: Interface> AbiTransferable for Option<T> {
+    type Abi = RawPtr;
 
     fn set_abi(&mut self) -> *mut Self::Abi {
-        &mut self
-            .as_mut()
-            .map(|p| p.as_raw().as_ptr())
-            .unwrap_or(::core::ptr::null_mut())
+        debug_assert!(self.is_none());
+        self as *mut _ as *mut _
+    }
+
+    fn from_abi(_abi: Self::Abi) -> Self {
+        panic!("Option<T> should not not be used for return types. Use Result<T> instead.");
     }
 }

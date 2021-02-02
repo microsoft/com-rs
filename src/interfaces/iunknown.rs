@@ -65,3 +65,16 @@ impl IUnknown {
         ppv
     }
 }
+
+impl PartialEq for IUnknown {
+    fn eq(&self, other: &Self) -> bool {
+        // Since COM objects may implement multiple intefaces, COM identity can only
+        // be determined by querying for `IUnknown` explicitly and then comparing the
+        // pointer values. This works since `QueryInterface` is required to return
+        // the same pointer value for queries for `IUnknown`.
+        self.cast::<IUnknown>().unwrap().inner == other.cast::<IUnknown>().unwrap().inner
+    }
+}
+
+impl Eq for IUnknown {}
+
