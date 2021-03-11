@@ -4,6 +4,7 @@ use syn::spanned::Spanned;
 
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
+use syn::parse::ParseBuffer;
 
 #[derive(Debug)]
 pub struct Class {
@@ -67,14 +68,22 @@ impl Class {
             interfaces.push(interface);
 
             let mut current = interfaces.last_mut().unwrap();
-            while input.peek(syn::token::Paren) {
-                let contents;
-                syn::parenthesized!(contents in input);
-                let path = contents.parse::<syn::Path>()?;
-                let interface = Interface { path, parent: None };
-                current.parent = Some(Box::new(interface));
-                current = current.parent.as_mut().unwrap().as_mut();
+            fn parse_parens(buffer: &ParseBuffer, current: &mut Interface) -> syn::Result<()> {
+                while buffer.peek(syn::token::Paren) {
+                    let contents;
+                    syn::parenthesized!(contents in buffer);
+                    let path = contents.parse::<syn::Path>()?;
+                    let parent = Interface { path, parent: None };
+                    current.parent = Some(Box::new(parent));
+                    if !contents.is_empty() {
+                        parse_parens(&contents, current.parent.as_mut().unwrap().as_mut())?;
+                    }
+                }
+
+                Ok(())
             }
+
+            parse_parens(&input, &mut current)?;
 
             if !input.peek(syn::token::Brace) {
                 let _ = input.parse::<syn::Token!(,)>()?;
