@@ -77,6 +77,7 @@ primitive_transferable_type! {
     u64,
     f32,
     f64,
+    usize,
     crate::sys::GUID
 }
 
