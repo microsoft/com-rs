@@ -224,7 +224,7 @@ impl Class {
                     f.debug_struct(::core::stringify!(#name))
                         #(#fields)*
                         .finish()
-                    }
+                }
             }
         }
     }
