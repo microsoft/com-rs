@@ -220,11 +220,11 @@ impl Class {
 
         quote! {
             impl ::core::fmt::Debug for #name {
-                 fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                     f.debug_struct(::core::stringify!(#name))
                         #(#fields)*
                         .finish()
-                    }
+                }
             }
         }
     }
