@@ -13,9 +13,18 @@ pub struct Class {
     pub docs: Vec<syn::Attribute>,
     pub visibility: syn::Visibility,
     pub interfaces: Vec<Interface>,
-    pub methods: HashMap<syn::Path, Vec<syn::ImplItemMethod>>,
+    pub methods: HashMap<syn::Path, Vec<InterfaceMethod>>,
     pub fields: Vec<syn::Field>,
     pub impl_debug: bool,
+}
+
+#[derive(Debug)]
+pub struct InterfaceMethod {
+    pub item: syn::ImplItemMethod,
+    /// The original ident of the method definition. If the method has been
+    /// renamed (to avoid collisions), then this will be the original ident as
+    /// written by the user.
+    pub original_ident: Ident,
 }
 
 impl Class {
@@ -137,9 +146,10 @@ impl Class {
         let user_fields = &self.fields;
         let docs = &self.docs;
         let methods = self.methods.values().flatten().map(|m| {
+            let m_item = &m.item;
             quote! {
                 #[allow(non_snake_case)]
-                #m
+                #m_item
             }
         });
 
@@ -248,7 +258,7 @@ impl Class {
 impl syn::parse::Parse for Class {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let mut class = None;
-        let mut methods: HashMap<syn::Path, Vec<syn::ImplItemMethod>> = HashMap::new();
+        let mut methods: HashMap<syn::Path, Vec<InterfaceMethod>> = HashMap::new();
         let mut impl_debug = false;
         while !input.is_empty() {
             let attributes = input.call(syn::Attribute::parse_outer)?;
@@ -285,7 +295,10 @@ impl syn::parse::Parse for Class {
                     .items
                     .into_iter()
                     .map(|i| match i {
-                        syn::ImplItem::Method(m) => Ok(m),
+                        syn::ImplItem::Method(m) => Ok(InterfaceMethod {
+                            original_ident: m.sig.ident.clone(),
+                            item: m,
+                        }),
                         _ => Err(syn::Error::new(
                             i.span(),
                             "only trait methods are allowed when implementing an interface",
@@ -320,7 +333,152 @@ impl syn::parse::Parse for Class {
         };
         class.impl_debug = impl_debug;
         class.methods = methods;
+        find_method_name_collisions(&mut class);
         Ok(class)
+    }
+}
+
+/// Resolve name collisions among methods defined on different interfaces, by
+/// renaming some methods with a disambiguating suffix.
+///
+/// It is common for designers of COM interfaces to define multiple versions of
+/// the same interface, where each new interface is a superset of the previous
+/// version. For examples, see these DirectWrite interfaces:
+///
+/// * [IDWriteTextFormat](https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritetextformat)
+/// * [IDWriteTextFormat1](https://docs.microsoft.com/en-us/windows/win32/api/dwrite_2/nn-dwrite_2-idwritetextformat1)
+/// * [IDWriteTextFormat2](https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/nn-dwrite_3-idwritetextformat2)
+/// * [IDWriteTextFormat3](https://docs.microsoft.com/en-us/windows/win32/api/dwrite_3/nn-dwrite_3-idwritetextformat3)
+///
+/// These interfaces define methods that have the same name. When implementing a
+/// COM object in Rust, we need a way to distinguish these functions. The ugly
+/// way is to require that different COM interface definitions avoid using the
+/// same name, but that is clearly not feasible.
+///
+/// This implementation looks for name collisions, and simply renames methods
+/// that participate in name collisions by appending the name of the interface.
+/// If _that_ fails, then we use a numeric suffix. (We could just use the IID
+/// as a suffix, but that's a harsh experience when debugging.)
+fn find_method_name_collisions(class: &mut Class) {
+    // First, we find the set of method names that collide. These are the method
+    // names as defined on the COM interfaces. We just count how many times
+    // each method name occurs; a count of more than 1 indicates a collision.
+    // This pass uses `class.methods.values()` because we don't need to consider
+    // the interface name.
+    let mut method_name_count: HashMap<Ident, u32> = HashMap::new();
+    for interface_methods in class.methods.values() {
+        for m in interface_methods.iter() {
+            *method_name_count
+                .entry(m.original_ident.clone())
+                .or_default() += 1;
+        }
+    }
+
+    // Next, we scan the methods again. For each method defined on each
+    // interface, we check whether this _bare_ method name was involved in a
+    // collision. For example, if a COM class implements both `IFoo::zap()`
+    // and `IBar::zap()`, then the name `zap` will have a collision.
+    // Equivalently, `method_name_count["zap"] > 1`.
+    //
+    // If we find a method that has collided in this way, then we want to rename
+    // the method _implementation_ (the function body provided by the definition
+    // of the COM class), so that the renamed method does not collide with
+    // anything. At the same time, we want the renamed method to be based on
+    // the method name that was provided by the user, and also be based on the
+    // interface name, so that callstacks shown in a debugger are sensible.
+    //
+    // To do so, we generate a new method name, using
+    // `{old_method_name}__{interface_name}`. In our example above, the two
+    // different `zap` methods will be named `IFoo__zap` and `IBar__zap`.
+    // This gives a fairly good debugging experience, in case of a collision.
+    // The method name resembles the `<MyClass as IFoo>::zap` form of a method
+    // defined on a trait impl.
+    //
+    // There is one more case to consider, unfortunately. It is possible that
+    // some COM interface defines a method with a name that collides with the
+    // name that we just generated. In other words, there could be an interface
+    // that defines a method named `IFoo__zap`, which would collide with one of
+    // the names that we generated to avoid a collision in the first place.
+    // (This situation is unlikely, but certainly possible. This could occur,
+    // for example, if the COM interface definitions were themselves machine-
+    // generated.)
+    //
+    // To handle that situation, we check whether our generated name (e.g.
+    // `IFoo__zap`) collides with an existing name. If it does, then we append
+    // a numeric suffix (using `collision_counter`). If that also collides, we
+    // keep increasing the collision counter until we finally find one that
+    // does not. We're good for up to 4 billion collisions, this way.
+
+    let mut collision_counter: u32 = 0;
+
+    for (interface, methods) in class.methods.iter_mut() {
+        for method in methods.iter_mut() {
+            // We know the unwrap() will succeed, because we're repeating the
+            // same query that we just performed, above.
+            let old_ident = &method.original_ident;
+            let collides = *method_name_count.get(old_ident).unwrap() > 1;
+            if !collides {
+                // This is the normal case, where this method did not collide.
+                // We don't have to do anything special in this case.
+                continue;
+            }
+
+            // We've found a collision, such as `IFoo::zap` and `IBar::zap`.
+            // (We'll enter this code for both method definitions.)
+            // We try to fix the collision by renaming the method definitions,
+            // by prepending the name of the interface itself. So we rename
+            // the `zap` defined on `IFoo` to `IFoo__zap`.
+            let interface_ident = path_to_single_string(interface);
+            let new_ident_string = format!("{}__{}", interface_ident, old_ident);
+            let mut new_ident = Ident::new(&new_ident_string, old_ident.span());
+
+            // This checks for the pathological case described above, where
+            // the generated `IFoo__zap` _also_ collides with some method.
+            // This should never occur in practice, but we're prepared for it,
+            // just in case.
+            if method_name_count.contains_key(&new_ident) {
+                loop {
+                    assert!(collision_counter < std::u32::MAX);
+                    new_ident = Ident::new(
+                        &format!("{}__{:04}", new_ident_string, collision_counter),
+                        old_ident.span(),
+                    );
+                    collision_counter += 1;
+                    if !method_name_count.contains_key(&new_ident) {
+                        break;
+                    }
+                }
+            }
+
+            // Modify the ident in the item definition (the function body),
+            // because we're going to re-emit the entire function body definition.
+            // It's easier to modify it here than to clone and edit it later.
+            method.item.sig.ident = new_ident;
+        }
+    }
+}
+
+/// Converts a `Path` to a string, flattening each path segment and separating
+/// them with `_`.
+///
+/// This function requires that each segment of the path have no generic
+/// arguments.
+fn path_to_single_string(path: &syn::Path) -> String {
+    assert!(!path.segments.is_empty());
+    let seg0 = &path.segments[0];
+    assert!(seg0.arguments.is_empty());
+    if path.segments.len() == 1 {
+        seg0.ident.to_string()
+    } else {
+        let mut s = String::new();
+        for (i, seg) in path.segments.iter().enumerate() {
+            assert!(seg.arguments.is_empty());
+            if i > 0 {
+                s.push_str("_");
+            }
+            s.push_str(&seg.ident.to_string());
+        }
+        s
     }
 }
 
@@ -361,8 +519,9 @@ impl Interface {
             None => Self::iunknown_tokens(class, offset),
         };
         let fields = class.methods.get(&self.path).unwrap().iter().map(|m| {
-            let name = &m.sig.ident;
-            let params = m.sig.inputs.iter().filter_map(|p| {
+            let original_name = &m.original_ident;
+            let name = &m.item.sig.ident;
+            let params = m.item.sig.inputs.iter().filter_map(|p| {
                 match p {
                     syn::FnArg::Receiver(_) => None,
                     syn::FnArg::Typed(p) => Some(p),
@@ -383,7 +542,7 @@ impl Interface {
                     #pat: <#typ as ::com::AbiTransferable>::Abi
                 }
             });
-            let ret = &m.sig.output;
+            let ret = &m.item.sig.output;
             let method = quote! {
                 #[allow(non_snake_case)]
                 unsafe extern "system" fn #name(this: ::core::ptr::NonNull<::core::ptr::NonNull<#vtable_ident>>, #(#params),*) #ret {
@@ -393,7 +552,7 @@ impl Interface {
                     #class_name::#name(&this, #(#args),*)
                 }
             };
-            let field_name = Ident::new(&crate::utils::snake_to_camel(&name.to_string()), proc_macro2::Span::call_site());
+            let field_name = Ident::new(&crate::utils::snake_to_camel(&original_name.to_string()), proc_macro2::Span::call_site());
             quote! {
                 #field_name: {
                     #method
