@@ -13,7 +13,7 @@ jobs:
   test:
     strategy:
       matrix:
-        rust: [1.42.0, stable]
+        rust: [1.46.0, stable]
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
