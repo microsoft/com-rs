@@ -25,6 +25,7 @@ impl Interface {
             #(#docs)*
             #[repr(transparent)]
             #[derive(Debug)]
+            #[derive(PartialEq, Eq)]
             #vis struct #name {
                 inner: ::core::ptr::NonNull<#vptr>,
             }
