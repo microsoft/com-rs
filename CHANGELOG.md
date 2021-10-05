@@ -1,3 +1,19 @@
+# 0.5.0 (2021-10-05)
+
+### Fixes
+
+- Fix `class!` macro's buggy parsing of complex inheritance hierarchies [#209](https://github.com/microsoft/com-rs/pull/209)
+- Properly handle COM interfaces with conflicting method names [#219](https://github.com/microsoft/com-rs/pull/219)
+
+### Added
+
+- Add `usize` as `AbiTransferable` [#207](https://github.com/microsoft/com-rs/pull/207)
+- Implement `PartialEq` and `Eq` for interfaces [#220](https://github.com/microsoft/com-rs/pull/220)
+
+### Changed
+
+- The minimum supported Rust version is now 1.46.0 [#221](https://github.com/microsoft/com-rs/pull/221)
+
 # 0.4.0 (2021-01-27)
 
 ### Fixes
@@ -44,10 +60,9 @@ The public API for this crate has changed considerably since the previous versio
 - Interface{Ptr,Rc} => Com{Ptr,Rc} [#129](https://github.com/microsoft/com-rs/pull/129)
 - Runtime is now done through stand alone functions [#136](https://github.com/microsoft/com-rs/pull/136)
 
-
 # 0.1.0 (2019-10-01)
 
-Initial release of the `com` crate. 
+Initial release of the `com` crate.
 
 A one stop shop for all things related to [COM](https://docs.microsoft.com/en-us/windows/win32/com/component-object-model--com--portal) programming in Rust.
 
