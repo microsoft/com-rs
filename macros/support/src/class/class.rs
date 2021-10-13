@@ -171,7 +171,7 @@ impl Class {
             #[repr(C)]
             #vis struct #name {
                 #(#interface_fields,)*
-                #ref_count_ident: ::core::cell::Cell<u32>,
+                #ref_count_ident: ::core::sync::atomic::AtomicU32,
                 #(#user_fields),*
             }
             impl #name {
@@ -207,9 +207,9 @@ impl Class {
                 type Factory = #factory;
 
                 fn dec_ref_count(&self) -> u32 {
-                    let count = self.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count");
-                    self.#ref_count_ident.set(count);
-                    count
+                    let old_value = self.#ref_count_ident.fetch_sub(1, ::core::sync::atomic::Ordering::SeqCst);
+                    assert!(old_value > 0);
+                    old_value - 1
                 }
             }
         }
