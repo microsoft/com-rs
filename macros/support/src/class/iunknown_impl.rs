@@ -34,7 +34,7 @@ impl IUnknownAbi {
         quote! {
             unsafe extern "system" fn Release(this: #this_ptr) -> u32 {
                 #munge
-                let new_ref_count = ::com::release_refcount(&munged.#ref_count_ident);
+                let new_ref_count = ::com::refcounting::release(&munged.#ref_count_ident);
                 if new_ref_count == 0 {
                     // The last reference has been dropped.
                     munged.drop_inner();
@@ -91,7 +91,7 @@ impl IUnknown {
         let ref_count_ident = crate::utils::ref_count_ident();
         quote! {
             pub unsafe fn AddRef(self: &::core::pin::Pin<::com::alloc::boxed::Box<Self>>) -> u32 {
-                ::com::addref_refcount(&self.#ref_count_ident)
+                ::com::refcounting::addref(&self.#ref_count_ident)
             }
         }
     }

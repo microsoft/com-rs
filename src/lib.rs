@@ -50,6 +50,8 @@ mod abi_transferable;
 mod interface;
 pub mod interfaces;
 mod param;
+#[doc(hidden)]
+pub mod refcounting;
 #[cfg(windows)]
 pub mod runtime;
 pub mod sys;
@@ -120,61 +122,3 @@ extern crate self as com;
 // for code that uses `#![no_std]`.
 #[doc(hidden)]
 pub extern crate alloc;
-
-/// Panics, because an `IUnknown::Release()` call has underflowed.
-///
-/// This function is never inlined, so it keeps the (some what verbose)
-/// machinery of calling the panic handler out of mainline code, which is
-/// inlined in many places. This also gives us a very convenient call stack
-/// in a debugger.
-///
-#[doc(hidden)]
-#[inline(never)]
-fn release_refcount_underflow() -> ! {
-    panic!("IUnknown::Release called, but refcount was zero");
-}
-
-// We check for u32::MAX / 2, instead of u32::MAX, to guard against AddRef attacks.
-const REFCOUNT_OVERFLOW_MAX: u32 = u32::MAX / 2;
-
-#[doc(hidden)]
-#[inline(always)]
-pub fn release_refcount(ref_count: &core::sync::atomic::AtomicU32) -> u32 {
-    let old_ref_count = ref_count.fetch_sub(1, ::core::sync::atomic::Ordering::SeqCst);
-    if old_ref_count == 0 {
-        // The reference count was invalid.
-        // In safe Rust, this should be impossible.
-        // Of course, other clients outside of safe Rust can use COM.
-        ::com::release_refcount_underflow();
-    } else {
-        old_ref_count - 1
-    }
-}
-
-/// We do our best to harden code against `AddRef` attacks. An `AddRef` attack
-/// is one that intentionally overflows a reference count, so that a `Release`
-/// call can be used to destroy an object, even though other references are
-/// still outstanding.
-#[doc(hidden)]
-#[inline(always)]
-pub fn addref_refcount(ref_count: &core::sync::atomic::AtomicU32) -> u32 {
-    let old_ref_count = ref_count.fetch_add(1, ::core::sync::atomic::Ordering::SeqCst);
-    if old_ref_count >= REFCOUNT_OVERFLOW_MAX {
-        // Undo the increment that we just performed.
-        let _ = ref_count.fetch_sub(1, ::core::sync::atomic::Ordering::SeqCst);
-        addref_overflow();
-    } else {
-        old_ref_count + 1
-    }
-}
-
-/// Panics, because an `IUnknown::AddRef()` call has overflowed.
-///
-/// This function is never inlined, so it keeps the (some what verbose)
-/// machinery of calling the panic handler out of mainline code, which is
-/// inlined in many places. This also gives us a very convenient call stack
-/// in a debugger.
-#[inline(never)]
-fn addref_overflow() -> ! {
-    panic!("IUnknown::AddRef: refcount has overflowed");
-}
