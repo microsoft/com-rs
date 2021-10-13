@@ -55,7 +55,7 @@ fn gen_allocate_interface_fields(interface_idents: &[Interface]) -> TokenStream 
 
 /// Creates static items containing the vtables for each top-level interface.
 pub(crate) fn gen_vpointer_inits(class: &Class) -> TokenStream {
-    let interface_inits = class.interfaces
+    class.interfaces
         .iter()
         .enumerate()
         .map(move |(index,  interface)| {
@@ -66,7 +66,5 @@ pub(crate) fn gen_vpointer_inits(class: &Class) -> TokenStream {
                 #[allow(non_upper_case_globals)]
                 static #vtable_item_ident: <#interface_name as ::com::Interface>::VTable = #interface_tokens;
             }
-        });
-
-    quote!(#(#interface_inits)*)
+        }).collect()
 }

@@ -1,5 +1,3 @@
-mod err;
-mod ok;
 pub(crate) mod rustfmt;
 
 pub(crate) fn is_verbose_testing() -> bool {

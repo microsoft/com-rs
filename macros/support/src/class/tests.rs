@@ -1,6 +1,5 @@
-use super::*;
-use crate::tests::rustfmt;
-use crate::tests::is_verbose_testing;
+use crate::test_utils::is_verbose_testing;
+use crate::test_utils::rustfmt;
 use crate::Class;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -11,9 +10,8 @@ fn parse_class_ok(input: TokenStream) -> Class {
             // For any class that successfully parses, we expect that we can also
             // generate valid output tokens.
             let output_tokens = class.to_tokens();
-            let formatted_output = rustfmt::run(&output_tokens.to_string());
             if is_verbose_testing() {
-                // println!("input: {:#?}", class);
+                let formatted_output = rustfmt::run(&output_tokens.to_string());
                 println!("output:\n{}", formatted_output);
             }
             class
@@ -23,6 +21,28 @@ fn parse_class_ok(input: TokenStream) -> Class {
                 "Expected class definition to parse successfully.\nClass: {}\nError: {:?}",
                 input, e
             );
+        }
+    }
+}
+
+fn parse_class_err(input: TokenStream, expected_error: &str) {
+    assert!(!expected_error.is_empty());
+
+    match syn::parse2::<Class>(input.clone()) {
+        Ok(_) => {
+            panic!(
+                "Expected class definition to fail to parse.\nInput: {}",
+                input
+            );
+        }
+        Err(e) => {
+            let e_string = e.to_string();
+            if !e_string.contains(expected_error) {
+                panic!(
+                    "Did not find expected error string.\nActual error: {:?}\nExpected error: {:?}",
+                    e_string, expected_error
+                );
+            }
         }
     }
 }
@@ -92,28 +112,6 @@ fn interface_list() {
     assert!(interface1.parent.is_none());
 }
 
-fn parse_class_err(input: TokenStream, expected_error: &str) {
-    assert!(!expected_error.is_empty());
-
-    match syn::parse2::<Class>(input.clone()) {
-        Ok(_) => {
-            panic!(
-                "Expected class definition to fail to parse.\nInput: {}",
-                input
-            );
-        }
-        Err(e) => {
-            let e_string = e.to_string();
-            if !e_string.contains(expected_error) {
-                panic!(
-                    "Did not find expected error string.\nActual error: {:?}\nExpected error: {:?}",
-                    e_string, expected_error
-                );
-            }
-        }
-    }
-}
-
 #[test]
 fn parse_class_err_no_interfaces() {
     parse_class_err(
@@ -125,7 +123,7 @@ fn parse_class_err_no_interfaces() {
 }
 
 #[test]
-fn parse_class_err_no_impl() {
+fn err_no_impl() {
     parse_class_err(
         quote! {
             pub class Simple: IFoo {}
@@ -135,7 +133,7 @@ fn parse_class_err_no_impl() {
 }
 
 #[test]
-fn parse_class_err_no_indirect_impl() {
+fn err_missing_indirect_impl() {
     parse_class_err(
         quote! {
             pub class Simple: IFoo(IBar) {}
@@ -146,7 +144,7 @@ fn parse_class_err_no_indirect_impl() {
 }
 
 #[test]
-fn parse_class_err_bad_impl() {
+fn err_impl() {
     parse_class_err(
         quote! {
             pub class Simple: IFoo {}
@@ -158,7 +156,7 @@ fn parse_class_err_bad_impl() {
 
 #[test]
 #[cfg(disabled)] // TODO: This should fail
-fn parse_class_err_bad_method() {
+fn err_method() {
     parse_class_err(
         quote! {
             pub class Simple: IFoo {}
@@ -172,7 +170,7 @@ fn parse_class_err_bad_method() {
 
 #[test]
 #[cfg(disabled)] // TODO: This should fail
-fn parse_class_err_bad_method_ref_mut_self() {
+fn err_method_ref_mut_self() {
     parse_class_err(
         quote! {
             pub class Simple: IFoo {}
@@ -185,7 +183,7 @@ fn parse_class_err_bad_method_ref_mut_self() {
 }
 
 #[test]
-fn parse_class_err_bad_attribute() {
+fn err_unrecognized_attribute() {
     parse_class_err(
         quote! {
             #[bogus]
@@ -195,5 +193,36 @@ fn parse_class_err_bad_attribute() {
             }
         },
         "Unrecognized attribute",
+    );
+}
+
+#[test]
+fn derive_debug() {
+    let class = parse_class_ok(quote! {
+        #[derive(Debug)]
+        pub class Simple: IFoo {}
+        impl IFoo for Simple {}
+    });
+    assert!(class.impl_debug);
+}
+
+#[test]
+fn no_derive_debug() {
+    let class = parse_class_ok(quote! {
+        pub class Simple: IFoo {}
+        impl IFoo for Simple {}
+    });
+    assert!(!class.impl_debug);
+}
+
+#[test]
+fn err_derive_unrecognized() {
+    parse_class_err(
+        quote! {
+            #[derive(Unknown)]
+            pub class Simple: IFoo {}
+            impl IFoo for Simple {}
+        },
+        "Unrecognized derive attribute",
     );
 }
