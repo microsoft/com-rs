@@ -31,7 +31,7 @@ pub fn generate(class: &Class) -> TokenStream {
             #interface_inits
             let instance = #name {
                 #interface_fields
-                #ref_count_ident: ::core::cell::Cell::new(1),
+                #ref_count_ident: ::core::sync::atomic::AtomicU32::new(1),
                 #(#user_fields),*
             };
             let instance = ::com::alloc::boxed::Box::pin(instance);

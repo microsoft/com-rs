@@ -1,3 +1,5 @@
+use std::mem::ManuallyDrop;
+
 use alloc::boxed::Box;
 
 /// A COM compliant class
@@ -42,9 +44,20 @@ impl<T: Class> ClassAllocation<T> {
     /// # Safety
     /// Must be a valid, owned pointer to an allocated COM class. This returns an owned `ClassAllocation`
     /// which will drop the wrapped COM class when it is dropped.
+    #[inline(always)]
     pub unsafe fn from_raw(raw: *mut T) -> Self {
         let inner = core::mem::ManuallyDrop::new(Box::from_raw(raw).into());
         Self { inner }
+    }
+
+    /// Drop (free) the inner allocation.
+    ///
+    /// This function is never inlined, so that the (relatively) cold path of
+    /// freeing an object is kept out of the inlined `Release` call paths.
+    #[doc(hidden)]
+    #[inline(never)]
+    pub unsafe fn drop_inner(&mut self) {
+        ManuallyDrop::drop(&mut self.inner);
     }
 }
 

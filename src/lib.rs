@@ -50,6 +50,8 @@ mod abi_transferable;
 mod interface;
 pub mod interfaces;
 mod param;
+#[doc(hidden)]
+pub mod refcounting;
 #[cfg(windows)]
 pub mod runtime;
 pub mod sys;

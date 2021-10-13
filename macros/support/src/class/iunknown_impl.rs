@@ -28,13 +28,18 @@ impl IUnknownAbi {
 
     pub fn to_release_tokens(&self) -> TokenStream {
         let this_ptr = this_ptr_type();
-        let munge = self.owned_pointer_munging();
+        let munge = self.borrowed_pointer_munging();
         let ref_count_ident = crate::utils::ref_count_ident();
 
         quote! {
             unsafe extern "system" fn Release(this: #this_ptr) -> u32 {
                 #munge
-                munged.#ref_count_ident.get().checked_sub(1).expect("Underflow of reference count")
+                let new_ref_count = ::com::refcounting::release(&munged.#ref_count_ident);
+                if new_ref_count == 0 {
+                    // The last reference has been dropped.
+                    munged.drop_inner();
+                }
+                new_ref_count
             }
         }
     }
@@ -70,7 +75,7 @@ impl IUnknownAbi {
 
         quote! {
             #owned
-            let munged = ::core::mem::ManuallyDrop::new(munged);
+            let mut munged = ::core::mem::ManuallyDrop::new(munged);
         }
     }
 }
@@ -86,9 +91,7 @@ impl IUnknown {
         let ref_count_ident = crate::utils::ref_count_ident();
         quote! {
             pub unsafe fn AddRef(self: &::core::pin::Pin<::com::alloc::boxed::Box<Self>>) -> u32 {
-                let value = self.#ref_count_ident.get().checked_add(1).expect("Overflow of reference count");
-                self.#ref_count_ident.set(value);
-                value
+                ::com::refcounting::addref(&self.#ref_count_ident)
             }
         }
     }
