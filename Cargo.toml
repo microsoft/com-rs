@@ -38,6 +38,7 @@ members = [
     "macros/support",
     "examples/basic",
     "examples/basic/server",
+    "examples/basic/simple_server",
     "examples/basic/client",
     "examples/basic/interface",
     "examples/d2d-clock",
@@ -47,3 +48,10 @@ members = [
 [[example]]
 name = "webview2"
 required-features = ["production"]
+
+[profile.dev]
+panic = "unwind"
+debug = 2
+# We use opt-level = 2 even for "dev" profile because otherwise the unit tests
+# take much too long to complete.
+opt-level = 2
