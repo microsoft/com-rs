@@ -226,3 +226,13 @@ fn err_derive_unrecognized() {
         "Unrecognized derive attribute",
     );
 }
+
+#[test]
+fn from_impls() {
+    let _class = parse_class_ok(quote! {
+        class Server: IBar(IFoo), IZap(IFoo) {}
+        impl IFoo for Server {}
+        impl IBar for Server {}
+        impl IZap for Server {}
+    });
+}

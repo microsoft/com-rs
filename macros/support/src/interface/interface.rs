@@ -18,7 +18,7 @@ impl Interface {
     pub fn to_struct_tokens(&self) -> TokenStream {
         let vis = &self.visibility;
         let name = &self.name;
-        let vptr = super::vptr::ident(&name);
+        let vptr = super::vptr::ident(name);
         let docs = &self.docs;
         let impl_block = self.to_impl_block();
         quote! {
@@ -317,6 +317,7 @@ impl InterfaceMethod {
         let vis = &self.visibility;
         return quote! {
             #[allow(non_snake_case)]
+            #[allow(clippy::from_over_into)]
             #(#docs)*
             #vis unsafe fn #outer_method_ident<#(#generics),*>(&self, #(#args),*) #return_type {
                 #(#into)*

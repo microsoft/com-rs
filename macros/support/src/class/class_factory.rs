@@ -26,7 +26,7 @@ pub fn generate(class: &Class) -> TokenStream {
                     ppv: *mut *mut ::core::ffi::c_void,
                 ) -> ::com::sys::HRESULT {
                     assert!(!riid.is_null(), "iid passed to CreateInstance was null");
-                    if aggr != ::core::ptr::null_mut() {
+                    if !aggr.is_null() {
                         return ::com::sys::CLASS_E_NOAGGREGATION;
                     }
 

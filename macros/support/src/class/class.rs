@@ -26,55 +26,74 @@ pub struct InterfaceMethod {
 }
 
 impl Class {
-    /// Returns an `Ident` for a module that contains implementation details for
-    /// this class.
-    pub fn mod_ident(&self) -> Ident {
-        quote::format_ident!("{}__mod", self.name)
-    }
-
     pub fn to_tokens(&self) -> TokenStream {
-        let class_vis = &self.visibility;
-        let class_ident = &self.name;
-        let mod_ident = self.mod_ident();
         let struct_tokens = self.to_struct_tokens();
         let class_trait_impl_tokens = self.to_class_trait_impl_tokens();
         let class_factory = super::class_factory::generate(self);
-
-        let interface_inits = super::class_constructor::gen_vpointer_inits(self);
+        let vtable_static_items = self.gen_vtable_static_items();
         let interface_from_impls = self.interface_from_impls();
 
         quote! {
-            #[doc(hidden)]
-            #[allow(non_snake_case)]
-            #class_vis mod #mod_ident {
-                use super::*;
-                #struct_tokens
-                #class_trait_impl_tokens
-                #interface_inits
-                #interface_from_impls
-            }
-
-            #class_vis use #mod_ident::#class_ident;
-
+            #struct_tokens
+            #class_trait_impl_tokens
+            #vtable_static_items
+            #interface_from_impls
             #class_factory
         }
     }
 
-    /// Generates `From` impls for interface chains of this class.
-    ///
-    /// Since we know which interfaces this class implements, we can generate
-    /// `From` impls that convert directly to those interfaces.
-    fn interface_from_impls(&self) -> TokenStream {
+    /// Creates static items containing the vtables for each top-level interface.
+    fn gen_vtable_static_items(&self) -> TokenStream {
         self.interfaces
             .iter()
             .enumerate()
-            .map(|(index, interface)| {
-                let class_name = &self.name;
+            .map(move |(index,  interface)| {
                 let interface_name = &interface.path;
-                let chain_ident = interface.chain_ident(index);
-                let ref_count_ident = crate::utils::ref_count_ident();
+                let interface_tokens = interface.to_initialized_vtable_tokens(self, index);
+                let vtable_item_ident = interface.vtable_static_item_ident(self);
                 quote! {
-                    impl<'a> ::core::convert::From<&'a #class_name> for #interface_name {
+                    #[allow(non_upper_case_globals)]
+                    static #vtable_item_ident: <#interface_name as ::com::Interface>::VTable = #interface_tokens;
+                }
+            }).collect()
+    }
+
+    /// Generates `From` impls for the interfaces implemented by this class.
+    ///
+    /// Since we know which interfaces this class implements, we can generate
+    /// `From` impls that convert directly to those interfaces. These allow apps
+    /// to obtain an interface pointer without a fallible conversion ending in
+    /// in `server.unwrap()`.
+    ///
+    /// Classes may implement one or more interface chains, where each chain
+    /// is a sequence of single-inheritance relationships. Two chains may
+    /// contain duplicates, that is, may derive from a shared subclass. When we
+    /// generate `From` impls, we have to avoid generating duplicate definitions
+    /// for these interfaces. To do so, we use a `HashSet` to track which
+    /// interfaces we have already processed.
+    ///
+    /// Because our traversal is dependent on the order of declarations that
+    /// were provided by the user, our output is deterministic, and is not
+    /// affected by the iteration order of `HashSet` (which is not
+    /// deterministic).
+    fn interface_from_impls(&self) -> TokenStream {
+        let mut interfaces_seen = std::collections::HashSet::<&syn::Path>::new();
+        let mut output = TokenStream::new();
+
+        for (index, interface) in self.interfaces.iter().enumerate() {
+            let class_name = &self.name;
+            let chain_ident = interface.chain_ident(index);
+            let ref_count_ident = crate::utils::ref_count_ident();
+
+            for interface_path in interface.iter_chain() {
+                // Avoid generating duplicate From implementations
+                if interfaces_seen.contains(interface_path) {
+                    continue;
+                }
+                interfaces_seen.insert(interface_path);
+
+                output.extend(quote! {
+                    impl<'a> ::core::convert::From<&'a #class_name> for #interface_path {
                         fn from(class: &'a #class_name) -> Self {
                             unsafe {
                                 ::com::refcounting::addref(&class.#ref_count_ident);
@@ -82,9 +101,11 @@ impl Class {
                             }
                         }
                     }
-                }
-            })
-            .collect()
+                });
+            }
+        }
+
+        output
     }
 
     /// Get the paths of all interfaces including parent interfaces
@@ -213,6 +234,15 @@ impl Class {
         quote! {
             #(#docs)*
             #[repr(C)]
+            // TODO: Ideally, we should apply #[allow(non_snake_case)] only to
+            // those fields that need it, such as the interface chain pointer
+            // fields. However, rustc ignores #[allow(non_snake_case)] on
+            // individual fields; the warning suppression only works if the
+            // suppression is applied to the type. Once that issue is fixed,
+            // this suppression can be moved to the individual fields. This
+            // does have the disadvantage that non-snake-case names for user
+            // fields will be silently accepted.
+            #[allow(non_snake_case)]
             #vis struct #name {
                 #(#interface_fields)*
                 #ref_count_ident: ::core::sync::atomic::AtomicU32,
@@ -243,10 +273,12 @@ impl Class {
             unsafe impl com::production::Class for #name {
                 type Factory = #factory;
 
-                fn dec_ref_count(&self) -> u32 {
-                    let old_value = self.#ref_count_ident.fetch_sub(1, ::core::sync::atomic::Ordering::SeqCst);
-                    assert!(old_value > 0);
-                    old_value - 1
+                unsafe fn dec_ref_count(&self) -> u32 {
+                    ::com::refcounting::release(&self.#ref_count_ident)
+                }
+
+                unsafe fn add_ref(&self) -> u32 {
+                    ::com::refcounting::addref(&self.#ref_count_ident)
                 }
             }
         }
@@ -630,8 +662,12 @@ impl Interface {
 
     /// Returns the `Ident` for the static item that contains the vtable for this
     /// interface chain.
-    pub fn vtable_static_item_ident(&self) -> proc_macro2::Ident {
-        quote::format_ident!("{}_VTABLE", self.path.segments.last().unwrap().ident)
+    pub fn vtable_static_item_ident(&self, class: &Class) -> proc_macro2::Ident {
+        quote::format_ident!(
+            "{}__{}_VTABLE",
+            class.name,
+            self.path.segments.last().unwrap().ident
+        )
     }
 
     /// Generates the `IUnknown` implementation for a given interface chain.
@@ -659,6 +695,28 @@ impl Interface {
                     QueryInterface,
                 }
             }
+        }
+    }
+
+    pub fn iter_chain(&self) -> IterChain<'_> {
+        IterChain {
+            next_interface: Some(self),
+        }
+    }
+}
+
+pub struct IterChain<'a> {
+    next_interface: Option<&'a Interface>,
+}
+
+impl<'a> Iterator for IterChain<'a> {
+    type Item = &'a syn::Path;
+    fn next(&mut self) -> Option<&'a syn::Path> {
+        if let Some(n) = self.next_interface {
+            self.next_interface = n.parent.as_deref();
+            Some(&n.path)
+        } else {
+            None
         }
     }
 }

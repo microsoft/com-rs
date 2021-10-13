@@ -101,6 +101,9 @@ impl IUnknown {
         let base_match_arms = Self::gen_base_match_arms(interfaces);
 
         quote! {
+            // We don't want this inlined into every interface chain. QueryInterface
+            // can generate a lot of code.
+            #[inline(never)]
             pub unsafe fn QueryInterface(
                 self: &::core::pin::Pin<::com::alloc::boxed::Box<Self>>,
                 riid: *const ::com::sys::IID,
@@ -111,11 +114,7 @@ impl IUnknown {
                 // Use 'pv' for definite assignment analysis, to guarantee
                 // that we always assign *ppv.
                 let pv: *const ::core::ffi::c_void =
-                    if riid == &::com::interfaces::iunknown::IID_IUNKNOWN {
-                        // Cast the &Pin<Box<T>> as a pointer and then dereference
-                        // it to get the Pin<Box> as a pointer
-                        *(self as *const _ as *const *mut ::core::ffi::c_void)
-                    } #base_match_arms else {
+                    #base_match_arms {
                         *ppv = ::core::ptr::null_mut::<::core::ffi::c_void>();
                         return ::com::sys::E_NOINTERFACE;
                     };
@@ -133,12 +132,20 @@ impl IUnknown {
         interfaces.iter().enumerate().map(|(index, interface)| {
             let interface_path = &interface.path;
             let interface_field_ident = interface.chain_ident(index);
+            let or_iunknown_clause =
+                if index == 0 {
+                    // If we're querying for IUnknown, any interface chain will do.
+                    // So we always pick the first one.
+                    quote!(riid == &::com::interfaces::iunknown::IID_IUNKNOWN ||)
+                } else {
+                    quote!()
+                };
             quote! {
-                else if <#interface_path as ::com::Interface>::is_iid_in_inheritance_chain(riid) {
+                if #or_iunknown_clause <#interface_path as ::com::Interface>::is_iid_in_inheritance_chain(riid) {
                     // Cast the &Pin<Box<T>> as a pointer and then dereference
                     // it to get the Pin<Box> as a pointer
                     &self.#interface_field_ident as *const _ as *const ::core::ffi::c_void
-                }
+                } else
             }
         }).collect()
     }

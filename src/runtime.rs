@@ -117,7 +117,7 @@ pub fn get_class_object<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
 ///
 /// Calls `CoCreateInstance` internally
 pub fn create_instance<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
-    unsafe { Ok(create_raw_instance::<T>(class_id, core::ptr::null_mut())?) }
+    unsafe { create_raw_instance::<T>(class_id, core::ptr::null_mut()) }
 }
 
 /// A helper for creating both regular and aggregated instances

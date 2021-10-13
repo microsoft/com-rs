@@ -1,6 +1,6 @@
 [package]
 name = "com"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Microsoft Corp."]
 description = """
 Utilities for implementing COM Client and Servers
@@ -13,7 +13,7 @@ license = "MIT"
 readme = "./README.md"
 
 [dependencies]
-com_macros = { version = "0.5", path = "macros" }
+com_macros = { version = "0.6", path = "macros" }
 
 [features]
 default = ["std"]
@@ -37,21 +37,13 @@ members = [
     "macros",
     "macros/support",
     "examples/basic",
+    "examples/basic/no_std_com",
     "examples/basic/server",
-    "examples/basic/simple_server",
     "examples/basic/client",
     "examples/basic/interface",
     "examples/d2d-clock",
-    "examples/lib_no_std",
 ]
 
 [[example]]
 name = "webview2"
 required-features = ["production"]
-
-[profile.dev]
-panic = "unwind"
-debug = 2
-# We use opt-level = 2 even for "dev" profile because otherwise the unit tests
-# take much too long to complete.
-opt-level = 2

@@ -1,6 +1,7 @@
-use std::mem::ManuallyDrop;
+#![allow(clippy::missing_safety_doc)]
 
 use alloc::boxed::Box;
+use core::mem::ManuallyDrop;
 
 /// A COM compliant class
 ///
@@ -15,7 +16,10 @@ pub unsafe trait Class {
     type Factory;
 
     /// Decrement the current reference count and return the new count
-    fn dec_ref_count(&self) -> u32;
+    unsafe fn dec_ref_count(&self) -> u32;
+
+    /// Increment the current reference count and return the new count
+    unsafe fn add_ref(&self) -> u32;
 }
 
 /// An allocated COM class
@@ -61,6 +65,15 @@ impl<T: Class> ClassAllocation<T> {
     }
 }
 
+/// `ClassAllocation<T>` is `Send` because it represents an owned reference to
+/// a heap allocation, and the changes to that reference count are atomic.
+unsafe impl<T: Class> Send for ClassAllocation<T> {}
+
+/// `ClassAllocation<T>` is `Sync` because it represents an aliased (shared)
+/// reference to a heap-allocated object, and the only way you can gain access
+/// to that heap object is to acquire a `&self` (shared) reference.
+unsafe impl<T: Class> Sync for ClassAllocation<T> {}
+
 impl<T: Class> core::ops::Deref for ClassAllocation<T> {
     type Target = core::pin::Pin<Box<T>>;
 
@@ -71,9 +84,9 @@ impl<T: Class> core::ops::Deref for ClassAllocation<T> {
 
 impl<T: Class> Drop for ClassAllocation<T> {
     fn drop(&mut self) {
-        if self.inner.dec_ref_count() == 0 {
-            // SAFETY: This is safe because the inner value is not accessible by anyone else
-            unsafe {
+        unsafe {
+            if self.inner.dec_ref_count() == 0 {
+                // SAFETY: This is safe because the inner value is not accessible by anyone else
                 core::mem::ManuallyDrop::drop(&mut self.inner);
             }
         }
@@ -84,5 +97,14 @@ impl<T: Class + core::fmt::Debug> core::fmt::Debug for ClassAllocation<T> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let inner = self.inner.as_ref().get_ref();
         write!(f, "{:?}", inner)
+    }
+}
+
+impl<T: Class> Clone for ClassAllocation<T> {
+    fn clone(&self) -> Self {
+        unsafe {
+            self.inner.add_ref();
+            core::mem::transmute_copy(self)
+        }
     }
 }

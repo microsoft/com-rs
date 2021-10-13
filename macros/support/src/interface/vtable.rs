@@ -2,7 +2,6 @@ use super::vptr;
 use super::{Interface, InterfaceMethod};
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
-use std::iter::FromIterator;
 use syn::spanned::Spanned;
 use syn::Type;
 
@@ -18,7 +17,7 @@ pub fn generate(interface: &Interface) -> syn::Result<TokenStream> {
         }
         None => quote! {},
     };
-    let methods = gen_vtable_methods(&interface)?;
+    let methods = gen_vtable_methods(interface)?;
     let vis = &interface.visibility;
 
     Ok(quote!(
@@ -71,16 +70,16 @@ fn gen_vtable_function_signature(
 }
 
 fn gen_raw_params(interface_ident: &Ident, method: &InterfaceMethod) -> syn::Result<TokenStream> {
-    let vptr_ident = vptr::ident(&interface_ident);
-    let mut params = vec![quote!(
+    let vptr_ident = vptr::ident(interface_ident);
+    let mut params = quote!(
         ::core::ptr::NonNull<#vptr_ident>,
-    )];
+    );
 
     for param in method.args.iter() {
-        params.push(gen_raw_type(param)?);
+        params.extend(gen_raw_type(param)?);
     }
 
-    Ok(TokenStream::from_iter(params))
+    Ok(params)
 }
 
 fn gen_raw_type(p: &super::interface::InterfaceMethodArg) -> syn::Result<TokenStream> {

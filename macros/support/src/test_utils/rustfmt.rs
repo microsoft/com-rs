@@ -1,6 +1,8 @@
 use std::io::Write;
 use std::process::{Command, Stdio};
 
+/// Runs a text string through `rustfmt`. If anything goes wrong, returns the
+/// original string. This should be used only for debugging.
 pub fn run(input: &str) -> String {
     let try_block = || -> std::io::Result<String> {
         let mut cmd = Command::new("rustfmt")

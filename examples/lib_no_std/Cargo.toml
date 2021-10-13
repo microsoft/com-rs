@@ -1,8 +1,0 @@
-[package]
-name = "lib_no_std"
-version = "0.1.0"
-authors = ["Microsoft Corp"]
-edition = "2018"
-
-[dependencies]
-com = { path = "../.." }
