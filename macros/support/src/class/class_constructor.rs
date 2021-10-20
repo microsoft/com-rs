@@ -1,4 +1,4 @@
-use super::{class::Interface, Class};
+use super::Class;
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -15,11 +15,20 @@ pub fn generate(class: &Class) -> TokenStream {
         }
     });
 
-    let interface_inits = gen_vpointer_inits(class);
     let ref_count_ident = crate::utils::ref_count_ident();
 
-    let interfaces = &class.interfaces;
-    let interface_fields = gen_allocate_interface_fields(interfaces);
+    // Generate the vptr field idents needed in the instantiation syntax of the COM struct.
+    let interface_fields = class
+        .interfaces
+        .iter()
+        .enumerate()
+        .map(|(index, interface)| {
+            let interface_field_ident = interface.chain_ident(index);
+            let vtable_static_item = interface.vtable_static_item_ident(class);
+            quote! {
+                #interface_field_ident: &#vtable_static_item,
+            }
+        });
 
     quote! {
         /// Allocate the class casting it to the supplied interface
@@ -28,9 +37,8 @@ pub fn generate(class: &Class) -> TokenStream {
         /// must have a stable location in memory. Once a COM class is instantiated somewhere
         /// it must stay there.
         #vis fn allocate(#(#parameters),*) -> ::com::production::ClassAllocation<Self> {
-            #interface_inits
             let instance = #name {
-                #interface_fields
+                #(#interface_fields)*
                 #ref_count_ident: ::core::sync::atomic::AtomicU32::new(1),
                 #(#user_fields),*
             };
@@ -38,34 +46,4 @@ pub fn generate(class: &Class) -> TokenStream {
             ::com::production::ClassAllocation::new(instance)
         }
     }
-}
-
-// Generate the vptr field idents needed in the instantiation syntax of the COM struct.
-fn gen_allocate_interface_fields(interface_idents: &[Interface]) -> TokenStream {
-    let base_fields = interface_idents
-        .iter()
-        .enumerate()
-        .map(|(index, _)| quote::format_ident!("__{}", index));
-
-    quote!(#(#base_fields,)*)
-}
-
-// Initialise VTables with the correct adjustor thunks
-fn gen_vpointer_inits(class: &Class) -> TokenStream {
-    let interface_inits = class.interfaces
-        .iter()
-        .enumerate()
-        .map(move |(index,  interface)| {
-            let interface = interface.to_initialized_vtable_tokens(class, index);
-            let vptr_field_ident = quote::format_ident!("__{}", index);
-            quote! {
-                let #vptr_field_ident = unsafe {
-                    ::core::ptr::NonNull::new_unchecked(
-                        ::com::alloc::boxed::Box::into_raw(::com::alloc::boxed::Box::new(#interface)),
-                    )
-                };
-            }
-        });
-
-    quote!(#(#interface_inits)*)
 }

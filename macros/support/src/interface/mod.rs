@@ -48,11 +48,13 @@ fn convert_impls(parents: HashMap<Ident, Path>) -> Vec<TokenStream> {
                         unsafe { ::core::mem::transmute(this) }
                     }
                 }
+                #[allow(clippy::from_over_into)]
                 impl <'a> ::core::convert::Into<::com::Param<'a, #p>> for #name {
                     fn into(self) -> ::com::Param<'a, #p> {
                         ::com::Param::Owned(self.into())
                     }
                 }
+                #[allow(clippy::from_over_into)]
                 impl <'a> ::core::convert::Into<::com::Param<'a, #p>> for &'a #name {
                     fn into(self) -> ::com::Param<'a, #p> {
                         ::com::Param::Borrowed(self.into())

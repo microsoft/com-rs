@@ -41,7 +41,7 @@ members = [
     "examples/basic/client",
     "examples/basic/interface",
     "examples/d2d-clock",
-    "examples/lib_no_std",
+    "examples/no_std_com",
 ]
 
 [[example]]

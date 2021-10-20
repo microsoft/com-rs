@@ -27,7 +27,6 @@ fn main() {
             .expect("Something went wrong!");
         if !child_proc.wait().unwrap().success() {
             println!("Execution of client failed.");
-            return;
         }
     }
 }

@@ -64,7 +64,7 @@ pub fn init_apartment(apartment_type: ApartmentType) -> Result<(), HRESULT> {
 ///
 /// This should only be called if the user already initialized the thread as a specific apartment type
 /// (usually started through [`init_apartment`]).
-/// https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
+/// <https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize>
 pub fn deinit_apartment() {
     unsafe { CoUninitialize() }
 }
@@ -117,7 +117,7 @@ pub fn get_class_object<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
 ///
 /// Calls `CoCreateInstance` internally
 pub fn create_instance<T: Interface>(class_id: &CLSID) -> Result<T, HRESULT> {
-    unsafe { Ok(create_raw_instance::<T>(class_id, core::ptr::null_mut())?) }
+    unsafe { create_raw_instance::<T>(class_id, core::ptr::null_mut()) }
 }
 
 /// A helper for creating both regular and aggregated instances
