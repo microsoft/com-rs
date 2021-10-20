@@ -16,9 +16,39 @@ pub unsafe trait Class {
     type Factory;
 
     /// Decrement the current reference count and return the new count
+    ///
+    /// # Safety
+    ///
+    /// Because the caller is directly modifying the reference count of an
+    /// object, and reference counts are used to determine object lifetime,
+    /// the caller is responsible for ensuring that the object is destroyed
+    /// if `dec_ref_count` reaches zero. All such adjustments to the
+    /// reference count can only be used by `unsafe` code, because this method
+    /// has a side effect (modifies the reference count) but this side effect
+    /// is not represented in Rust's type system (no refcount-holding object
+    /// is destroyed).
+    ///
+    /// This method should only be called in `Drop` implementations, or similar
+    /// functions that terminate the lifetime of a reference-holding type.
     unsafe fn dec_ref_count(&self) -> u32;
 
     /// Increment the current reference count and return the new count
+    ///
+    /// # Safety
+    ///
+    /// Because the caller is directly modifying the reference count of an
+    /// object, and reference counts are used to determine object lifetime,
+    /// the caller is responsible for ensuring that the newly-created reference
+    /// is correctly encapsulated within a Rust object. All such adjustments to
+    /// the reference count can only be used by `unsafe` code, because this
+    /// method has a side effect (modifies the reference count) but this side
+    /// effect is not represented in Rust's type system (no refcount-holding
+    /// object is destroyed).
+    ///
+    /// This method should only be called in type constructors, `Clone`
+    /// implementations, `query_interface` implementations, or similar code
+    /// paths that create a new instance of a Rust type that holds the
+    /// counted reference.
     unsafe fn add_ref(&self) -> u32;
 }
 
