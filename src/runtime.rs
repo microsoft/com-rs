@@ -64,7 +64,7 @@ pub fn init_apartment(apartment_type: ApartmentType) -> Result<(), HRESULT> {
 ///
 /// This should only be called if the user already initialized the thread as a specific apartment type
 /// (usually started through [`init_apartment`]).
-/// https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize
+/// <https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-couninitialize>
 pub fn deinit_apartment() {
     unsafe { CoUninitialize() }
 }

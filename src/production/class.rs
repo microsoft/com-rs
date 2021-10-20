@@ -3,6 +3,9 @@
 use alloc::boxed::Box;
 use core::mem::ManuallyDrop;
 
+#[cfg(doc)]
+use crate::interfaces::IUnknown;
+
 /// A COM compliant class
 ///
 /// # Safety
@@ -28,7 +31,7 @@ pub unsafe trait Class {
     /// is not represented in Rust's type system (no refcount-holding object
     /// is destroyed).
     ///
-    /// This method should only be called in `Drop` implementations, or similar
+    /// This method should only be called in [Drop] implementations, or similar
     /// functions that terminate the lifetime of a reference-holding type.
     unsafe fn dec_ref_count(&self) -> u32;
 
@@ -45,9 +48,9 @@ pub unsafe trait Class {
     /// effect is not represented in Rust's type system (no refcount-holding
     /// object is destroyed).
     ///
-    /// This method should only be called in type constructors, `Clone`
-    /// implementations, `query_interface` implementations, or similar code
-    /// paths that create a new instance of a Rust type that holds the
+    /// This method should only be called in type constructors, [Clone]
+    /// implementations, [IUnknown::query_interface] implementations, or similar
+    /// code paths that create a new instance of a Rust type that holds the
     /// counted reference.
     unsafe fn add_ref(&self) -> u32;
 }
