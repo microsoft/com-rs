@@ -23,7 +23,7 @@ jobs:
         toolchain: ${{ matrix.rust }}
         profile: minimal
         override: true
-        components: rustfmt
+        components: rustfmt, clippy
 
     - name: tests
       uses: actions-rs/cargo@v1
@@ -37,3 +37,10 @@ jobs:
       with:
         command: fmt
         args: --all -- --check
+
+    - name: clippy
+      uses: actions-rs/cargo@v1
+      if: matrix.rust == 'stable'
+      with:
+        command: clippy
+        args: --workspace --all-targets
