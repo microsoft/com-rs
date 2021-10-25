@@ -26,8 +26,14 @@ jobs:
         components: rustfmt
 
     - name: tests
-      run: cargo test --all
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --all
 
     - name: fmt
+      uses: actions-rs/cargo@v1
       if: matrix.rust == 'stable'
-      run: cargo fmt --all -- --check
+      with:
+        command: fmt
+        args: --all -- --check
