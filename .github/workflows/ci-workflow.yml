@@ -8,6 +8,7 @@ on:
 
 env:
   RUSTFLAGS: -Dwarnings
+  RUSTDOCFLAGS: -Dwarnings
 
 jobs:
   test:
@@ -44,3 +45,10 @@ jobs:
       with:
         command: clippy
         args: --workspace --all-targets
+
+    - name: doc
+      uses: actions-rs/cargo@v1
+      if: matrix.rust == 'stable'
+      with:
+        command: doc
+        args: --no-deps --workspace --document-private-items
