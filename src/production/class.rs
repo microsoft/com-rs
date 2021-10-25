@@ -31,7 +31,7 @@ pub unsafe trait Class {
     /// is not represented in Rust's type system (no refcount-holding object
     /// is destroyed).
     ///
-    /// This method should only be called in [Drop] implementations, or similar
+    /// This method should only be called in [`Drop`] implementations, or similar
     /// functions that terminate the lifetime of a reference-holding type.
     unsafe fn dec_ref_count(&self) -> u32;
 
@@ -48,8 +48,8 @@ pub unsafe trait Class {
     /// effect is not represented in Rust's type system (no refcount-holding
     /// object is destroyed).
     ///
-    /// This method should only be called in type constructors, [Clone]
-    /// implementations, [IUnknown::query_interface] implementations, or similar
+    /// This method should only be called in type constructors, [`Clone`]
+    /// implementations, [`IUnknown::query_interface()`] implementations, or similar
     /// code paths that create a new instance of a Rust type that holds the
     /// counted reference.
     unsafe fn add_ref(&self) -> u32;
@@ -79,7 +79,7 @@ impl<T: Class> ClassAllocation<T> {
     /// Create an allocated class from a raw pointer
     ///
     /// # Safety
-    /// Must be a valid, owned pointer to an allocated COM class. This returns an owned `ClassAllocation`
+    /// Must be a valid, owned pointer to an allocated COM class. This returns an owned [`ClassAllocation`]
     /// which will drop the wrapped COM class when it is dropped.
     #[inline(always)]
     pub unsafe fn from_raw(raw: *mut T) -> Self {
@@ -98,11 +98,11 @@ impl<T: Class> ClassAllocation<T> {
     }
 }
 
-/// `ClassAllocation<T>` is `Send` because it represents an owned reference to
+/// [`ClassAllocation<T>`] is [`Send`] because it represents an owned reference to
 /// a heap allocation, and the changes to that reference count are atomic.
 unsafe impl<T: Class> Send for ClassAllocation<T> {}
 
-/// `ClassAllocation<T>` is `Sync` because it represents an aliased (shared)
+/// [`ClassAllocation<T>`] is [`Sync`] because it represents an aliased (shared)
 /// reference to a heap-allocated object, and the only way you can gain access
 /// to that heap object is to acquire a `&self` (shared) reference.
 unsafe impl<T: Class> Sync for ClassAllocation<T> {}
