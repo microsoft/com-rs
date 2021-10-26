@@ -5,7 +5,7 @@ use winapi::shared::{
     dxgi::{CreateDXGIFactory1, DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL},
     dxgi1_2::{DXGI_SWAP_CHAIN_DESC1, DXGI_SWAP_CHAIN_FULLSCREEN_DESC},
     dxgiformat::DXGI_FORMAT_B8G8R8A8_UNORM,
-    dxgitype::DXGI_USAGE_RENDER_TARGET_OUTPUT,
+    dxgitype::{DXGI_SAMPLE_DESC, DXGI_USAGE_RENDER_TARGET_OUTPUT},
     minwindef::{FLOAT, UINT},
     windef::HWND,
     winerror::{DXGI_ERROR_UNSUPPORTED, DXGI_STATUS_OCCLUDED, S_OK},
@@ -358,12 +358,14 @@ fn create_swapchain_bitmap(swap_chain: &IDXGISwapChain1, target: &ID2D1DeviceCon
             &mut surface as *mut _ as *mut *mut c_void,
         ));
 
-        let mut props = D2D1_BITMAP_PROPERTIES1::default();
-        props.pixelFormat = D2D1_PIXEL_FORMAT {
-            format: DXGI_FORMAT_B8G8R8A8_UNORM,
-            alphaMode: D2D1_ALPHA_MODE_IGNORE,
+        let props = D2D1_BITMAP_PROPERTIES1 {
+            pixelFormat: D2D1_PIXEL_FORMAT {
+                format: DXGI_FORMAT_B8G8R8A8_UNORM,
+                alphaMode: D2D1_ALPHA_MODE_IGNORE,
+            },
+            bitmapOptions: D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+            ..Default::default()
         };
-        props.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
 
         let mut bitmap = None;
 
@@ -375,12 +377,17 @@ fn create_swapchain_bitmap(swap_chain: &IDXGISwapChain1, target: &ID2D1DeviceCon
 fn create_swapchain(device: &ID3D11Device, window: HWND) -> IDXGISwapChain1 {
     let factory = get_dxgi_factory(device);
 
-    let mut props = DXGI_SWAP_CHAIN_DESC1::default();
-    props.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    props.SampleDesc.Count = 1;
-    props.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    props.BufferCount = 2;
-    props.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    let props = DXGI_SWAP_CHAIN_DESC1 {
+        Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+        SampleDesc: DXGI_SAMPLE_DESC {
+            Count: 1,
+            Quality: 0,
+        },
+        BufferUsage: DXGI_USAGE_RENDER_TARGET_OUTPUT,
+        BufferCount: 2,
+        SwapEffect: DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,
+        ..Default::default()
+    };
 
     let mut swap_chain = None;
 
@@ -506,9 +513,11 @@ struct DeviceIndependentResources {
 
 impl DeviceIndependentResources {
     fn new(factory: &ID2D1Factory1) -> Self {
-        let mut style_props = D2D1_STROKE_STYLE_PROPERTIES1::default();
-        style_props.startCap = D2D1_CAP_STYLE_ROUND;
-        style_props.endCap = D2D1_CAP_STYLE_TRIANGLE;
+        let style_props = D2D1_STROKE_STYLE_PROPERTIES1 {
+            startCap: D2D1_CAP_STYLE_ROUND,
+            endCap: D2D1_CAP_STYLE_TRIANGLE,
+            ..Default::default()
+        };
 
         let mut style = None;
         unsafe {
@@ -599,8 +608,10 @@ fn create_device_resources(target: &ID2D1DeviceContext) -> ID2D1SolidColorBrush 
         a: 1.0,
     };
 
-    let mut props = D2D1_BRUSH_PROPERTIES::default();
-    props.opacity = 0.8;
+    let props = D2D1_BRUSH_PROPERTIES {
+        opacity: 0.8,
+        ..Default::default()
+    };
 
     let mut brush = None;
     unsafe {
