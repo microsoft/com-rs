@@ -643,7 +643,7 @@ fn create_device_size_resources(target: &ID2D1DeviceContext, dpi: f32) -> ID2D1B
     //     m_shadow.put()));
 
     // m_shadow->SetInput(0, m_clock.get());
-    clock.unwrap().into()
+    clock.unwrap()
 }
 
 fn get_time(frequency: winnt::LARGE_INTEGER) -> f64 {
