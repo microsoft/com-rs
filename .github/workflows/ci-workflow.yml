@@ -4,10 +4,10 @@ on:
   pull_request:
   push:
     branches:
-      - master
 
 env:
   RUSTFLAGS: -Dwarnings
+  RUSTDOCFLAGS: -Dwarnings
 
 jobs:
   test:
@@ -23,11 +23,31 @@ jobs:
         toolchain: ${{ matrix.rust }}
         profile: minimal
         override: true
-        components: rustfmt
+        components: rustfmt, clippy
 
     - name: tests
-      run: cargo test --all
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --all
 
     - name: fmt
+      uses: actions-rs/cargo@v1
       if: matrix.rust == 'stable'
-      run: cargo fmt --all -- --check
+      with:
+        command: fmt
+        args: --all -- --check
+
+    - name: clippy
+      uses: actions-rs/cargo@v1
+      if: matrix.rust == 'stable'
+      with:
+        command: clippy
+        args: --workspace --all-targets
+
+    - name: doc
+      uses: actions-rs/cargo@v1
+      if: matrix.rust == 'stable'
+      with:
+        command: doc
+        args: --no-deps --workspace --document-private-items
