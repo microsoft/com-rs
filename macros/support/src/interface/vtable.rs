@@ -23,6 +23,7 @@ pub fn generate(interface: &Interface) -> syn::Result<TokenStream> {
     Ok(quote!(
         #[allow(non_snake_case, missing_docs)]
         #[repr(C)]
+        #[doc(hidden)]
         #vis struct #vtable_ident {
             #parent_field
             #methods
