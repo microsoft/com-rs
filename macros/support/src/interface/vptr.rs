@@ -10,6 +10,7 @@ pub fn generate(interface: &Interface) -> TokenStream {
 
     quote!(
         #[allow(missing_docs)]
+        #[doc(hidden)]
         #vis type #vptr_ident = ::core::ptr::NonNull<#vtable_ident>;
     )
 }
