@@ -85,13 +85,11 @@ impl Class {
             let chain_ident = interface.chain_ident(index);
             let ref_count_ident = crate::utils::ref_count_ident();
 
-            for interface_path in interface.iter_chain() {
+            for interface_path in interface
+                .iter_chain()
                 // Avoid generating duplicate From implementations
-                if interfaces_seen.contains(interface_path) {
-                    continue;
-                }
-                interfaces_seen.insert(interface_path);
-
+                .filter(|interface_path| interfaces_seen.insert(interface_path))
+            {
                 output.extend(quote! {
                     impl<'a> ::core::convert::From<&'a #class_name> for #interface_path {
                         fn from(class: &'a #class_name) -> Self {
