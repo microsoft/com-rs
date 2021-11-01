@@ -46,6 +46,7 @@ impl IID {
         let data4_8 = hex_lit(data4_8);
         quote!(
             #[allow(missing_docs)]
+            #[doc(hidden)]
             pub const #iid_ident: com::sys::IID = com::sys::IID {
                 data1: #data1,
                 data2: #data2,
