@@ -5,7 +5,7 @@ use com::sys::{HRESULT, NOERROR};
 
 class! {
     /// The implementation class
-    /// https://en.wikipedia.org/wiki/British_Shorthair
+    /// <https://en.wikipedia.org/wiki/British_Shorthair>
     #[derive(Debug)]
     pub class BritishShortHairCat: IDomesticAnimal(IAnimal), ICat(IAnimal) {
         happiness: std::cell::Cell<usize>,
