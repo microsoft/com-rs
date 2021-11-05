@@ -12,8 +12,6 @@ pub unsafe trait AbiTransferable: Sized {
 
     /// Turn the type into the FFI ABI type.
     fn get_abi(&self) -> Self::Abi;
-    /// Set the abi of the implementing type
-    fn set_abi(&mut self) -> *mut Self::Abi;
 
     /// Convert into a reference to Self from a reference to the ABI
     fn from_abi(abi: Self::Abi) -> Self {
@@ -58,9 +56,6 @@ macro_rules! primitive_transferable_type {
             fn get_abi(&self) -> Self::Abi {
                 *self
             }
-            fn set_abi(&mut self) -> *mut Self::Abi {
-                self as *mut Self::Abi
-            }
         })*
     };
 }
@@ -78,6 +73,7 @@ primitive_transferable_type! {
     f32,
     f64,
     usize,
+    isize,
     crate::sys::GUID
 }
 
@@ -86,18 +82,12 @@ unsafe impl<T> AbiTransferable for *mut T {
     fn get_abi(&self) -> Self::Abi {
         *self
     }
-    fn set_abi(&mut self) -> *mut Self::Abi {
-        self as *mut Self::Abi
-    }
 }
 
 unsafe impl<T> AbiTransferable for *const T {
     type Abi = Self;
     fn get_abi(&self) -> Self::Abi {
         *self
-    }
-    fn set_abi(&mut self) -> *mut Self::Abi {
-        self as *mut Self::Abi
     }
 }
 
@@ -106,23 +96,12 @@ unsafe impl<T: crate::Interface> AbiTransferable for T {
     fn get_abi(&self) -> Self::Abi {
         self.as_raw()
     }
-
-    fn set_abi(&mut self) -> *mut Self::Abi {
-        &mut self.as_raw()
-    }
 }
 
 unsafe impl<T: crate::Interface> AbiTransferable for Option<T> {
     type Abi = *mut core::ptr::NonNull<<T as crate::Interface>::VTable>;
     fn get_abi(&self) -> Self::Abi {
         self.as_ref()
-            .map(|p| p.as_raw().as_ptr())
-            .unwrap_or(::core::ptr::null_mut())
-    }
-
-    fn set_abi(&mut self) -> *mut Self::Abi {
-        &mut self
-            .as_mut()
             .map(|p| p.as_raw().as_ptr())
             .unwrap_or(::core::ptr::null_mut())
     }
