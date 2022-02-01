@@ -10,7 +10,7 @@ use crate::sys::IID;
 /// * it is `#[repr(C)]`
 /// * the type only contains `extern "system" fn" definitions
 ///
-/// The implementor must be a transparrently equivalent to a valid interface pointer
+/// The implementor must be a transparently equivalent to a valid interface pointer
 /// for the interface `T`. An interface pointer as the name suggests points to an
 /// interface. A valid interface is itself trivial castable to a `*mut T::VTable`.
 /// In other words, the implementing type must also be equal to `*mut *const T::VTable`
@@ -36,7 +36,7 @@ pub unsafe trait Interface: Sized + 'static {
 
     /// Cast the COM interface pointer to a raw pointer
     ///
-    /// The returned pointer is only guranteed valid for as long
+    /// The returned pointer is only guaranteed valid for as long
     /// as the reference to self id valid.
     fn as_raw(&self) -> core::ptr::NonNull<core::ptr::NonNull<Self::VTable>> {
         unsafe { core::mem::transmute_copy(self) }

@@ -118,7 +118,7 @@ impl syn::parse::Parse for Interface {
             if path.is_ident("doc") {
                 docs.push(attr);
             } else if path.is_ident("uuid") {
-                let iid_str: ParenthsizedStr = syn::parse2(tokens.clone())?;
+                let iid_str: ParenthesizedStr = syn::parse2(tokens.clone())?;
 
                 iid = Some(IID::parse(&iid_str.lit)?);
             } else {
@@ -173,11 +173,11 @@ mod keywords {
     syn::custom_keyword!(interface);
 }
 
-struct ParenthsizedStr {
+struct ParenthesizedStr {
     lit: syn::LitStr,
 }
 
-impl syn::parse::Parse for ParenthsizedStr {
+impl syn::parse::Parse for ParenthesizedStr {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let lit;
         syn::parenthesized!(lit in input);

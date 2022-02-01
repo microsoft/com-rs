@@ -670,7 +670,7 @@ interfaces! {
     unsafe interface ID2D1Factory: IUnknown {
         fn ReloadSystemMetrics(&self) -> HRESULT;
         fn GetDesktopDpi(&self, dpi_x: *mut FLOAT, dpi_y: *mut FLOAT);
-        // ununsed functions
+        // unused functions
         fn f0(&self);
         fn f1(&self);
         fn f2(&self);
