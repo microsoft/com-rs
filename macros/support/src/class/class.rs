@@ -625,7 +625,9 @@ impl Interface {
                 }
             };
             let field_name = Ident::new(&crate::utils::snake_to_camel(&original_name.to_string()), proc_macro2::Span::call_site());
+            let attrs = &m.item.attrs;
             quote! {
+                #(#attrs)*
                 #field_name: {
                     #method
                     #name
