@@ -4,12 +4,12 @@
 [![crates.io](https://img.shields.io/crates/v/com.svg)](https://crates.io/crates/com)
 [![Docs.rs](https://docs.rs/com/badge.svg)](https://docs.rs/crate/com/)
 
+:rotating_light: :rotating_light: :rotating_light: **NOTE** This crate is **deprecated** in favor of [`windows-rs`](https://github.com/microsoft/windows-rs). :rotating_light:
+:rotating_light: :rotating_light:
+
 A one stop shop for all things related to [COM](https://docs.microsoft.com/en-us/windows/win32/com/component-object-model--com--portal) programming in Rust.
 
 This library exposes various macros, structs and functions to the user for both producing and consuming COM components in an idiomatic manner.
-
-:rotating_light: :rotating_light: :rotating_light: **NOTE** This crate is currently in heavy development as we decide on a stable API. :rotating_light:
-:rotating_light: :rotating_light:
 
 ## What is COM?
 
