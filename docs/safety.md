@@ -4,7 +4,7 @@ COM specifies very little in the way of memory safety of COM based APIs. It is l
 
 ## The `unsafe` Keyword
 
-It is a requirement for all usages of COM methods be marked as `unsafe`. This is required since at the time of declaring an interface, there is no way to ensure that any call to that interface will meet all of Rust's safety expectations. 
+It is a requirement for all usages of COM methods be marked as `unsafe`. This is required since at the time of declaring an interface, there is no way to ensure that any call to that interface will meet all of Rust's safety expectations.
 
 ## `&self`, `&mut self`, and `self`
 
@@ -12,7 +12,7 @@ All methods of a COM interface are required to take an unexclusive reference to 
 
 ## Example
 
-It may be helpful to look at an example of a COM interface and what code gets generated to better understand its safety properties. 
+It may be helpful to look at an example of a COM interface and what code gets generated to better understand its safety properties.
 
 We'll try to declare a minimum COM interface. This interface will seemingly do very little, but we'll explore what the programmer must ensure for this interface to be safe.
 
@@ -29,7 +29,7 @@ com::interfaces! {
 
 This interface will expand to the following code.
 
-```rust 
+```rust
 // The interface is an FFI safe struct around a non-null pointer
 #[derive(Debug)]
 #[repr(transparent)]
@@ -41,7 +41,7 @@ pub struct IAnimal {
 impl IAnimal {
     // It is up to the programmer to ensure that the pointer contained
     // in the interface is still valid.
-    // This is likely to be the case as interface automatically keeps 
+    // This is likely to be the case as interface automatically keeps
     // track of its reference count.
     pub unsafe fn Eat(&self) -> HRESULT {
         let interface_ptr = <Self as com::AbiTransferable>::get_abi(self);
@@ -53,13 +53,13 @@ impl IAnimal {
 impl std::ops::Deref for IAnimal {
     type Target = <IAnimal as com::Interface>::Super;
     fn deref(&self) -> &Self::Target {
-        // This is safe because a valid reference to the child interface is exactly 
+        // This is safe because a valid reference to the child interface is exactly
         // equal to a valid reference to its parent interface.
         unsafe { std::mem::transmute(self) }
     }
 }
 
-// On drop the interface will call the IUknown::Release method
+// On drop the interface will call the IUnknown::Release method
 impl Drop for IAnimal {
     fn drop(&mut self) {
         // This is safe because we are calling `Release` when the interface handle is no

@@ -1,4 +1,4 @@
-//! Common COM interfaces including IUknown and IClassFactory
+//! Common COM interfaces including IUnknown and IClassFactory
 
 pub mod iclass_factory;
 pub mod iunknown;

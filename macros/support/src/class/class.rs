@@ -145,7 +145,7 @@ impl Class {
             }
             interfaces.push(interface);
 
-            let mut current = interfaces.last_mut().unwrap();
+            let current = interfaces.last_mut().unwrap();
             fn parse_parens(buffer: &ParseBuffer, current: &mut Interface) -> syn::Result<()> {
                 while buffer.peek(syn::token::Paren) {
                     let contents;
@@ -161,7 +161,7 @@ impl Class {
                 Ok(())
             }
 
-            parse_parens(input, &mut current)?;
+            parse_parens(input, current)?;
 
             if !input.peek(syn::token::Brace) {
                 let _ = input.parse::<syn::Token!(,)>()?;
@@ -581,7 +581,7 @@ impl Interface {
         quote::format_ident!("__{}_{}", offset, self.path.segments.last().unwrap().ident)
     }
 
-    /// Creates an intialized VTable for the interface
+    /// Creates an initialized VTable for the interface
     pub fn to_initialized_vtable_tokens(&self, class: &Class, offset: usize) -> TokenStream {
         let class_name = &class.name;
         let vtable_ident = self.vtable_ident();
@@ -683,11 +683,11 @@ impl Interface {
         quote! {
             {
                 // See https://github.com/rust-lang/rust/issues/86935
-                type IUknownVTable = <::com::interfaces::IUnknown as ::com::Interface>::VTable;
+                type IUnknownVTable = <::com::interfaces::IUnknown as ::com::Interface>::VTable;
                 #add_ref
                 #release
                 #query_interface
-                IUknownVTable {
+                IUnknownVTable {
                     AddRef,
                     Release,
                     QueryInterface,
