@@ -113,6 +113,21 @@ pub use com_macros::interfaces;
 #[cfg(feature = "production")]
 pub use com_macros::class;
 
+/// Defines a COM class.
+///
+/// This macro definition is only present if the `com` crate was compiled
+/// _without_ the `production` feature enabled. Its purpose is to help users
+/// quickly realize that they need to add the `production` feature to their
+/// crates.
+#[cfg(not(feature = "production"))]
+#[macro_export]
+macro_rules! class {
+    ($($t:tt)*) => {
+        compile_error! {"The `com::class!` macro requires that the `production` feature be enabled. Use `com = { version = \"...\", features = [\"production\"] }`." }
+    }
+}
+
+
 // this allows for the crate to refer to itself as `com` to keep macros consistent
 // whether they are used by some other crate or internally
 #[doc(hidden)]
