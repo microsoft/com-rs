@@ -1,5 +1,4 @@
 mod class;
-#[cfg(windows)]
 #[doc(hidden)]
 #[cfg(windows)]
 pub mod registration;

@@ -145,7 +145,7 @@ impl Class {
             }
             interfaces.push(interface);
 
-            let mut current = interfaces.last_mut().unwrap();
+            let current = interfaces.last_mut().unwrap();
             fn parse_parens(buffer: &ParseBuffer, current: &mut Interface) -> syn::Result<()> {
                 while buffer.peek(syn::token::Paren) {
                     let contents;
@@ -161,7 +161,7 @@ impl Class {
                 Ok(())
             }
 
-            parse_parens(input, &mut current)?;
+            parse_parens(input, current)?;
 
             if !input.peek(syn::token::Brace) {
                 let _ = input.parse::<syn::Token!(,)>()?;
@@ -625,7 +625,9 @@ impl Interface {
                 }
             };
             let field_name = Ident::new(&crate::utils::snake_to_camel(&original_name.to_string()), proc_macro2::Span::call_site());
+            let attrs = &m.item.attrs;
             quote! {
+                #(#attrs)*
                 #field_name: {
                     #method
                     #name
